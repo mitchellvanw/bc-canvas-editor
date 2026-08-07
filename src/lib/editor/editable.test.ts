@@ -18,8 +18,8 @@ function blur(node: HTMLElement) {
 	node.dispatchEvent(new FocusEvent('blur'));
 }
 
-function press(node: HTMLElement, key: string): KeyboardEvent {
-	const event = new KeyboardEvent('keydown', { key, cancelable: true, bubbles: true });
+function press(node: HTMLElement, key: string, init: KeyboardEventInit = {}): KeyboardEvent {
+	const event = new KeyboardEvent('keydown', { key, cancelable: true, bubbles: true, ...init });
 	node.dispatchEvent(event);
 	return event;
 }
@@ -101,5 +101,58 @@ describe('editableText', () => {
 		expect(node.textContent).toBe('Restored Name');
 		blur(node);
 		expect(onCommit).not.toHaveBeenCalled();
+	});
+
+	it('syncs an external change (undo) into a focused field with no uncommitted edits', () => {
+		const { node, onCommit, action } = mount();
+		node.focus();
+		expect(document.activeElement).toBe(node);
+		action.update({ value: 'Fulfillment', onCommit });
+		expect(node.textContent).toBe('Fulfillment');
+		blur(node);
+		expect(onCommit).not.toHaveBeenCalled();
+	});
+
+	it('never clobbers uncommitted edits in a focused field on external change', () => {
+		const { node, onCommit, action } = mount();
+		node.focus();
+		type(node, 'Shipp');
+		action.update({ value: 'Fulfillment', onCommit });
+		expect(node.textContent).toBe('Shipp');
+	});
+
+	describe('⌘Z inside a field (SPEC §6.1)', () => {
+		it('reverts uncommitted edits as a synonym of Esc, consuming the event', () => {
+			const { node, onCommit } = mount();
+			type(node, 'Ship');
+			const reachedWindow = vi.fn();
+			window.addEventListener('keydown', reachedWindow);
+			const event = press(node, 'z', { metaKey: true });
+			window.removeEventListener('keydown', reachedWindow);
+			expect(node.textContent).toBe('Order Fulfillment');
+			expect(onCommit).not.toHaveBeenCalled();
+			expect(event.defaultPrevented).toBe(true);
+			expect(reachedWindow).not.toHaveBeenCalled();
+		});
+
+		it('lets ⌘Z bubble to the global history handler when the field is pristine', () => {
+			const { node } = mount();
+			const reachedWindow = vi.fn();
+			window.addEventListener('keydown', reachedWindow);
+			press(node, 'z', { metaKey: true });
+			window.removeEventListener('keydown', reachedWindow);
+			expect(reachedWindow).toHaveBeenCalledTimes(1);
+		});
+
+		it('lets ⇧⌘Z (redo) bubble even with uncommitted edits', () => {
+			const { node } = mount();
+			type(node, 'Ship');
+			const reachedWindow = vi.fn();
+			window.addEventListener('keydown', reachedWindow);
+			press(node, 'Z', { metaKey: true, shiftKey: true });
+			window.removeEventListener('keydown', reachedWindow);
+			expect(node.textContent).toBe('Ship');
+			expect(reachedWindow).toHaveBeenCalledTimes(1);
+		});
 	});
 });

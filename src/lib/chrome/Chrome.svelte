@@ -1,13 +1,14 @@
 <script lang="ts">
 	/**
-	 * App chrome (SPEC §10): Import…, the Export menu, New canvas, and the quiet
-	 * Unexported-changes indicator. File verbs are Import/Export, never
-	 * Open/Save. Owns the confirmation dialogs and file-refusal notices; the
-	 * Export menu's HTML entry arrives with ticket 09.
+	 * App chrome (SPEC §10): Undo/Redo, Import…, the Export menu, New canvas,
+	 * and the quiet Unexported-changes indicator. File verbs are Import/Export,
+	 * never Open/Save. Owns the confirmation dialogs and file-refusal notices;
+	 * the Export menu's HTML entry arrives with ticket 09.
 	 */
 	import { downloadBlob } from '$lib/artifact/download';
 	import { exportPngArtifact } from '$lib/artifact/png';
 	import { canvas } from '$lib/editor/document.svelte';
+	import { performRedo, performUndo } from '$lib/editor/undo';
 	import { blankCanvas, stampIds, CANVAS_VERSION, type CanvasFile } from '$lib/model/canvas';
 	import { exportFileName } from '$lib/model/filename';
 	import { parseCanvasFile } from '$lib/model/parse';
@@ -28,7 +29,7 @@
 	const canvasName = $derived(canvas.doc.name.trim());
 
 	const chromeButton =
-		'rounded-[4px] border border-line bg-sheet px-3 py-1.5 text-sm font-medium hover:bg-paper';
+		'rounded-[4px] border border-line bg-sheet px-3 py-1.5 text-sm font-medium hover:bg-paper disabled:opacity-40 disabled:hover:bg-sheet';
 	const menuItem =
 		'block w-full px-4 py-1.5 text-left text-sm hover:bg-paper focus:bg-paper focus:outline-none';
 
@@ -103,6 +104,25 @@
 <svelte:window onclick={exportMenuOpen ? closeExportMenu : undefined} />
 
 <header class="mx-auto flex max-w-[1440px] items-center justify-end gap-2 px-10 pt-6">
+	<button
+		type="button"
+		class="{chromeButton} mr-1"
+		title="Undo (⌘Z)"
+		disabled={!canvas.canUndo}
+		onclick={() => performUndo()}
+	>
+		Undo
+	</button>
+	<button
+		type="button"
+		class="{chromeButton} mr-auto"
+		title="Redo (⇧⌘Z)"
+		disabled={!canvas.canRedo}
+		onclick={() => performRedo()}
+	>
+		Redo
+	</button>
+
 	<button type="button" class={chromeButton} onclick={() => fileInput.click()}>Import…</button>
 
 	{#if canvas.unexported}

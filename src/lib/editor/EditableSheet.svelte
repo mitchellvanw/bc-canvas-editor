@@ -21,6 +21,7 @@
 	import { canvas } from './document.svelte';
 	import { dragReorder } from './drag';
 	import { editableText } from './editable';
+	import { handleUndoShortcut } from './undo';
 	import Picker from './Picker.svelte';
 	import TraitPicker from './TraitPicker.svelte';
 	import { CLEAR_LABELS, PICK_OPTIONS } from './vocab';
@@ -110,6 +111,7 @@
 		if (openPicker && !target?.closest('.pickwrap')) closePicker(false);
 	}}
 	onkeydown={(event) => {
+		handleUndoShortcut(event);
 		if (event.key === 'Escape') {
 			typePopover = null;
 			// Backstop only: a popover with focus inside handles its own Esc first.
@@ -461,6 +463,25 @@
 		font-family: var(--font-mono);
 		font-size: 0.72rem;
 		cursor: pointer;
+	}
+
+	/* ---- undo/redo reveal (SPEC §6.1): brief highlight on the affected
+	   region; instant on/off under reduced motion, fade-out otherwise. Wider
+	   and further offset than the §8.4 2px focus ring, so a flash never reads
+	   as focus having moved. ---- */
+	.editable :global(:is(.tb, .panel)) {
+		outline: 3px solid transparent;
+		outline-offset: 6px;
+		transition: outline-color 350ms ease-out;
+	}
+	.editable :global(.undo-flash) {
+		outline-color: var(--color-ink);
+		transition: none;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.editable :global(:is(.tb, .panel)) {
+			transition: none;
+		}
 	}
 
 	/* ---- drag feedback (classes applied by dragReorder) ---- */

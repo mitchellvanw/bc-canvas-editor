@@ -2,8 +2,12 @@
  * The commit grammar for every free-text field on the sheet (SPEC §6): the
  * field is contenteditable plaintext in place; blur commits, Enter commits
  * single-line fields, Esc reverts to the last committed value. One field blur
- * is one commit — unchanged text commits nothing.
+ * is one commit — unchanged text commits nothing. ⌘Z over uncommitted edits
+ * is a synonym of Esc (SPEC §6.1), consumed here so it never reaches the
+ * global history handler; a pristine field lets it bubble to app undo.
  */
+
+import { undoShortcut } from './undo';
 
 export interface EditableTextOptions {
 	value: string;
@@ -32,6 +36,11 @@ export function editableText(node: HTMLElement, options: EditableTextOptions): E
 		current.onCommit(value);
 	};
 
+	const revert = () => {
+		node.textContent = committed;
+		node.blur();
+	};
+
 	const onBlur = () => commit();
 
 	const onKeydown = (event: KeyboardEvent) => {
@@ -41,8 +50,11 @@ export function editableText(node: HTMLElement, options: EditableTextOptions): E
 			node.blur();
 		} else if (event.key === 'Escape') {
 			event.preventDefault();
-			node.textContent = committed;
-			node.blur();
+			revert();
+		} else if (undoShortcut(event) === 'undo' && node.textContent !== committed) {
+			event.preventDefault();
+			event.stopPropagation();
+			revert();
 		}
 	};
 
@@ -53,8 +65,11 @@ export function editableText(node: HTMLElement, options: EditableTextOptions): E
 		update(next: EditableTextOptions) {
 			current = next;
 			if (next.value !== committed) {
+				// A focused pristine field follows the document (undo can change it
+				// under a parked caret); uncommitted edits are never clobbered.
+				const pristine = node.textContent === committed;
 				committed = next.value;
-				if (document.activeElement !== node) node.textContent = committed;
+				if (pristine || document.activeElement !== node) node.textContent = committed;
 			}
 		},
 		destroy() {
