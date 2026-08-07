@@ -9,8 +9,11 @@
 	 * ◆ event), then the new chip's name is focused for immediate typing.
 	 * Chips drag-reorder within their lane and lanes within their section via
 	 * the delegated dragReorder wrapper. Every action — field blur, add,
-	 * remove, reorder — is exactly one commit feeding autosave. Pickers are
-	 * ticket 07, the full placeholder teaching copy ticket 10.
+	 * remove, reorder — is exactly one commit feeding autosave. The empty
+	 * state teaches through these same seams (SPEC §7): ghost labels arrive
+	 * from the sheet as questions on empty sections (kept visible via
+	 * `ghost--teach`) and field placeholders ride the TextSlots — the editor
+	 * adds no teaching of its own.
 	 */
 	import { tick } from 'svelte';
 	import { moveItem, type MessageType } from '$lib/model/canvas';
@@ -151,6 +154,7 @@
 			<button
 				type="button"
 				class="ghost"
+				class:ghost--teach={slot.teaching}
 				onclick={(event) => addAndFocus(event.currentTarget, slot)}>{slot.label}</button
 			>
 		{/snippet}
@@ -226,8 +230,10 @@
 				<button
 					type="button"
 					class="ghost"
+					class:ghost--teach={slot.teaching}
 					aria-expanded={openPicker === TRAIT_POPOVER}
-					onclick={(event) => togglePicker(TRAIT_POPOVER, event.currentTarget)}>+ trait</button
+					onclick={(event) => togglePicker(TRAIT_POPOVER, event.currentTarget)}
+					>{slot.label}</button
 				>
 				{#if openPicker === TRAIT_POPOVER}
 					<TraitPicker
@@ -314,6 +320,13 @@
 	.ghost:focus-visible,
 	.ghost[aria-expanded='true'] {
 		opacity: 1;
+	}
+
+	/* On an empty section the ghost carries the teaching question and rests
+	   visible — the §7 amendment to the hover rule — at the prototype's 0.75,
+	   so approach still reads as engagement (the rules above outrank this). */
+	.ghost--teach {
+		opacity: 0.75;
 	}
 
 	/* Hovering an item reveals its ×; a lane's own × lives in its head, so a

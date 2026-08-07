@@ -153,6 +153,12 @@ describe('CanvasSheet is read-only and complete when empty', () => {
 		const labels = [...el.querySelectorAll('h2')].map((h) => h.textContent);
 		expect(labels).toEqual(SECTION_LABELS);
 		expect(el.textContent).not.toContain('Name this context');
+		// The §10 teaching copy enters only through the editor's snippets — the
+		// bare sheet (the artifact path) never shows a question or placeholder.
+		// No '?' holds only on an empty canvas: a filled one renders ? glyphs
+		// on query chips (and question marks in user prose).
+		expect(el.textContent).not.toContain('?');
+		expect(el.textContent).not.toContain('What it means here');
 		expect(el.querySelectorAll('h3')).toHaveLength(0);
 	});
 });

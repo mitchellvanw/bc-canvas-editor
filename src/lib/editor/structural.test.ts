@@ -127,9 +127,13 @@ describe('ghost adds', () => {
 
 		canvas.replace(stampIds(blankCanvas()));
 		flushSync();
-		expect(buttons(section(el, 'inbound'), '+ collaborator')).toHaveLength(1);
-		expect(buttons(el, '+ term')).toHaveLength(1);
-		expect(buttons(el, '+ question')).toHaveLength(1);
+		// Empty sections keep their ghosts, carrying the §10 teaching questions
+		// (the full empty-state behavior is covered by empty-state.test.ts).
+		expect(
+			buttons(section(el, 'inbound'), '+ collaborator — who sends this context commands, queries or events?')
+		).toHaveLength(1);
+		expect(buttons(el, '+ term — which words mean something precise here?')).toHaveLength(1);
+		expect(buttons(el, "+ question — what's still unresolved?")).toHaveLength(1);
 	});
 
 	it('adds a collaborator lane in one commit and focuses its name', async () => {
@@ -314,12 +318,13 @@ describe('every section goes empty → populated → empty by pointer alone', ()
 		const el = render();
 		const inbound = section(el, 'inbound');
 
-		click(button(inbound, '+ collaborator'));
+		// Empty sections offer their ghosts as the §10 teaching questions.
+		click(button(inbound, '+ collaborator — who sends this context commands, queries or events?'));
 		click(button(inbound, 'Add message'));
 		click(button(inbound, 'command'));
-		click(button(el, '+ term'));
-		click(button(el, '+ decision'));
-		click(button(el, '+ assumption'));
+		click(button(el, '+ term — which words mean something precise here?'));
+		click(button(el, '+ decision — which rules does this context enforce?'));
+		click(button(el, '+ assumption — what are you taking to be true?'));
 
 		expect(canvas.doc.inboundCommunication).toHaveLength(1);
 		expect(canvas.doc.inboundCommunication[0].messages).toHaveLength(1);

@@ -23,6 +23,11 @@ export interface RemoveSlot {
 export interface AddSlot {
 	/** The ghost's visible label; terse once a section has content (SPEC §7). */
 	label: string;
+	/**
+	 * The section is empty, so the label is its teaching question and the ghost
+	 * stays visible instead of materializing on approach (SPEC §7).
+	 */
+	teaching: boolean;
 	/** The aria-label of the new item's first field, for the editor to focus. */
 	focusField: string;
 	/** Append the blank item to the document. */

@@ -62,6 +62,15 @@
 		{ meaning: 'hotspot', label: 'open question' }
 	];
 
+	/**
+	 * A ghost add's teaching face (SPEC §7): while its section is empty the
+	 * label is the section's §10 question and the ghost stays visible; the
+	 * first item collapses it to the terse label. Pure emptiness — no flag.
+	 */
+	function ghostFace(count: number, terse: string, question: string) {
+		return { label: count ? terse : question, teaching: count === 0 };
+	}
+
 	const axes = $derived([
 		{ kind: 'domain' as const, label: 'Domain', value: doc.strategicClassification.domain },
 		{
@@ -75,7 +84,7 @@
 
 {#snippet text(slot: TextSlot)}{#if field}{@render field(slot)}{:else}{slot.value}{/if}{/snippet}
 
-{#snippet communication(label: string, lanes: LaneRow[], area: string)}
+{#snippet communication(label: string, lanes: LaneRow[], area: string, question: string)}
 	<section class="panel panel--collab {area}">
 		<h2 class="panel__label">{label}</h2>
 		<div class="panel__body">
@@ -89,6 +98,7 @@
 									{@render text({
 										value: lane.collaborator,
 										label: 'Collaborator',
+										placeholder: 'Collaborator',
 										set: (value) => (lane.collaborator = value)
 									})}
 								</h3>
@@ -116,12 +126,14 @@
 											><span class="sr-only">{message.type}, </span>{@render text({
 												value: message.name,
 												label: 'Message name',
+												placeholder: 'Message name',
 												set: (value) => (message.name = value)
 											})}
 											{#if field || message.description}<span class="msg__desc"
 													>{@render text({
 														value: message.description ?? '',
 														label: 'Message description',
+														placeholder: 'detail',
 														multiline: true,
 														set: (value) => (message.description = value)
 													})}</span
@@ -143,7 +155,7 @@
 				</ul>
 			{/if}
 			{@render addItem?.({
-				label: '+ collaborator',
+				...ghostFace(lanes.length, '+ collaborator', question),
 				focusField: 'Collaborator',
 				add: () => lanes.push({ id: newId(), collaborator: '', messages: [] })
 			})}
@@ -154,7 +166,8 @@
 {#snippet stickies(
 	label: string,
 	itemLabel: string,
-	ghost: string,
+	terse: string,
+	question: string,
 	items: string[],
 	area: string,
 	hotspot: boolean
@@ -169,6 +182,7 @@
 							{@render text({
 								value: item,
 								label: itemLabel,
+								placeholder: '…',
 								set: (value) => (items[index] = value)
 							})}
 							{@render removeItem?.({
@@ -180,7 +194,7 @@
 				</ul>
 			{/if}
 			{@render addItem?.({
-				label: ghost,
+				...ghostFace(items.length, terse, question),
 				focusField: itemLabel,
 				add: () => items.push('')
 			})}
@@ -230,6 +244,8 @@
 						{@render text({
 							value: doc.description,
 							label: 'Description',
+							placeholder:
+								'What does this context exist to do? A few sentences in business language.',
 							multiline: true,
 							set: (value) => (doc.description = value)
 						})}
@@ -254,6 +270,11 @@
 					</ul>
 				{/if}
 				{@render addTrait?.({
+					...ghostFace(
+						doc.domainRoles.length,
+						'+ trait',
+						'+ trait — how does this context behave?'
+					),
 					selected: doc.domainRoles.map((role) => role.name),
 					toggle: (name) => {
 						const index = doc.domainRoles.findIndex((role) => role.name === name);
@@ -264,7 +285,12 @@
 			</div>
 		</section>
 
-		{@render communication('Inbound communication', doc.inboundCommunication, 'area-inbound')}
+		{@render communication(
+			'Inbound communication',
+			doc.inboundCommunication,
+			'area-inbound',
+			'+ collaborator — who sends this context commands, queries or events?'
+		)}
 
 		<section class="panel panel--lang area-language">
 			<h2 class="panel__label">Ubiquitous language</h2>
@@ -277,6 +303,7 @@
 									{@render text({
 										value: entry.term,
 										label: 'Term',
+										placeholder: 'Term',
 										set: (value) => (entry.term = value)
 									})}{@render removeItem?.({
 										label: `Remove term ${entry.term}`.trim(),
@@ -288,6 +315,7 @@
 										{@render text({
 											value: entry.definition ?? '',
 											label: 'Definition',
+											placeholder: 'What it means here',
 											multiline: true,
 											set: (value) => (entry.definition = value)
 										})}
@@ -298,7 +326,11 @@
 					</dl>
 				{/if}
 				{@render addItem?.({
-					label: '+ term',
+					...ghostFace(
+						doc.ubiquitousLanguage.length,
+						'+ term',
+						'+ term — which words mean something precise here?'
+					),
 					focusField: 'Term',
 					add: () => doc.ubiquitousLanguage.push({ id: newId(), term: '' })
 				})}
@@ -316,6 +348,7 @@
 									>{@render text({
 										value: decision.name,
 										label: 'Decision',
+										placeholder: 'Rule',
 										set: (value) => (decision.name = value)
 									})}</b
 								>
@@ -323,6 +356,7 @@
 										>{@render text({
 											value: decision.description ?? '',
 											label: 'Decision description',
+											placeholder: 'detail',
 											multiline: true,
 											set: (value) => (decision.description = value)
 										})}</span
@@ -336,19 +370,29 @@
 					</ul>
 				{/if}
 				{@render addItem?.({
-					label: '+ decision',
+					...ghostFace(
+						doc.businessDecisions.length,
+						'+ decision',
+						'+ decision — which rules does this context enforce?'
+					),
 					focusField: 'Decision',
 					add: () => doc.businessDecisions.push({ id: newId(), name: '' })
 				})}
 			</div>
 		</section>
 
-		{@render communication('Outbound communication', doc.outboundCommunication, 'area-outbound')}
+		{@render communication(
+			'Outbound communication',
+			doc.outboundCommunication,
+			'area-outbound',
+			'+ collaborator — who consumes what this context emits?'
+		)}
 
 		{@render stickies(
 			'Assumptions',
 			'Assumption',
 			'+ assumption',
+			'+ assumption — what are you taking to be true?',
 			doc.assumptions,
 			'area-assumptions',
 			false
@@ -357,6 +401,7 @@
 			'Verification metrics',
 			'Verification metric',
 			'+ metric',
+			'+ metric — what would verify this design?',
 			doc.verificationMetrics,
 			'area-metrics',
 			false
@@ -365,6 +410,7 @@
 			'Open questions',
 			'Open question',
 			'+ question',
+			"+ question — what's still unresolved?",
 			doc.openQuestions,
 			'area-questions',
 			true

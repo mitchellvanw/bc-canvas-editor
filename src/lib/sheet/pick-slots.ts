@@ -32,6 +32,13 @@ export interface PickSlot {
 
 /** The domain-role trait set: one multi-select location per canvas (SPEC §6). */
 export interface TraitSlot {
+	/** The ghost's visible label; terse once a trait is chosen (SPEC §7). */
+	label: string;
+	/**
+	 * No traits yet, so the label is the teaching question and the ghost stays
+	 * visible instead of materializing on approach (SPEC §7).
+	 */
+	teaching: boolean;
 	/** The trait names currently on the canvas, in chip order. */
 	selected: string[];
 	/** Add the trait if absent, remove it if present — one toggle, one commit. */

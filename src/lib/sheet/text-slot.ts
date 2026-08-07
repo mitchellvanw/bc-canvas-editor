@@ -13,7 +13,7 @@ export interface TextSlot {
 	label: string;
 	/** Prose fields commit on blur only; single-line fields also on Enter (SPEC §6). */
 	multiline?: boolean;
-	/** Teaching placeholder for the empty field (the full §10 copy lands with ticket 10). */
+	/** Teaching placeholder for the empty field — SPEC §10 copy, verbatim. */
 	placeholder?: string;
 	/** Set on fields inside the ink title block, where editing chrome inverts. */
 	tone?: 'ink';
