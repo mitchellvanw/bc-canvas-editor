@@ -3,8 +3,10 @@
 	 * App chrome (SPEC §10): Import…, the Export menu, New canvas, and the quiet
 	 * Unexported-changes indicator. File verbs are Import/Export, never
 	 * Open/Save. Owns the confirmation dialogs and file-refusal notices; the
-	 * Export menu's HTML/PNG entries arrive with tickets 09/04.
+	 * Export menu's HTML entry arrives with ticket 09.
 	 */
+	import { downloadBlob } from '$lib/artifact/download';
+	import { exportPngArtifact } from '$lib/artifact/png';
 	import { canvas } from '$lib/editor/document.svelte';
 	import { blankCanvas, stampIds, CANVAS_VERSION, type CanvasFile } from '$lib/model/canvas';
 	import { exportFileName } from '$lib/model/filename';
@@ -27,6 +29,15 @@
 
 	const chromeButton =
 		'rounded-[4px] border border-line bg-sheet px-3 py-1.5 text-sm font-medium hover:bg-paper';
+	const menuItem =
+		'block w-full px-4 py-1.5 text-left text-sm hover:bg-paper focus:bg-paper focus:outline-none';
+
+	function closeMenuOnEscape(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			exportMenuOpen = false;
+			exportButton.focus();
+		}
+	}
 
 	function openAsModal(node: HTMLDialogElement) {
 		node.showModal();
@@ -53,12 +64,18 @@
 	function exportCanvasFile() {
 		exportMenuOpen = false;
 		const blob = new Blob([canvas.exportCanvasFile()], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = exportFileName(canvas.doc.name, 'json');
-		link.click();
-		URL.revokeObjectURL(url);
+		downloadBlob(blob, exportFileName(canvas.doc.name, 'json'));
+	}
+
+	// PNG export is pixels-only: it never clears Unexported changes (SPEC §6.1).
+	async function exportPng() {
+		exportMenuOpen = false;
+		try {
+			await exportPngArtifact(canvas.doc);
+		} catch (error) {
+			// SPEC §10 defines no export-failure notice; don't let it vanish silently.
+			console.error('PNG export failed', error);
+		}
 	}
 
 	function newCanvas() {
@@ -117,16 +134,20 @@
 				<button
 					type="button"
 					role="menuitem"
-					class="block w-full px-4 py-1.5 text-left text-sm hover:bg-paper focus:bg-paper focus:outline-none"
+					class={menuItem}
 					onclick={exportCanvasFile}
-					onkeydown={(event) => {
-						if (event.key === 'Escape') {
-							exportMenuOpen = false;
-							exportButton.focus();
-						}
-					}}
+					onkeydown={closeMenuOnEscape}
 				>
 					Canvas file (.bcc.json)
+				</button>
+				<button
+					type="button"
+					role="menuitem"
+					class={menuItem}
+					onclick={exportPng}
+					onkeydown={closeMenuOnEscape}
+				>
+					PNG image (2x)
 				</button>
 			</div>
 		{/if}

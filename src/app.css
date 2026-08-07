@@ -42,7 +42,10 @@
 	--font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
-body {
+/* The cream paper ground — shared by the app body and the offscreen artifact
+   mount (SPEC §9), so captures carry the same ground the editor sits on. */
+body,
+.paper-ground {
 	background-color: var(--color-paper);
 	/* Faint 32px drafting grid on the cream paper */
 	background-image:
