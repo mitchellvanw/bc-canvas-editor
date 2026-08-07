@@ -1,0 +1,837 @@
+<!--
+  PROTOTYPE — throwaway. Inline-editing round, variant 2: "Focus panel".
+  The rendered canvas is inert; hovering a panel reveals an "✎ edit" chip and
+  clicking anywhere on the panel swaps THAT panel into a real form (inputs,
+  selects, explicit ↑ ↓ × / add buttons) while the rest of the sheet dims.
+  Done commits, Cancel (or Esc) reverts; clicking another panel commits the
+  open one and moves focus there. Cmd/Ctrl+Enter = Done. No persistence —
+  the {} drawer shows the serialized Canvas JSON after every commit.
+  Switch variants via the floating bar or arrow keys. Not production code.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inline editing — 2 Focus panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after { box-sizing: border-box; }
+  :root {
+    --paper: #EAE7DE;
+    --sheet: #FDFDFB;
+    --ink: #191C1E;
+    --ink-2: #50564F;
+    --ink-3: #8E948C;
+    --rule: #D8D4C8;
+    --es-event: #F3A54E;    --es-event-ink: #A96517;
+    --es-command: #85BCE5;  --es-command-ink: #33688F;
+    --es-query: #93CB91;    --es-query-ink: #40733E;
+    --es-policy: #C2ABDD;   --es-policy-ink: #6F519B;
+    --es-system: #F1A5CB;   --es-system-ink: #A94879;
+    --es-hotspot: #F76BA3;  --es-hotspot-ink: #B92367;
+    --es-term: #EFE08B;     --es-term-ink: #8A7A12;
+    --dir: var(--ink-3);
+    --f-disp: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    --f-body: 'Source Serif 4', Georgia, serif;
+    --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    --gap: 18px;
+    --pad: 1.35rem;
+  }
+  body {
+    margin: 0;
+    font-family: var(--f-body);
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(to right, rgba(20,24,26,.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20,24,26,.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    line-height: 1.5;
+    padding-bottom: 84px;
+  }
+  .sheet { max-width: 1440px; margin: 0 auto; padding: 32px; }
+
+  .tb {
+    position: relative;
+    background: #1A1E20; color: var(--paper);
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--gap) 2.5rem;
+    padding: 1.5rem 1.7rem;
+    border-radius: 6px; margin-bottom: var(--gap);
+  }
+  .tb__id { flex: 1 1 320px; }
+  .eyebrow {
+    font-family: var(--f-disp); font-size: .62rem; font-weight: 600;
+    letter-spacing: .24em; text-transform: uppercase; color: #98A29A;
+    display: block; margin-bottom: .55rem;
+  }
+  .ctx-name {
+    font-family: var(--f-disp); font-weight: 700;
+    font-size: 2.4rem; line-height: 1.04; letter-spacing: .01em;
+    margin: 0; color: #F6F7F2;
+  }
+  .tb__class { display: flex; gap: 2.2rem; margin: 0; }
+  .tb__class dt {
+    font-family: var(--f-disp); font-size: .57rem; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: #8D9791; margin: 0 0 .25rem;
+  }
+  .tb__class dd { margin: 0; font-family: var(--f-mono); font-size: .8rem; color: #E7E9E2; }
+
+  .grid {
+    display: grid; gap: var(--gap);
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-areas:
+      "purpose purpose purpose purpose purpose purpose purpose roles roles roles roles roles"
+      "inb inb inb inb lang lang lang lang outb outb outb outb"
+      "inb inb inb inb dec dec dec dec outb outb outb outb"
+      "assum assum assum assum metrics metrics metrics metrics quest quest quest quest";
+  }
+  .a-purpose { grid-area: purpose; }
+  .a-roles { grid-area: roles; }
+  .a-inb { grid-area: inb; }
+  .a-lang { grid-area: lang; }
+  .a-dec { grid-area: dec; }
+  .a-outb { grid-area: outb; }
+  .a-assum { grid-area: assum; }
+  .a-metrics { grid-area: metrics; }
+  .a-quest { grid-area: quest; }
+
+  .panel {
+    position: relative;
+    background: var(--sheet); border: 1px solid var(--rule);
+    border-radius: 5px; padding: var(--pad); min-width: 0;
+    box-shadow: 0 1px 2px rgba(25, 28, 30, .04);
+  }
+  .panel__label {
+    font-family: var(--f-disp); font-size: .64rem; font-weight: 700; letter-spacing: .17em;
+    text-transform: uppercase; color: var(--ink); margin: 0;
+    display: inline-block;
+    padding-bottom: .5rem;
+    border-bottom: 2px solid var(--dir);
+  }
+  .panel__body { margin-top: 1rem; }
+  .panel--lang { --dir: var(--es-term-ink); }
+  .panel--dec { --dir: var(--es-policy-ink); }
+  .panel--in, .panel--out { --dir: var(--es-system-ink); }
+  .panel--ask { --dir: var(--es-hotspot-ink); }
+
+  .prose { font-size: 1rem; line-height: 1.55; margin: 0; }
+
+  .roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+  .role {
+    font-family: var(--f-disp); font-size: .74rem; font-weight: 600;
+    border: 1px solid var(--ink); border-radius: 999px; padding: .22rem .68rem;
+  }
+  .role__note {
+    display: block; font-style: italic; font-size: .84rem; color: var(--ink-2); margin-top: .6rem;
+  }
+
+  .lane + .lane { margin-top: 1.05rem; padding-top: 1.05rem; border-top: 1px solid #EDEAE1; }
+  .lane__head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .45rem; }
+  .lane__who {
+    font-family: var(--f-disp); font-size: .8rem; font-weight: 600;
+    color: var(--es-system-ink);
+    border-bottom: 2px solid var(--es-system);
+    padding-bottom: .1rem;
+  }
+  .badge {
+    font-family: var(--f-mono); font-size: .62rem; letter-spacing: .06em;
+    color: var(--ink-3); white-space: nowrap; margin-left: auto;
+  }
+  .msgs { list-style: none; margin: .55rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .35rem; }
+  .msg {
+    font-family: var(--f-mono); font-size: .73rem; line-height: 1.25;
+    padding: .28rem .55rem; color: var(--ink);
+    border: 1px solid; border-radius: 4px;
+  }
+  .msg::before { font-size: .7em; margin-right: .42em; vertical-align: .08em; opacity: .7; }
+  .msg--command { background: var(--es-command); border-color: var(--es-command-ink); }
+  .msg--command::before { content: "\25B6"; }
+  .msg--query { background: var(--es-query); border-color: var(--es-query-ink); }
+  .msg--query::before { content: "?"; font-weight: 700; }
+  .msg--event { background: var(--es-event); border-color: var(--es-event-ink); }
+  .msg--event::before { content: "\25C6"; }
+
+  .terms { margin: 0; }
+  .terms dt {
+    font-family: var(--f-mono); font-size: .76rem; font-weight: 600;
+    margin-top: .8rem; display: inline-block;
+    background: linear-gradient(transparent 45%, var(--es-term) 45%, var(--es-term) 92%, transparent 92%);
+    padding: 0 .15rem;
+  }
+  .terms dt:first-of-type { margin-top: 0; }
+  .terms dd { margin: .15rem 0 0; font-size: .9rem; line-height: 1.45; color: var(--ink-2); }
+
+  .stack { list-style: none; margin: 0; padding: 0; }
+  .stack li { position: relative; padding-left: 1.15rem; font-size: .9rem; line-height: 1.5; }
+  .stack li + li { margin-top: .65rem; }
+  .stack li::before {
+    content: ""; position: absolute; left: 0; top: .48em;
+    width: 7px; height: 7px; border-radius: 2px;
+    background: var(--ink-3);
+  }
+  .stack--rule li::before { background: var(--es-policy); border: 1px solid var(--es-policy-ink); }
+  .stack--ask li::before { background: var(--es-hotspot); border: 1px solid var(--es-hotspot-ink); transform: rotate(14deg); }
+  .stack b { font-family: var(--f-disp); font-size: .8rem; letter-spacing: .01em; }
+
+  .foot {
+    margin-top: var(--gap);
+    display: flex; flex-wrap: wrap; gap: .6rem 2rem;
+    align-items: baseline; justify-content: space-between;
+    padding-top: 1rem; border-top: 1px solid var(--rule);
+  }
+  .key { display: flex; flex-wrap: wrap; gap: .45rem 1.05rem; align-items: center; }
+  .key__i { display: inline-flex; align-items: center; gap: .35rem; font-size: .74rem; color: var(--ink-2); }
+  .sw { width: 10px; height: 10px; display: inline-block; border: 1px solid; border-radius: 3px; }
+  .sw--cmd { background: var(--es-command); border-color: var(--es-command-ink); }
+  .sw--qry { background: var(--es-query); border-color: var(--es-query-ink); }
+  .sw--evt { background: var(--es-event); border-color: var(--es-event-ink); }
+  .sw--system { background: var(--es-system); border-color: var(--es-system-ink); }
+  .sw--policy { background: var(--es-policy); border-color: var(--es-policy-ink); }
+  .sw--hotspot { background: var(--es-hotspot); border-color: var(--es-hotspot-ink); }
+  .note { font-size: .74rem; color: var(--ink-3); margin: 0; }
+  .note a { color: var(--ink-2); }
+
+  /* =====================================================================
+     EDITING CHROME — variant 2 "Focus panel": edit chip on hover, one
+     panel at a time swaps into a form, the rest dims.
+     ===================================================================== */
+
+  .editable { cursor: pointer; }
+  .edit-chip {
+    position: absolute; top: .65rem; right: .65rem;
+    font-family: var(--f-disp); font-size: .66rem; font-weight: 600;
+    letter-spacing: .06em; color: var(--ink-2);
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 999px;
+    padding: .18rem .55rem; opacity: 0; transition: opacity .12s;
+    pointer-events: none;
+  }
+  .tb .edit-chip { background: #22282A; color: #B9C2BB; border-color: #3A4245; }
+  .editable:hover > .edit-chip { opacity: 1; }
+  .editable:hover { border-color: #B9B4A4; }
+  .tb.editable:hover { outline: 1px solid #3A4245; }
+
+  .is-dim { opacity: .45; transition: opacity .15s; }
+  .is-editing {
+    border-color: var(--ink) !important;
+    box-shadow: 0 10px 30px rgba(25,28,30,.16);
+    cursor: default;
+  }
+
+  /* form controls, styled to the sheet */
+  .frm { display: flex; flex-direction: column; gap: .6rem; }
+  .frm input[type="text"], .frm textarea, .frm select {
+    font-family: var(--f-mono); font-size: .78rem; color: var(--ink);
+    background: #FFFEF9; border: 1px solid #C4BFAF; border-radius: 4px;
+    padding: .38rem .5rem; width: 100%; min-width: 0;
+  }
+  .frm textarea { font-family: var(--f-body); font-size: .92rem; line-height: 1.5; resize: vertical; }
+  .frm input:focus, .frm textarea:focus, .frm select:focus { outline: 1.5px solid #8E948C; }
+  .frm__row { display: flex; gap: .4rem; align-items: center; }
+  .frm__row > input[type="text"] { flex: 1; }
+  .frm label.frm__lbl {
+    font-family: var(--f-disp); font-size: .6rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .mini {
+    font-family: var(--f-disp); font-size: .72rem; font-weight: 600;
+    background: none; border: 1px solid var(--rule); border-radius: 4px;
+    color: var(--ink-2); cursor: pointer; padding: .25rem .45rem; line-height: 1;
+    flex: none;
+  }
+  .mini:hover { border-color: var(--ink-3); color: var(--ink); }
+  .mini:disabled { opacity: .3; cursor: default; }
+  .mini--add { border-style: dashed; align-self: flex-start; }
+  .mini--danger:hover { border-color: var(--es-hotspot-ink); color: var(--es-hotspot-ink); }
+  .frm__actions {
+    display: flex; gap: .5rem; justify-content: flex-end;
+    margin-top: .35rem; padding-top: .7rem; border-top: 1px solid #EDEAE1;
+  }
+  .btn {
+    font-family: var(--f-disp); font-size: .74rem; font-weight: 600;
+    border-radius: 4px; padding: .38rem .85rem; cursor: pointer; border: 1px solid;
+  }
+  .btn--done { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn--cancel { background: none; color: var(--ink-2); border-color: var(--rule); }
+  .btn--cancel:hover { border-color: var(--ink-3); }
+  .frm__hint { font-family: var(--f-disp); font-size: .64rem; color: var(--ink-3); margin-right: auto; align-self: center; }
+
+  .lane-frm { border: 1px solid #E4E0D4; border-radius: 5px; padding: .7rem; display: flex; flex-direction: column; gap: .45rem; }
+  .lane-frm__head { display: flex; gap: .4rem; align-items: center; }
+  .lane-frm__head input { flex: 1; }
+  .lane-frm__head select { width: auto; flex: 1; }
+  .msg-row { display: flex; gap: .4rem; align-items: center; }
+  .msg-row select { width: auto; flex: none; }
+  .msg-row input { flex: 1; }
+
+  /* role checklist */
+  .traits { display: flex; flex-direction: column; gap: .1rem; max-height: 340px; overflow-y: auto; border: 1px solid #E4E0D4; border-radius: 5px; padding: .4rem; }
+  .trait { display: grid; grid-template-columns: auto 1fr; gap: .1rem .5rem; align-items: baseline; padding: .3rem .35rem; border-radius: 4px; cursor: pointer; }
+  .trait:hover { background: rgba(25,28,30,.045); }
+  .trait input { grid-row: 1 / 3; accent-color: var(--ink); }
+  .trait__name { font-family: var(--f-disp); font-size: .78rem; font-weight: 600; }
+  .trait__desc { grid-column: 2; font-size: .78rem; color: var(--ink-2); line-height: 1.35; }
+
+  /* title-block form */
+  .tb .frm { flex: 1 1 100%; }
+  .tb .frm input[type="text"], .tb .frm select { background: #22282A; color: #E7E9E2; border-color: #3A4245; }
+  .tb .frm label.frm__lbl { color: #8D9791; }
+  .tb__grp { display: flex; flex-wrap: wrap; gap: 1.6rem; }
+  .tb__grp fieldset { border: none; margin: 0; padding: 0; min-width: 150px; }
+  .radio-row { display: flex; align-items: center; gap: .4rem; font-family: var(--f-mono); font-size: .78rem; color: #E7E9E2; padding: .12rem 0; cursor: pointer; }
+  .radio-row input { accent-color: #E7E9E2; }
+  .tb .frm__actions { border-top-color: #3A4245; }
+  .tb .btn--done { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  .tb .btn--cancel { color: #B9C2BB; border-color: #3A4245; }
+
+  .state-btn {
+    position: fixed; right: 18px; bottom: 18px; z-index: 998;
+    font-family: var(--f-mono); font-size: 12px;
+    background: #1c1c1e; color: #fff; border: none; border-radius: 999px;
+    padding: 8px 12px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  }
+  .state-panel {
+    position: fixed; right: 18px; bottom: 58px; z-index: 997;
+    width: 420px; max-height: 60vh; overflow: auto;
+    background: #1c1c1e; color: #d8e0d8; border-radius: 10px;
+    font-family: var(--f-mono); font-size: 11px; line-height: 1.45;
+    padding: 12px 14px; box-shadow: 0 8px 30px rgba(0,0,0,.4);
+    display: none; white-space: pre;
+  }
+  .state-panel.open { display: block; }
+
+  .proto-bar {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    background: #1c1c1e; color: #fff;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    padding: 8px 14px; border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35); z-index: 999;
+  }
+  .proto-bar a { color: #fff; text-decoration: none; font-size: 15px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="tb editable" id="tb" title="Edit name & classification">
+    <span class="edit-chip">✎ edit</span>
+  </header>
+
+  <main class="grid" id="grid"></main>
+
+  <footer class="foot">
+    <div class="key">
+      <span class="key__i"><span class="sw sw--cmd"></span>command</span>
+      <span class="key__i"><span class="sw sw--qry"></span>query</span>
+      <span class="key__i"><span class="sw sw--evt"></span>event</span>
+      <span class="key__i"><span class="sw sw--system"></span>collaborator</span>
+      <span class="key__i"><span class="sw sw--policy"></span>policy</span>
+      <span class="key__i"><span class="sw sw--hotspot"></span>open question</span>
+    </div>
+    <p class="note">Canvas v5 and sticky colours from the DDD Crew <a href="https://github.com/ddd-crew/bounded-context-canvas">Bounded Context Canvas</a> and <a href="https://github.com/ddd-crew/eventstorming-glossary-cheat-sheet">EventStorming cheat sheet</a>, CC BY 4.0.</p>
+  </footer>
+</div>
+
+<button class="state-btn" id="state-btn" title="Serialized Canvas JSON">{&hairsp;}</button>
+<pre class="state-panel" id="state-panel"></pre>
+
+<nav class="proto-bar" aria-label="Prototype variant switcher">
+  <a href="../1-live-sheet/index.html" title="Previous variant">←</a>
+  <span>2 / 3 — Focus panel</span>
+  <a href="../3-marked-up-sheet/index.html" title="Next variant">→</a>
+</nav>
+
+<script>
+/* ============================ data ============================ */
+
+const VOCAB = {
+  domain: ["core", "supporting", "generic"],
+  businessModel: ["revenue", "engagement", "compliance", "cost reduction"],
+  evolution: ["genesis", "custom-built", "product", "commodity"],
+  relationship: ["partnership", "shared kernel", "customer–supplier", "conformist",
+                 "anticorruption layer", "open-host service", "published language", "separate ways"],
+  roles: [
+    ["Specification model", "Encodes the detailed rules of a critical business calculation."],
+    ["Execution context", "Carries out a business workflow from trigger to outcome."],
+    ["Audit model", "Records what happened for traceability and compliance."],
+    ["Approver", "Decides whether a requested action may proceed."],
+    ["Enforcer", "Makes other contexts comply with a policy or standard."],
+    ["Octopus coordinator", "Orchestrates several contexts to fulfil one process."],
+    ["Interchange context", "Translates between two models so neither has to bend."],
+    ["Gateway context", "Fronts an external system or protocol for the rest of the system."],
+    ["Service context", "Offers a capability other contexts consume on demand."],
+    ["Analysis context", "Derives insight from data other contexts produce."],
+    ["Engagement context", "Drives user interaction and experience."],
+    ["Funnel context", "Condenses input from many sources into one stream."],
+    ["Draft context", "A model still being explored; expect churn."],
+    ["Brain context", "Concentrates the cleverest, most valuable logic."],
+    ["Autonomous bubble", "Deliberately isolated from legacy models so it can evolve freely."],
+  ],
+};
+
+const canvas = {
+  version: 1,
+  name: "Order Fulfillment",
+  description: "Coordinates picking, packing and shipping once an order is paid. Owns the shipment lifecycle from payment confirmation to carrier hand-off.",
+  classification: { domain: "core", businessModel: "revenue", evolution: "custom-built" },
+  domainRoles: ["Execution context", "Gateway context"],
+  domainRolesNote: "Carries out the fulfillment workflow from paid order to dispatched shipment, and fronts the carrier integrations for the rest of the system.",
+  inbound: [
+    { collaborator: "Checkout", relationship: "customer–supplier",
+      messages: [{ type: "command", name: "Place Order" }, { type: "event", name: "Payment Confirmed" }] },
+    { collaborator: "Customer Support", relationship: "",
+      messages: [{ type: "query", name: "Get Shipment Status" }, { type: "command", name: "Cancel Fulfillment" }] },
+    { collaborator: "Inventory", relationship: "conformist",
+      messages: [{ type: "event", name: "Stock Level Changed" }] },
+  ],
+  outbound: [
+    { collaborator: "Notifications", relationship: "",
+      messages: [{ type: "event", name: "Order Shipped" }, { type: "event", name: "Delivery Delayed" }] },
+    { collaborator: "Billing", relationship: "open-host service",
+      messages: [{ type: "event", name: "Shipment Completed" }] },
+    { collaborator: "Carrier Gateway", relationship: "anticorruption layer",
+      messages: [{ type: "command", name: "Book Shipment" }, { type: "query", name: "Get Tracking Status" }] },
+  ],
+  ubiquitousLanguage: [
+    { term: "Shipment", definition: "A physical parcel dispatched against an order." },
+    { term: "Pick List", definition: "The ordered set of warehouse locations to visit for one shipment." },
+    { term: "Dispatch", definition: "The moment a packed shipment is handed to a carrier." },
+    { term: "Delivery Promise", definition: "The date shown at checkout that fulfillment must honor." },
+  ],
+  businessDecisions: [
+    { title: "No partial shipments.", detail: "An order ships complete or not at all." },
+    { title: "Cost-first carrier selection.", detail: "The cheapest carrier that meets the delivery promise wins." },
+    { title: "Hazardous goods go ground.", detail: "Never booked onto air freight, whatever the promise." },
+  ],
+  assumptions: [
+    "Warehouse stock counts are accurate within the hour.",
+    "A single warehouse fulfills any given order.",
+  ],
+  verificationMetrics: [
+    "Time from payment to dispatch under 4 hours.",
+    "Fewer than 1% of shipments re-booked with a second carrier.",
+  ],
+  openQuestions: [
+    "Who owns returns — this context or a new one?",
+    "Does the carrier integration deserve its own context?",
+  ],
+};
+
+const clone = (x) => JSON.parse(JSON.stringify(x));
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function input(value, ph, oninput) {
+  const i = el("input"); i.type = "text"; i.value = value || ""; if (ph) i.placeholder = ph;
+  i.addEventListener("input", () => oninput(i.value));
+  return i;
+}
+function textarea(value, ph, oninput, rows = 3) {
+  const t = el("textarea"); t.value = value || ""; if (ph) t.placeholder = ph; t.rows = rows;
+  t.addEventListener("input", () => oninput(t.value));
+  return t;
+}
+function mini(label, title, onclick, cls) {
+  const b = el("button", "mini" + (cls ? " " + cls : ""), label);
+  b.title = title; b.type = "button";
+  b.onclick = (e) => { e.stopPropagation(); onclick(); };
+  return b;
+}
+/* select over a curated vocabulary + escape hatch: picking "custom…" swaps
+   in a text input beside the select */
+function vocabSelect(options, current, allowNone, onchange, host) {
+  const s = el("select");
+  if (allowNone) s.append(new Option("(none)", ""));
+  options.forEach((o) => s.append(new Option(o, o)));
+  const customOpt = new Option("custom…", "__custom");
+  s.append(customOpt);
+  const isCustom = current && !options.includes(current);
+  if (isCustom) { customOpt.text = "custom: " + current; customOpt.value = current; }
+  s.value = current || (allowNone ? "" : options[0]);
+  s.addEventListener("change", () => {
+    if (s.value === "__custom") {
+      const inp = input("", "type a custom value…", () => {});
+      inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); inp.blur(); } });
+      inp.addEventListener("blur", () => {
+        const v = inp.value.trim();
+        inp.remove(); s.style.display = "";
+        if (v) { customOpt.text = "custom: " + v; customOpt.value = v; s.value = v; onchange(v); }
+        else s.value = current || "";
+      });
+      s.style.display = "none";
+      s.after(inp); inp.focus();
+    } else onchange(s.value);
+  });
+  return s;
+}
+
+/* ============================ view renderers ============================ */
+
+const PANELS = [
+  { key: "description", area: "a-purpose", label: "Description", cls: "" },
+  { key: "roles", area: "a-roles", label: "Domain roles", cls: "" },
+  { key: "inbound", area: "a-inb", label: "Inbound communication", cls: "panel--in" },
+  { key: "language", area: "a-lang", label: "Ubiquitous language", cls: "panel--lang" },
+  { key: "decisions", area: "a-dec", label: "Business decisions", cls: "panel--dec" },
+  { key: "outbound", area: "a-outb", label: "Outbound communication", cls: "panel--out" },
+  { key: "assumptions", area: "a-assum", label: "Assumptions", cls: "" },
+  { key: "metrics", area: "a-metrics", label: "Verification metrics", cls: "" },
+  { key: "questions", area: "a-quest", label: "Open questions", cls: "panel--ask" },
+];
+
+function viewBody(key, body) {
+  body.innerHTML = "";
+  if (key === "description") {
+    body.append(el("p", "prose", canvas.description));
+  }
+  if (key === "roles") {
+    const ul = el("ul", "roles");
+    canvas.domainRoles.forEach((r) => ul.append(el("li", "role", r)));
+    body.append(ul, el("span", "role__note", canvas.domainRolesNote));
+  }
+  if (key === "inbound" || key === "outbound") {
+    canvas[key].forEach((lane) => {
+      const box = el("div", "lane");
+      const head = el("div", "lane__head");
+      head.append(el("span", "lane__who", lane.collaborator));
+      if (lane.relationship) head.append(el("span", "badge", lane.relationship));
+      box.append(head);
+      const ul = el("ul", "msgs");
+      lane.messages.forEach((m) => ul.append(el("li", "msg msg--" + m.type, m.name)));
+      box.append(ul);
+      body.append(box);
+    });
+  }
+  if (key === "language") {
+    const dl = el("dl", "terms");
+    canvas.ubiquitousLanguage.forEach((t) => {
+      dl.append(el("dt", null, t.term), el("dd", null, t.definition));
+    });
+    body.append(dl);
+  }
+  if (key === "decisions") {
+    const ul = el("ul", "stack stack--rule");
+    canvas.businessDecisions.forEach((d) => {
+      const li = el("li");
+      li.append(el("b", null, d.title), document.createTextNode(" " + d.detail));
+      ul.append(li);
+    });
+    body.append(ul);
+  }
+  if (key === "assumptions" || key === "metrics" || key === "questions") {
+    const arrKey = { assumptions: "assumptions", metrics: "verificationMetrics", questions: "openQuestions" }[key];
+    const ul = el("ul", "stack" + (key === "questions" ? " stack--ask" : ""));
+    canvas[arrKey].forEach((s) => ul.append(el("li", null, s)));
+    body.append(ul);
+  }
+}
+
+/* ============================ form renderers ============================ */
+/* Each builds controls bound to `draft`; structural edits re-run buildForm. */
+
+function listRow(controls, arr, i, rebuild) {
+  const row = el("div", "frm__row");
+  controls.forEach((c) => row.append(c));
+  const up = mini("↑", "Move up", () => { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; rebuild(); });
+  const dn = mini("↓", "Move down", () => { [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]]; rebuild(); });
+  up.disabled = i === 0; dn.disabled = i === arr.length - 1;
+  const del = mini("×", "Remove", () => { arr.splice(i, 1); rebuild(); }, "mini--danger");
+  row.append(up, dn, del);
+  return row;
+}
+
+function formBody(key, body, draft) {
+  body.innerHTML = "";
+  const frm = el("div", "frm");
+  const rebuild = () => formBody(key, body, draft);
+
+  if (key === "description") {
+    frm.append(textarea(draft.description, "What is this context responsible for?",
+      (v) => (draft.description = v), 4));
+  }
+
+  if (key === "roles") {
+    const box = el("div", "traits");
+    VOCAB.roles.forEach(([name, desc]) => {
+      const lab = el("label", "trait");
+      const cb = el("input"); cb.type = "checkbox";
+      cb.checked = draft.domainRoles.includes(name);
+      cb.addEventListener("change", () => {
+        const j = draft.domainRoles.indexOf(name);
+        if (cb.checked && j < 0) draft.domainRoles.push(name);
+        if (!cb.checked && j >= 0) draft.domainRoles.splice(j, 1);
+      });
+      lab.append(cb, el("span", "trait__name", name), el("span", "trait__desc", desc));
+      box.append(lab);
+    });
+    frm.append(box);
+    /* custom traits (escape hatch) */
+    draft.domainRoles.filter((r) => !VOCAB.roles.some(([n]) => n === r)).forEach((r) => {
+      const i = draft.domainRoles.indexOf(r);
+      frm.append(listRow([input(r, "custom trait", (v) => (draft.domainRoles[i] = v))],
+        draft.domainRoles, i, rebuild));
+    });
+    frm.append(mini("+ custom trait", "Add a trait outside the curated list",
+      () => { draft.domainRoles.push(""); rebuild(); }, "mini--add"));
+    const lbl = el("label", "frm__lbl", "Why these roles?");
+    frm.append(lbl, textarea(draft.domainRolesNote, "Why these roles?", (v) => (draft.domainRolesNote = v), 2));
+  }
+
+  if (key === "inbound" || key === "outbound") {
+    const lanes = draft[key];
+    lanes.forEach((lane, li) => {
+      const box = el("div", "lane-frm");
+      const head = el("div", "lane-frm__head");
+      head.append(input(lane.collaborator, "Collaborator", (v) => (lane.collaborator = v)));
+      head.append(vocabSelect(VOCAB.relationship, lane.relationship, true, (v) => (lane.relationship = v)));
+      const up = mini("↑", "Move lane up", () => { [lanes[li - 1], lanes[li]] = [lanes[li], lanes[li - 1]]; rebuild(); });
+      const dn = mini("↓", "Move lane down", () => { [lanes[li], lanes[li + 1]] = [lanes[li + 1], lanes[li]]; rebuild(); });
+      up.disabled = li === 0; dn.disabled = li === lanes.length - 1;
+      head.append(up, dn, mini("×", "Remove collaborator", () => { lanes.splice(li, 1); rebuild(); }, "mini--danger"));
+      box.append(head);
+      lane.messages.forEach((m, mi) => {
+        const sel = el("select");
+        [["command", "▶ command"], ["query", "? query"], ["event", "◆ event"]].forEach(([v, t]) => sel.append(new Option(t, v)));
+        sel.value = m.type;
+        sel.addEventListener("change", () => (m.type = sel.value));
+        const row = listRow([sel, input(m.name, "Message name", (v) => (m.name = v))], lane.messages, mi, rebuild);
+        row.classList.add("msg-row");
+        box.append(row);
+      });
+      box.append(mini("+ message", "Add a message", () => { lane.messages.push({ type: "command", name: "" }); rebuild(); }, "mini--add"));
+      frm.append(box);
+    });
+    frm.append(mini("+ collaborator", "Add a collaborator lane",
+      () => { lanes.push({ collaborator: "", relationship: "", messages: [] }); rebuild(); }, "mini--add"));
+  }
+
+  if (key === "language") {
+    draft.ubiquitousLanguage.forEach((t, i) => {
+      frm.append(listRow([
+        input(t.term, "Term", (v) => (t.term = v)),
+        input(t.definition, "Definition", (v) => (t.definition = v)),
+      ], draft.ubiquitousLanguage, i, rebuild));
+    });
+    frm.append(mini("+ term", "Add a term",
+      () => { draft.ubiquitousLanguage.push({ term: "", definition: "" }); rebuild(); }, "mini--add"));
+  }
+
+  if (key === "decisions") {
+    draft.businessDecisions.forEach((d, i) => {
+      frm.append(listRow([
+        input(d.title, "Rule", (v) => (d.title = v)),
+        input(d.detail, "Detail", (v) => (d.detail = v)),
+      ], draft.businessDecisions, i, rebuild));
+    });
+    frm.append(mini("+ decision", "Add a decision",
+      () => { draft.businessDecisions.push({ title: "", detail: "" }); rebuild(); }, "mini--add"));
+  }
+
+  if (key === "assumptions" || key === "metrics" || key === "questions") {
+    const arrKey = { assumptions: "assumptions", metrics: "verificationMetrics", questions: "openQuestions" }[key];
+    const arr = draft[arrKey];
+    arr.forEach((s, i) => {
+      frm.append(listRow([input(s, "…", (v) => (arr[i] = v))], arr, i, rebuild));
+    });
+    frm.append(mini("+ add", "Add an item", () => { arr.push(""); rebuild(); }, "mini--add"));
+  }
+
+  const actions = el("div", "frm__actions");
+  actions.append(el("span", "frm__hint", "esc cancels · ⌘⏎ done"));
+  const cancel = el("button", "btn btn--cancel", "Cancel");
+  cancel.type = "button";
+  cancel.onclick = (e) => { e.stopPropagation(); exitEditor(false); };
+  const done = el("button", "btn btn--done", "Done");
+  done.type = "button";
+  done.onclick = (e) => { e.stopPropagation(); exitEditor(true); };
+  actions.append(cancel, done);
+  frm.append(actions);
+  body.append(frm);
+}
+
+/* ============================ title block ============================ */
+
+function viewTitle() {
+  const tb = document.getElementById("tb");
+  tb.querySelectorAll(":scope > *:not(.edit-chip)").forEach((n) => n.remove());
+  const id = el("div", "tb__id");
+  id.append(el("span", "eyebrow", "Bounded Context Canvas · V5"));
+  id.append(el("h1", "ctx-name", canvas.name));
+  const dl = el("dl", "tb__class");
+  [["Domain", "domain"], ["Business model", "businessModel"], ["Evolution", "evolution"]].forEach(([label, key]) => {
+    const w = el("div");
+    w.append(el("dt", null, label), el("dd", null, canvas.classification[key] || "—"));
+    dl.append(w);
+  });
+  tb.append(id, dl);
+}
+
+function formTitle(draft) {
+  const tb = document.getElementById("tb");
+  tb.querySelectorAll(":scope > *:not(.edit-chip)").forEach((n) => n.remove());
+  const frm = el("div", "frm");
+  const nameLbl = el("label", "frm__lbl", "Context name");
+  const nameInp = input(draft.name, "Name this context", (v) => (draft.name = v));
+  nameInp.style.fontSize = "1.2rem";
+  frm.append(nameLbl, nameInp);
+
+  const grp = el("div", "tb__grp");
+  [["Domain", "domain"], ["Business model", "businessModel"], ["Evolution", "evolution"]].forEach(([label, key]) => {
+    const fs = el("fieldset");
+    fs.append(el("label", "frm__lbl", label));
+    VOCAB[key].forEach((o) => {
+      const lab = el("label", "radio-row");
+      const r = el("input"); r.type = "radio"; r.name = "tb-" + key;
+      r.checked = draft.classification[key] === o;
+      r.addEventListener("change", () => (draft.classification[key] = o));
+      lab.append(r, document.createTextNode(o));
+      fs.append(lab);
+    });
+    /* escape hatch */
+    const lab = el("label", "radio-row");
+    const r = el("input"); r.type = "radio"; r.name = "tb-" + key;
+    const isCustom = draft.classification[key] && !VOCAB[key].includes(draft.classification[key]);
+    r.checked = !!isCustom;
+    const other = input(isCustom ? draft.classification[key] : "", "other…", (v) => {
+      r.checked = true; draft.classification[key] = v;
+    });
+    other.style.width = "9rem";
+    other.addEventListener("focus", () => { r.checked = true; if (other.value) draft.classification[key] = other.value; });
+    r.addEventListener("change", () => { if (other.value) draft.classification[key] = other.value; other.focus(); });
+    lab.append(r, other);
+    fs.append(lab);
+    grp.append(fs);
+  });
+  frm.append(grp);
+
+  const actions = el("div", "frm__actions");
+  actions.append(el("span", "frm__hint", "esc cancels · ⌘⏎ done"));
+  const cancel = el("button", "btn btn--cancel", "Cancel"); cancel.type = "button";
+  cancel.onclick = (e) => { e.stopPropagation(); exitEditor(false); };
+  const done = el("button", "btn btn--done", "Done"); done.type = "button";
+  done.onclick = (e) => { e.stopPropagation(); exitEditor(true); };
+  actions.append(cancel, done);
+  frm.append(actions);
+  tb.append(frm);
+}
+
+/* ============================ editor state machine ============================ */
+
+let editing = null; // { key, draft, node }
+
+function enterEditor(key) {
+  if (editing) exitEditor(true); // clicking elsewhere commits, like blurring a field
+  const draft = clone(canvas);
+  let node;
+  if (key === "title") {
+    node = document.getElementById("tb");
+    formTitle(draft);
+  } else {
+    node = document.querySelector(`[data-key="${key}"]`);
+    formBody(key, node.querySelector(".panel__body"), draft);
+  }
+  node.classList.add("is-editing");
+  node.classList.remove("editable");
+  editing = { key, draft, node };
+  document.querySelectorAll(".panel, .tb").forEach((p) => {
+    if (p !== node) p.classList.add("is-dim");
+  });
+  const first = node.querySelector("input, textarea");
+  if (first) first.focus();
+}
+
+function exitEditor(commit) {
+  if (!editing) return;
+  const { key, draft, node } = editing;
+  if (commit) Object.assign(canvas, draft);
+  node.classList.remove("is-editing");
+  node.classList.add("editable");
+  document.querySelectorAll(".is-dim").forEach((p) => p.classList.remove("is-dim"));
+  editing = null;
+  if (key === "title") viewTitle();
+  else viewBody(key, node.querySelector(".panel__body"));
+  refreshState();
+}
+
+document.addEventListener("keydown", (e) => {
+  if (!editing) return;
+  if (e.key === "Escape") { e.preventDefault(); exitEditor(false); }
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); exitEditor(true); }
+});
+
+/* ============================ boot ============================ */
+
+const grid = document.getElementById("grid");
+PANELS.forEach(({ key, area, label, cls }) => {
+  const sec = el("section", `panel editable ${area} ${cls}`.trim());
+  sec.dataset.key = key;
+  sec.title = "Edit " + label.toLowerCase();
+  sec.append(el("span", "edit-chip", "✎ edit"));
+  sec.append(el("h2", "panel__label", label));
+  const body = el("div", "panel__body");
+  sec.append(body);
+  sec.addEventListener("click", () => {
+    if (editing && editing.node === sec) return;
+    enterEditor(key);
+  });
+  viewBody(key, body);
+  grid.append(sec);
+});
+viewTitle();
+document.getElementById("tb").addEventListener("click", (e) => {
+  const tb = document.getElementById("tb");
+  if (editing && editing.node === tb) return;
+  enterEditor("title");
+});
+
+/* ============================ state drawer ============================ */
+
+function serialize() {
+  const lane = (l) => {
+    const o = { collaborator: l.collaborator };
+    if (l.relationship) o.relationship = l.relationship;
+    o.messages = l.messages.map((m) => ({ type: m.type, name: m.name }));
+    return o;
+  };
+  return {
+    version: canvas.version,
+    name: canvas.name,
+    description: canvas.description,
+    classification: { ...canvas.classification },
+    domainRoles: [...canvas.domainRoles],
+    domainRolesNote: canvas.domainRolesNote,
+    inbound: canvas.inbound.map(lane),
+    outbound: canvas.outbound.map(lane),
+    ubiquitousLanguage: canvas.ubiquitousLanguage.map((t) => ({ ...t })),
+    businessDecisions: canvas.businessDecisions.map((d) => ({ ...d })),
+    assumptions: [...canvas.assumptions],
+    verificationMetrics: [...canvas.verificationMetrics],
+    openQuestions: [...canvas.openQuestions],
+  };
+}
+function refreshState() {
+  document.getElementById("state-panel").textContent = JSON.stringify(serialize(), null, 2);
+}
+document.getElementById("state-btn").onclick = () =>
+  document.getElementById("state-panel").classList.toggle("open");
+refreshState();
+
+/* variant switcher */
+const prev = "../1-live-sheet/index.html", next = "../3-marked-up-sheet/index.html";
+document.addEventListener("keydown", (e) => {
+  if (editing) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  if (e.key === "ArrowLeft") location.href = prev;
+  if (e.key === "ArrowRight") location.href = next;
+});
+</script>
+</body>
+</html>
