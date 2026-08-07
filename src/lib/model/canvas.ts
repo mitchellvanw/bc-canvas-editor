@@ -85,6 +85,16 @@ export function newId(): string {
 	return crypto.randomUUID();
 }
 
+/**
+ * Reorder in place: the one mutation behind chip/lane drag (SPEC §6) and the
+ * Alt+arrow keyboard moves (SPEC §8.2). `to` is the index in the final list.
+ */
+export function moveItem<T>(list: T[], from: number, to: number): void {
+	if (from === to) return;
+	const [item] = list.splice(from, 1);
+	list.splice(to, 0, item);
+}
+
 export function blankCanvas(): CanvasDoc {
 	return {
 		version: CANVAS_VERSION,

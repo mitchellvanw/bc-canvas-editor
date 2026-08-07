@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blankCanvas, stampIds, type CanvasFile } from '$lib/model/canvas';
+import { blankCanvas, moveItem, stampIds, type CanvasFile } from '$lib/model/canvas';
 
 const SECTION_KEYS = [
 	'version',
@@ -93,6 +93,26 @@ describe('stampIds', () => {
 		};
 		stampIds(file);
 		expect(file.domainRoles[0]).toEqual({ name: 'audit model' });
+	});
+});
+
+describe('moveItem', () => {
+	it('moves an item toward the end', () => {
+		const list = ['a', 'b', 'c', 'd'];
+		moveItem(list, 0, 2);
+		expect(list).toEqual(['b', 'c', 'a', 'd']);
+	});
+
+	it('moves an item toward the start', () => {
+		const list = ['a', 'b', 'c', 'd'];
+		moveItem(list, 3, 1);
+		expect(list).toEqual(['a', 'd', 'b', 'c']);
+	});
+
+	it('leaves the list unchanged when from equals to', () => {
+		const list = ['a', 'b', 'c'];
+		moveItem(list, 1, 1);
+		expect(list).toEqual(['a', 'b', 'c']);
 	});
 });
 

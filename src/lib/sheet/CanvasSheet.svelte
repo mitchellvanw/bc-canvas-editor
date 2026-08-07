@@ -1,10 +1,22 @@
+<script lang="ts" module>
+	import type { MessageType } from '$lib/model/canvas';
+
+	// One uniform chip shape; type is carried by color + glyph (SPEC §5). The
+	// sheet is the canonical visual truth, so the editor's type popover imports
+	// this map rather than re-encoding it.
+	export const GLYPHS: Record<MessageType, string> = { command: '▶', query: '?', event: '◆' };
+</script>
+
 <script lang="ts">
 	/**
 	 * The quiet sheet (SPEC §5): the one shared read-only render of a canvas —
 	 * the canonical visual truth the editor wraps and both artifacts mount
 	 * offscreen (SPEC §9). It carries zero editing affordances; the only seam
 	 * for the editor is the optional `field` snippet, offered a TextSlot for
-	 * every free-text location. Without it every slot renders its plain value.
+	 * every free-text location, and the structural seams of ticket 06 — a
+	 * RemoveSlot on every removable item, an AddSlot ghost per repeating
+	 * section, a MessageAddSlot per lane, a grip per lane. Without the snippets
+	 * every slot renders its plain value and no chrome exists.
 	 * Picker-backed values — classification axes, domain roles, relationship —
 	 * are deliberately not slots: they get popovers, not carets (ticket 07).
 	 *
@@ -12,13 +24,25 @@
 	 * ink-soft (the prototype's faint gray fails AA and is decorative-only).
 	 */
 	import type { Snippet } from 'svelte';
-	import type { CanvasDoc, LaneRow, MessageType } from '$lib/model/canvas';
+	import { newId, type CanvasDoc, type LaneRow } from '$lib/model/canvas';
+	import type { AddSlot, MessageAddSlot, RemoveSlot } from './structure-slots';
 	import type { TextSlot } from './text-slot';
 
-	let { doc, field }: { doc: CanvasDoc; field?: Snippet<[TextSlot]> } = $props();
-
-	// One uniform chip shape; type is carried by color + glyph (SPEC §5).
-	const GLYPHS: Record<MessageType, string> = { command: '▶', query: '?', event: '◆' };
+	let {
+		doc,
+		field,
+		removeItem,
+		addItem,
+		addMessage,
+		grip
+	}: {
+		doc: CanvasDoc;
+		field?: Snippet<[TextSlot]>;
+		removeItem?: Snippet<[RemoveSlot]>;
+		addItem?: Snippet<[AddSlot]>;
+		addMessage?: Snippet<[MessageAddSlot]>;
+		grip?: Snippet;
+	} = $props();
 
 	const REPO_URL = 'https://github.com/ddd-crew/bounded-context-canvas';
 	const LICENSE_URL = 'https://creativecommons.org/licenses/by/4.0/';
@@ -48,9 +72,10 @@
 		<div class="panel__body">
 			{#if lanes.length > 0}
 				<ul class="lanes">
-					{#each lanes as lane (lane.id)}
+					{#each lanes as lane, laneIndex (lane.id)}
 						<li class="lane">
 							<div class="lane__head">
+								{#if grip}{@render grip()}{/if}
 								<h3 class="lane__who">
 									{@render text({
 										value: lane.collaborator,
@@ -58,11 +83,15 @@
 										set: (value) => (lane.collaborator = value)
 									})}
 								</h3>
+								{@render removeItem?.({
+									label: `Remove collaborator ${lane.collaborator}`.trim(),
+									remove: () => lanes.splice(laneIndex, 1)
+								})}
 								{#if lane.relationship}<span class="lane__rel">{lane.relationship}</span>{/if}
 							</div>
 							{#if lane.messages.length > 0}
 								<ul class="msgs">
-									{#each lane.messages as message (message.id)}
+									{#each lane.messages as message, messageIndex (message.id)}
 										<li class="msg" data-meaning={message.type}>
 											<span class="msg__glyph" aria-hidden="true">{GLYPHS[message.type]}</span
 											><span class="sr-only">{message.type}, </span>{@render text({
@@ -78,19 +107,39 @@
 														set: (value) => (message.description = value)
 													})}</span
 												>{/if}
+											{@render removeItem?.({
+												label: `Remove ${message.type} ${message.name}`.trim(),
+												remove: () => lane.messages.splice(messageIndex, 1)
+											})}
 										</li>
 									{/each}
 								</ul>
 							{/if}
+							{@render addMessage?.({
+								laneId: lane.id,
+								add: (type) => lane.messages.push({ id: newId(), type, name: '' })
+							})}
 						</li>
 					{/each}
 				</ul>
 			{/if}
+			{@render addItem?.({
+				label: '+ collaborator',
+				focusField: 'Collaborator',
+				add: () => lanes.push({ id: newId(), collaborator: '', messages: [] })
+			})}
 		</div>
 	</section>
 {/snippet}
 
-{#snippet stickies(label: string, itemLabel: string, items: string[], area: string, hotspot: boolean)}
+{#snippet stickies(
+	label: string,
+	itemLabel: string,
+	ghost: string,
+	items: string[],
+	area: string,
+	hotspot: boolean
+)}
 	<section class="panel {area}" class:panel--hotspot={hotspot}>
 		<h2 class="panel__label">{label}</h2>
 		<div class="panel__body">
@@ -103,10 +152,19 @@
 								label: itemLabel,
 								set: (value) => (items[index] = value)
 							})}
+							{@render removeItem?.({
+								label: `Remove ${itemLabel.toLowerCase()}`,
+								remove: () => items.splice(index, 1)
+							})}
 						</li>
 					{/each}
 				</ul>
 			{/if}
+			{@render addItem?.({
+				label: ghost,
+				focusField: itemLabel,
+				add: () => items.push('')
+			})}
 		</div>
 	</section>
 {/snippet}
@@ -157,8 +215,13 @@
 			<div class="panel__body">
 				{#if doc.domainRoles.length > 0}
 					<ul class="roles">
-						{#each doc.domainRoles as role (role.id)}
-							<li class="role">{role.name}</li>
+						{#each doc.domainRoles as role, index (role.id)}
+							<li class="role">
+								{role.name}{@render removeItem?.({
+									label: `Remove trait ${role.name}`.trim(),
+									remove: () => doc.domainRoles.splice(index, 1)
+								})}
+							</li>
 						{/each}
 					</ul>
 				{/if}
@@ -172,13 +235,16 @@
 			<div class="panel__body">
 				{#if doc.ubiquitousLanguage.length > 0}
 					<dl class="terms">
-						{#each doc.ubiquitousLanguage as entry (entry.id)}
+						{#each doc.ubiquitousLanguage as entry, index (entry.id)}
 							<div class="terms__row">
 								<dt>
 									{@render text({
 										value: entry.term,
 										label: 'Term',
 										set: (value) => (entry.term = value)
+									})}{@render removeItem?.({
+										label: `Remove term ${entry.term}`.trim(),
+										remove: () => doc.ubiquitousLanguage.splice(index, 1)
 									})}
 								</dt>
 								{#if field || entry.definition}
@@ -195,6 +261,11 @@
 						{/each}
 					</dl>
 				{/if}
+				{@render addItem?.({
+					label: '+ term',
+					focusField: 'Term',
+					add: () => doc.ubiquitousLanguage.push({ id: newId(), term: '' })
+				})}
 			</div>
 		</section>
 
@@ -203,7 +274,7 @@
 			<div class="panel__body">
 				{#if doc.businessDecisions.length > 0}
 					<ul class="stack stack--policy">
-						{#each doc.businessDecisions as decision (decision.id)}
+						{#each doc.businessDecisions as decision, index (decision.id)}
 							<li>
 								<b
 									>{@render text({
@@ -220,24 +291,48 @@
 											set: (value) => (decision.description = value)
 										})}</span
 									>{/if}
+								{@render removeItem?.({
+									label: `Remove decision ${decision.name}`.trim(),
+									remove: () => doc.businessDecisions.splice(index, 1)
+								})}
 							</li>
 						{/each}
 					</ul>
 				{/if}
+				{@render addItem?.({
+					label: '+ decision',
+					focusField: 'Decision',
+					add: () => doc.businessDecisions.push({ id: newId(), name: '' })
+				})}
 			</div>
 		</section>
 
 		{@render communication('Outbound communication', doc.outboundCommunication, 'area-outbound')}
 
-		{@render stickies('Assumptions', 'Assumption', doc.assumptions, 'area-assumptions', false)}
+		{@render stickies(
+			'Assumptions',
+			'Assumption',
+			'+ assumption',
+			doc.assumptions,
+			'area-assumptions',
+			false
+		)}
 		{@render stickies(
 			'Verification metrics',
 			'Verification metric',
+			'+ metric',
 			doc.verificationMetrics,
 			'area-metrics',
 			false
 		)}
-		{@render stickies('Open questions', 'Open question', doc.openQuestions, 'area-questions', true)}
+		{@render stickies(
+			'Open questions',
+			'Open question',
+			'+ question',
+			doc.openQuestions,
+			'area-questions',
+			true
+		)}
 	</div>
 
 	<footer class="foot">
