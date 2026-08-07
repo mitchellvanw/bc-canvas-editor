@@ -104,6 +104,7 @@
 								</h3>
 								{@render removeItem?.({
 									label: `Remove collaborator ${lane.collaborator}`.trim(),
+									type: 'Collaborator',
 									remove: () => lanes.splice(laneIndex, 1)
 								})}
 								{#if pickValue}
@@ -140,6 +141,7 @@
 												>{/if}
 											{@render removeItem?.({
 												label: `Remove ${message.type} ${message.name}`.trim(),
+												type: message.type.charAt(0).toUpperCase() + message.type.slice(1),
 												remove: () => lane.messages.splice(messageIndex, 1)
 											})}
 										</li>
@@ -187,6 +189,7 @@
 							})}
 							{@render removeItem?.({
 								label: `Remove ${itemLabel.toLowerCase()}`,
+								type: itemLabel,
 								remove: () => items.splice(index, 1)
 							})}
 						</li>
@@ -263,6 +266,7 @@
 							<li class="role">
 								{role.name}{@render removeItem?.({
 									label: `Remove trait ${role.name}`.trim(),
+									type: 'Trait',
 									remove: () => doc.domainRoles.splice(index, 1)
 								})}
 							</li>
@@ -307,6 +311,7 @@
 										set: (value) => (entry.term = value)
 									})}{@render removeItem?.({
 										label: `Remove term ${entry.term}`.trim(),
+										type: 'Term',
 										remove: () => doc.ubiquitousLanguage.splice(index, 1)
 									})}
 								</dt>
@@ -363,6 +368,7 @@
 									>{/if}
 								{@render removeItem?.({
 									label: `Remove decision ${decision.name}`.trim(),
+									type: 'Decision',
 									remove: () => doc.businessDecisions.splice(index, 1)
 								})}
 							</li>

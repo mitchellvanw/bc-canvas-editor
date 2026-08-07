@@ -6,6 +6,7 @@
 	 * Import… takes both importable forms — `.bcc.json` and `.bcc.html` —
 	 * through the one parseCanvasImport path (SPEC §9.1).
 	 */
+	import { announce } from '$lib/a11y/announce';
 	import { downloadBlob } from '$lib/artifact/download';
 	import { exportHtmlArtifact } from '$lib/artifact/html';
 	import { exportPngArtifact } from '$lib/artifact/png';
@@ -66,6 +67,7 @@
 			dialog = { kind: 'confirm-replace', file: result.file };
 		} else {
 			canvas.replace(stampIds(result.file));
+			announce('Canvas imported');
 		}
 	}
 
@@ -104,12 +106,19 @@
 			dialog = { kind: 'confirm-new' };
 		} else {
 			canvas.replace(blankCanvas());
+			announce('New canvas');
 		}
 	}
 
 	function proceed() {
-		if (dialog?.kind === 'confirm-replace') canvas.replace(stampIds(dialog.file));
-		if (dialog?.kind === 'confirm-new') canvas.replace(blankCanvas());
+		if (dialog?.kind === 'confirm-replace') {
+			canvas.replace(stampIds(dialog.file));
+			announce('Canvas imported');
+		}
+		if (dialog?.kind === 'confirm-new') {
+			canvas.replace(blankCanvas());
+			announce('New canvas');
+		}
 		dialogEl?.close();
 	}
 

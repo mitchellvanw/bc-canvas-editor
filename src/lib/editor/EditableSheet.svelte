@@ -16,7 +16,8 @@
 	 * adds no teaching of its own.
 	 */
 	import { tick } from 'svelte';
-	import { moveItem, type MessageType } from '$lib/model/canvas';
+	import { announce } from '$lib/a11y/announce';
+	import type { MessageType } from '$lib/model/canvas';
 	import CanvasSheet, { GLYPHS } from '$lib/sheet/CanvasSheet.svelte';
 	import type { PickSlot, TraitSlot } from '$lib/sheet/pick-slots';
 	import type { AddSlot, MessageAddSlot, RemoveSlot } from '$lib/sheet/structure-slots';
@@ -24,6 +25,7 @@
 	import { canvas } from './document.svelte';
 	import { dragReorder } from './drag';
 	import { editableText } from './editable';
+	import { commitMove, handleStructuralKey, modelList } from './keyboard';
 	import { handleUndoShortcut } from './undo';
 	import Picker from './Picker.svelte';
 	import TraitPicker from './TraitPicker.svelte';
@@ -83,27 +85,9 @@
 		focusLast(lane, 'Message name');
 	}
 
-	/**
-	 * Map a dropped `.lanes`/`.msgs` list element back to its model list —
-	 * render order is model order, so element indexes are model indexes.
-	 */
-	function modelList(listEl: HTMLElement): unknown[] | null {
-		const lanes = listEl.closest('.area-inbound')
-			? canvas.doc.inboundCommunication
-			: listEl.closest('.area-outbound')
-				? canvas.doc.outboundCommunication
-				: null;
-		if (!lanes) return null;
-		if (listEl.classList.contains('lanes')) return lanes;
-		const laneEl = listEl.closest('.lane');
-		if (!laneEl?.parentElement) return null;
-		const laneIndex = [...laneEl.parentElement.children].indexOf(laneEl);
-		return lanes[laneIndex]?.messages ?? null;
-	}
-
 	function onReorder(listEl: HTMLElement, from: number, to: number) {
 		const list = modelList(listEl);
-		if (list) canvas.commit(() => moveItem(list, from, to));
+		if (list) commitMove(list, from, to);
 	}
 </script>
 
@@ -115,6 +99,7 @@
 	}}
 	onkeydown={(event) => {
 		handleUndoShortcut(event);
+		handleStructuralKey(event);
 		if (event.key === 'Escape') {
 			typePopover = null;
 			// Backstop only: a popover with focus inside handles its own Esc first.
@@ -146,7 +131,12 @@
 				type="button"
 				class="x"
 				aria-label={slot.label}
-				onclick={() => canvas.commit(() => slot.remove())}>×</button
+				onclick={() => {
+					canvas.commit(() => slot.remove());
+					// Removal is the non-local structural commit (SPEC §8.5): the
+					// item is gone from under focus, so the live region says so.
+					announce(`${slot.type} removed`);
+				}}>×</button
 			>
 		{/snippet}
 
@@ -238,7 +228,13 @@
 				{#if openPicker === TRAIT_POPOVER}
 					<TraitPicker
 						selected={slot.selected}
-						onToggle={(name) => canvas.commit(() => slot.toggle(name))}
+						onToggle={(name) => {
+							// The chip appears (or vanishes) behind the open checklist —
+							// non-local, so it announces (SPEC §10: "Trait added").
+							const adding = !slot.selected.includes(name);
+							canvas.commit(() => slot.toggle(name));
+							announce(adding ? 'Trait added' : 'Trait removed');
+						}}
 						onCancel={() => closePicker(true)}
 					/>
 				{/if}
@@ -276,6 +272,18 @@
 	}
 	.field--ink:focus {
 		outline-color: rgb(253 253 251 / 0.4);
+	}
+
+	/* Keyboard-focused fields trade the hairline for the §8.4 2px ring — the
+	   .field-kbd class arrives from input-modality tracking (editable.ts),
+	   since contenteditable defeats :focus-visible. On the ink title block the
+	   ink ring would vanish into its ground, so the ring inverts to sheet. */
+	.field:global(.field-kbd):focus {
+		outline: 2px solid var(--color-ink);
+		outline-offset: 2px;
+	}
+	.field--ink:global(.field-kbd):focus {
+		outline-color: var(--color-sheet);
 	}
 
 	/* An empty optional detail (message description, term definition, decision
@@ -440,6 +448,10 @@
 	}
 	.pick--ink:hover {
 		background: rgb(253 253 251 / 0.12);
+	}
+	/* The app-wide §8.4 ink ring inverts on the ink title block (as above). */
+	.pick--ink:focus-visible {
+		outline-color: var(--color-sheet);
 	}
 
 	/* An unset relationship renders '—' but, like the other affordances,

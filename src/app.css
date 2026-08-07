@@ -68,3 +68,13 @@ body,
 	cursor: text;
 	caret-color: currentColor;
 }
+
+/* Focus visibility (SPEC §8.4): non-text targets get a 2px ink ring with a
+   small offset on :focus-visible only — pointer users never see rings.
+   Contenteditable fields are excluded here because browsers treat text-entry
+   targets as always focus-visible; their keyboard-focus ring rides the
+   .field-kbd class the editor sets from input modality. */
+:focus-visible:not([contenteditable]) {
+	outline: 2px solid var(--color-ink);
+	outline-offset: 2px;
+}

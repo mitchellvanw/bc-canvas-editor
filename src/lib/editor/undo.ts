@@ -8,8 +8,9 @@
  */
 
 import { tick } from 'svelte';
+import { announce } from '$lib/a11y/announce';
 import { canvas } from './document.svelte';
-import { regionSelector, type Region } from './regions';
+import { regionName, regionSelector, type Region } from './regions';
 
 /** How long the affected region stays highlighted. */
 const FLASH_MS = 850;
@@ -20,11 +21,17 @@ export const FLASH_CLASS = 'undo-flash';
 let flashing: { el: HTMLElement; timer: ReturnType<typeof setTimeout> } | null = null;
 
 export async function performUndo(): Promise<void> {
-	await reveal(canvas.undo());
+	const region = canvas.undo();
+	// Undo reveals without moving focus (below), so the live region carries
+	// the effect to screen readers: "Undone: <section name>" (SPEC §10).
+	if (region) announce(`Undone: ${regionName(region)}`);
+	await reveal(region);
 }
 
 export async function performRedo(): Promise<void> {
-	await reveal(canvas.redo());
+	const region = canvas.redo();
+	if (region) announce(`Redone: ${regionName(region)}`);
+	await reveal(region);
 }
 
 /**

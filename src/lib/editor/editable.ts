@@ -7,8 +7,16 @@
  * global history handler; a pristine field lets it bubble to app undo.
  */
 
+import { lastInputModality } from '$lib/a11y/modality';
 import { registerFlushable } from './flush';
 import { undoShortcut } from './undo';
+
+/**
+ * Marks a contenteditable field whose focus arrived by keyboard, carrying the
+ * SPEC §8.4 2px ring; pointer-initiated editing keeps hairline + caret.
+ * Class, not state: the ring is per-focus, set on entry, cleared on exit.
+ */
+export const KEYBOARD_FOCUS_CLASS = 'field-kbd';
 
 export interface EditableTextOptions {
 	value: string;
@@ -42,7 +50,17 @@ export function editableText(node: HTMLElement, options: EditableTextOptions): E
 		node.blur();
 	};
 
-	const onBlur = () => commit();
+	const onFocus = () =>
+		node.classList.toggle(KEYBOARD_FOCUS_CLASS, lastInputModality() === 'keyboard');
+
+	// Clicking into an already-focused field refires no focus event, but the
+	// editing just became pointer-initiated — back to hairline + caret.
+	const onPointerdown = () => node.classList.remove(KEYBOARD_FOCUS_CLASS);
+
+	const onBlur = () => {
+		node.classList.remove(KEYBOARD_FOCUS_CLASS);
+		commit();
+	};
 
 	const onKeydown = (event: KeyboardEvent) => {
 		if (event.key === 'Enter' && !current.multiline) {
@@ -59,6 +77,8 @@ export function editableText(node: HTMLElement, options: EditableTextOptions): E
 		}
 	};
 
+	node.addEventListener('focus', onFocus);
+	node.addEventListener('pointerdown', onPointerdown);
 	node.addEventListener('blur', onBlur);
 	node.addEventListener('keydown', onKeydown);
 	// The unload flush (flush.ts) commits this field if the tab closes or
@@ -77,6 +97,8 @@ export function editableText(node: HTMLElement, options: EditableTextOptions): E
 			}
 		},
 		destroy() {
+			node.removeEventListener('focus', onFocus);
+			node.removeEventListener('pointerdown', onPointerdown);
 			node.removeEventListener('blur', onBlur);
 			node.removeEventListener('keydown', onKeydown);
 			unregisterFlush();

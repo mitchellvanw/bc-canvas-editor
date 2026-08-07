@@ -15,6 +15,11 @@ import type { MessageType } from '$lib/model/canvas';
 export interface RemoveSlot {
 	/** Accessible name, type-led (SPEC §8.5): "Remove command Place Order". */
 	label: string;
+	/**
+	 * The item's type name, capitalized — "Collaborator", "Command", "Trait" —
+	 * for the type-led live-region announcement "<Type> removed" (SPEC §10).
+	 */
+	type: string;
 	/** Remove the item from the document. */
 	remove(): void;
 }
