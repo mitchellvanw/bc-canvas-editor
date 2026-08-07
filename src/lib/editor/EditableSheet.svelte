@@ -15,17 +15,48 @@
 	import { tick } from 'svelte';
 	import { moveItem, type MessageType } from '$lib/model/canvas';
 	import CanvasSheet, { GLYPHS } from '$lib/sheet/CanvasSheet.svelte';
+	import type { PickSlot, TraitSlot } from '$lib/sheet/pick-slots';
 	import type { AddSlot, MessageAddSlot, RemoveSlot } from '$lib/sheet/structure-slots';
 	import type { TextSlot } from '$lib/sheet/text-slot';
 	import { canvas } from './document.svelte';
 	import { dragReorder } from './drag';
 	import { editableText } from './editable';
+	import Picker from './Picker.svelte';
+	import TraitPicker from './TraitPicker.svelte';
+	import { CLEAR_LABELS, PICK_OPTIONS } from './vocab';
 
 	// The type popover's options, in SPEC §6 order; glyphs come from the sheet.
 	const TYPES: MessageType[] = ['command', 'query', 'event'];
 
 	/** The lane whose message-type popover is open, if any. */
 	let typePopover: string | null = $state(null);
+
+	/** The open picker popover's key: a PickSlot key, or the trait checklist's. */
+	let openPicker: string | null = $state(null);
+	/** The value button that opened it — focus returns here on pick and Esc. */
+	let pickerTrigger: HTMLElement | null = null;
+
+	/** The trait checklist's popover key — PickSlot keys are axis names or lane ids. */
+	const TRAIT_POPOVER = 'traits';
+
+	function togglePicker(key: string, triggerEl: HTMLElement) {
+		openPicker = openPicker === key ? null : key;
+		pickerTrigger = openPicker ? triggerEl : null;
+	}
+
+	function closePicker(refocus: boolean) {
+		openPicker = null;
+		if (refocus) pickerTrigger?.focus();
+		pickerTrigger = null;
+	}
+
+	/** Blur closes an open popover (SPEC §8.3) — unless focus stayed inside it. */
+	function onPickerFocusout(event: FocusEvent, key: string) {
+		if (openPicker !== key) return;
+		const wrapper = event.currentTarget as HTMLElement;
+		if (event.relatedTarget instanceof Node && wrapper.contains(event.relatedTarget)) return;
+		closePicker(false);
+	}
 
 	/** Focus the last field with this identity under `root` — adds append. */
 	function focusLast(root: Element | null, label: string) {
@@ -74,11 +105,16 @@
 
 <svelte:window
 	onpointerdown={(event) => {
-		if (typePopover && !(event.target instanceof Element && event.target.closest('.addmsg')))
-			typePopover = null;
+		const target = event.target instanceof Element ? event.target : null;
+		if (typePopover && !target?.closest('.addmsg')) typePopover = null;
+		if (openPicker && !target?.closest('.pickwrap')) closePicker(false);
 	}}
 	onkeydown={(event) => {
-		if (event.key === 'Escape') typePopover = null;
+		if (event.key === 'Escape') {
+			typePopover = null;
+			// Backstop only: a popover with focus inside handles its own Esc first.
+			if (openPicker) closePicker(false);
+		}
 	}}
 />
 
@@ -148,6 +184,58 @@
 		{#snippet grip()}
 			<button type="button" class="grip" data-grip tabindex="-1" aria-hidden="true">⠿</button>
 		{/snippet}
+
+		{#snippet pickValue(slot: PickSlot)}
+			<span class="pickwrap" onfocusout={(event) => onPickerFocusout(event, slot.key)}>
+				<button
+					type="button"
+					class="pick"
+					class:pick--ink={slot.tone === 'ink'}
+					class:pick--unset={slot.value === undefined}
+					aria-label={slot.label}
+					aria-haspopup="listbox"
+					aria-expanded={openPicker === slot.key}
+					onclick={(event) => togglePicker(slot.key, event.currentTarget)}
+					>{slot.value ?? '—'}</button
+				>
+				{#if openPicker === slot.key}
+					<Picker
+						label={slot.label}
+						options={PICK_OPTIONS[slot.kind]}
+						value={slot.value}
+						clearLabel={CLEAR_LABELS[slot.kind]}
+						onPick={(value) => {
+							// Re-picking the current value changes nothing and commits
+							// nothing — the pickers' "unchanged text commits nothing".
+							if (value !== slot.value) canvas.commit(() => slot.set(value));
+							closePicker(true);
+						}}
+						onCancel={() => closePicker(true)}
+					/>
+				{/if}
+			</span>
+		{/snippet}
+
+		{#snippet addTrait(slot: TraitSlot)}
+			<span
+				class="pickwrap addtrait"
+				onfocusout={(event) => onPickerFocusout(event, TRAIT_POPOVER)}
+			>
+				<button
+					type="button"
+					class="ghost"
+					aria-expanded={openPicker === TRAIT_POPOVER}
+					onclick={(event) => togglePicker(TRAIT_POPOVER, event.currentTarget)}>+ trait</button
+				>
+				{#if openPicker === TRAIT_POPOVER}
+					<TraitPicker
+						selected={slot.selected}
+						onToggle={(name) => canvas.commit(() => slot.toggle(name))}
+						onCancel={() => closePicker(true)}
+					/>
+				{/if}
+			</span>
+		{/snippet}
 	</CanvasSheet>
 </div>
 
@@ -211,7 +299,8 @@
 	@media (prefers-reduced-motion: reduce) {
 		.x,
 		.ghost,
-		.grip {
+		.grip,
+		.pick {
 			transition: none;
 		}
 	}
@@ -288,7 +377,8 @@
 		font-family: var(--font-sans);
 		font-size: 0.74rem;
 	}
-	.editable :global(.panel__body > .ghost:first-child) {
+	.editable :global(.panel__body > .ghost:first-child),
+	.editable :global(.panel__body > .addtrait:first-child .ghost) {
 		margin-top: 0;
 	}
 
@@ -308,6 +398,40 @@
 		line-height: 1;
 		cursor: grab;
 		touch-action: none;
+	}
+
+	/* ---- picker-backed values (ticket 07): the value itself is a button ---- */
+
+	/* The button disappears into its location — mono value text with the same
+	   hover halo as fields; the popover hangs off the wrapper. */
+	.pickwrap {
+		position: relative;
+		display: inline-block;
+	}
+	.pick {
+		margin: 0 -0.15rem;
+		padding: 0 0.15rem;
+		border: 0;
+		border-radius: 3px;
+		background: none;
+		font: inherit;
+		letter-spacing: inherit;
+		color: inherit;
+		cursor: pointer;
+		transition: opacity 120ms ease;
+	}
+	.pick:hover {
+		background: rgb(26 30 32 / 0.055);
+	}
+	.pick--ink:hover {
+		background: rgb(253 253 251 / 0.12);
+	}
+
+	/* An unset relationship renders '—' but, like the other affordances,
+	   materializes on approach (SPEC §6) — classification axes render their '—'
+	   always (SPEC §7). Opacity, not display: it stays a tab stop (SPEC §8.2). */
+	.editable :global(.lane:not(:hover, :focus-within) .pick--unset:not(:focus-visible)) {
+		opacity: 0;
 	}
 
 	/* ---- the message-type mini popover (SPEC §6) ---- */

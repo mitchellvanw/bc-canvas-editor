@@ -13,18 +13,19 @@
 	 * the canonical visual truth the editor wraps and both artifacts mount
 	 * offscreen (SPEC §9). It carries zero editing affordances; the only seam
 	 * for the editor is the optional `field` snippet, offered a TextSlot for
-	 * every free-text location, and the structural seams of ticket 06 — a
+	 * every free-text location, the structural seams of ticket 06 — a
 	 * RemoveSlot on every removable item, an AddSlot ghost per repeating
-	 * section, a MessageAddSlot per lane, a grip per lane. Without the snippets
+	 * section, a MessageAddSlot per lane, a grip per lane — and the picker
+	 * seams of ticket 07: a PickSlot on every classification axis and lane
+	 * relationship, a TraitSlot on the domain-role set. Without the snippets
 	 * every slot renders its plain value and no chrome exists.
-	 * Picker-backed values — classification axes, domain roles, relationship —
-	 * are deliberately not slots: they get popovers, not carets (ticket 07).
 	 *
 	 * Palette pairs are AA-verified by contrast.test.ts; secondary text uses
 	 * ink-soft (the prototype's faint gray fails AA and is decorative-only).
 	 */
 	import type { Snippet } from 'svelte';
 	import { newId, type CanvasDoc, type LaneRow } from '$lib/model/canvas';
+	import type { PickSlot, TraitSlot } from './pick-slots';
 	import type { AddSlot, MessageAddSlot, RemoveSlot } from './structure-slots';
 	import type { TextSlot } from './text-slot';
 
@@ -34,7 +35,9 @@
 		removeItem,
 		addItem,
 		addMessage,
-		grip
+		grip,
+		pickValue,
+		addTrait
 	}: {
 		doc: CanvasDoc;
 		field?: Snippet<[TextSlot]>;
@@ -42,6 +45,8 @@
 		addItem?: Snippet<[AddSlot]>;
 		addMessage?: Snippet<[MessageAddSlot]>;
 		grip?: Snippet;
+		pickValue?: Snippet<[PickSlot]>;
+		addTrait?: Snippet<[TraitSlot]>;
 	} = $props();
 
 	const REPO_URL = 'https://github.com/ddd-crew/bounded-context-canvas';
@@ -58,9 +63,13 @@
 	];
 
 	const axes = $derived([
-		{ label: 'Domain', value: doc.strategicClassification.domain },
-		{ label: 'Business model', value: doc.strategicClassification.businessModel },
-		{ label: 'Evolution', value: doc.strategicClassification.evolution }
+		{ kind: 'domain' as const, label: 'Domain', value: doc.strategicClassification.domain },
+		{
+			kind: 'businessModel' as const,
+			label: 'Business model',
+			value: doc.strategicClassification.businessModel
+		},
+		{ kind: 'evolution' as const, label: 'Evolution', value: doc.strategicClassification.evolution }
 	]);
 </script>
 
@@ -87,7 +96,17 @@
 									label: `Remove collaborator ${lane.collaborator}`.trim(),
 									remove: () => lanes.splice(laneIndex, 1)
 								})}
-								{#if lane.relationship}<span class="lane__rel">{lane.relationship}</span>{/if}
+								{#if pickValue}
+									<span class="lane__rel">
+										{@render pickValue({
+											kind: 'relationship',
+											key: lane.id,
+											label: `Relationship for ${lane.collaborator}`.trim(),
+											value: lane.relationship,
+											set: (value) => (lane.relationship = value)
+										})}
+									</span>
+								{:else if lane.relationship}<span class="lane__rel">{lane.relationship}</span>{/if}
 							</div>
 							{#if lane.messages.length > 0}
 								<ul class="msgs">
@@ -187,7 +206,16 @@
 			{#each axes as axis (axis.label)}
 				<div>
 					<dt>{axis.label}</dt>
-					<dd>{axis.value ?? '—'}</dd>
+					<dd>
+						{#if pickValue}{@render pickValue({
+								kind: axis.kind,
+								key: axis.kind,
+								label: axis.label,
+								tone: 'ink',
+								value: axis.value,
+								set: (value) => (doc.strategicClassification[axis.kind] = value)
+							})}{:else}{axis.value ?? '—'}{/if}
+					</dd>
 				</div>
 			{/each}
 		</dl>
@@ -225,6 +253,14 @@
 						{/each}
 					</ul>
 				{/if}
+				{@render addTrait?.({
+					selected: doc.domainRoles.map((role) => role.name),
+					toggle: (name) => {
+						const index = doc.domainRoles.findIndex((role) => role.name === name);
+						if (index >= 0) doc.domainRoles.splice(index, 1);
+						else doc.domainRoles.push({ id: newId(), name });
+					}
+				})}
 			</div>
 		</section>
 
