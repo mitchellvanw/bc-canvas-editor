@@ -20,6 +20,8 @@ A hand-off-ready spec (`SPEC.md`) for a client-side bounded context canvas edito
 
 <!-- one line per closed ticket -->
 
+- [Research: Contexture's canvas JSON — lessons for our schema](wayfinder/tickets/001-contexture-schema-lessons.md) — nest messages under collaborator lanes with explicit command/query/event types (Contexture can't express V5 lanes); versioned root + ordered migrations; escape-hatch values must round-trip through the UI. Full notes on branch `research/contexture-schema`.
+
 ## Not yet specified
 
 - **Empty state & placeholder guidance** — how a blank canvas teaches the method (ddd-crew's helper prompts per section, trait/relationship descriptions). Sharpens after the layout and editing prototypes.
