@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Chrome from '$lib/chrome/Chrome.svelte';
 	import { canvas } from '$lib/editor/document.svelte';
 	import { editableText } from '$lib/editor/editable';
 	import { windowTitle } from '$lib/model/title';
@@ -17,7 +18,9 @@
 	<title>{windowTitle(canvas.doc.name)}</title>
 </svelte:head>
 
-<main class="mx-auto max-w-[1440px] px-10 py-12">
+<Chrome />
+
+<main class="mx-auto max-w-[1440px] px-10 pt-6 pb-12">
 	<header class="rounded-[6px] bg-ink px-9 py-8 text-sheet shadow-md">
 		<p class="text-[11px] font-medium tracking-[0.22em] uppercase opacity-60">
 			Bounded Context Canvas&nbsp;·&nbsp;V5
