@@ -15,8 +15,11 @@ import { canvas } from './document.svelte';
 /** Every removable item container, nearest-first under closest(). */
 const ITEM_CONTAINERS = '.msg, .role, .stack li, .terms__row, .lane';
 
+/** The pickers' transient popover surfaces, which keep their own keyboard. */
+export const PICKER_SURFACES = '.picker, .typepop';
+
 /** Surfaces whose keyboard never means the sheet grammar. */
-const FOREIGN_SURFACES = 'dialog, input, textarea, .picker, .typepop';
+const FOREIGN_SURFACES = `dialog, input, textarea, ${PICKER_SURFACES}`;
 
 /**
  * The one reorder commit, shared by drag drops and Alt+arrow moves: one

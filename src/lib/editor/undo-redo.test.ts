@@ -9,6 +9,7 @@
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Chrome from '$lib/chrome/Chrome.svelte';
+import { renderKeys } from '$lib/chrome/reference';
 import { canvas } from '$lib/editor/document.svelte';
 import EditableSheet from '$lib/editor/EditableSheet.svelte';
 import { FLASH_CLASS } from '$lib/editor/undo';
@@ -199,8 +200,13 @@ describe('⌘Z / ⇧⌘Z on the live sheet', () => {
 
 describe('chrome Undo/Redo buttons (SPEC §10)', () => {
 	function buttons(el: HTMLElement) {
-		const undo = el.querySelector<HTMLButtonElement>('button[title="Undo (⌘Z)"]');
-		const redo = el.querySelector<HTMLButtonElement>('button[title="Redo (⇧⌘Z)"]');
+		// Tooltips carry the SPEC shortcut, modifier rendered per platform (§12).
+		const undo = el.querySelector<HTMLButtonElement>(
+			`button[title="Undo (${renderKeys('⌘Z')})"]`
+		);
+		const redo = el.querySelector<HTMLButtonElement>(
+			`button[title="Redo (${renderKeys('⇧⌘Z')})"]`
+		);
 		if (!undo || !redo) throw new Error('missing Undo/Redo chrome buttons');
 		return { undo, redo };
 	}
