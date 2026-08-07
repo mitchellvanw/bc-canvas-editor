@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+
+@import '@fontsource/archivo/latin-500.css';
+@import '@fontsource/archivo/latin-700.css';
+@import '@fontsource/archivo/latin-700-italic.css';
+@import '@fontsource/source-serif-4/latin-400.css';
+@import '@fontsource/source-serif-4/latin-400-italic.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+
+@theme {
+	/* Quiet-sheet tokens (SPEC §5) */
+	--color-paper: #eae7de;
+	--color-sheet: #fdfdfb;
+	--color-line: #d8d4c8;
+	--color-ink: #1a1e20;
+
+	--font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+	--font-serif: 'Source Serif 4', ui-serif, Georgia, serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+body {
+	background-color: var(--color-paper);
+	/* Faint 32px drafting grid on the cream paper */
+	background-image:
+		linear-gradient(to right, rgb(26 30 32 / 0.035) 1px, transparent 1px),
+		linear-gradient(to bottom, rgb(26 30 32 / 0.035) 1px, transparent 1px);
+	background-size: 32px 32px;
+	color: var(--color-ink);
+	font-family: var(--font-sans);
+}
+
+/* Empty free-text fields carry their teaching question in place (SPEC §7). */
+[contenteditable][data-placeholder]:empty::before {
+	content: attr(data-placeholder);
+	font-style: italic;
+	opacity: 0.45;
+	pointer-events: none;
+}
+
+[contenteditable] {
+	cursor: text;
+	caret-color: currentColor;
+}
