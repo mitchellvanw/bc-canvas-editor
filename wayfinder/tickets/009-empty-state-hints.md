@@ -3,7 +3,7 @@ name: empty-state-hints
 title: "Prototype: empty state & teaching hints"
 labels: [wayfinder:prototype]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
