@@ -4,6 +4,8 @@ Glossary for the bounded context canvas editor. The app's own domain — not the
 
 ## Terms
 
+**BC Canvas** — the app's name. Title bar reads `<canvas name> — BC Canvas` (`Untitled — BC Canvas` when unnamed).
+
 **Canvas** — the single document the app edits: one ddd-crew Bounded Context Canvas. Structured per the canvas template (name, purpose, strategic classification, domain roles, inbound/outbound communication, ubiquitous language, business decisions, assumptions, verification metrics, open questions).
 
 **Section** — one named area of the Canvas (e.g. Strategic Classification, Inbound Communication). Each Section has its own structure: free text, pick-one enums, or typed rows.
