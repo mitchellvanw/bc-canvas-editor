@@ -3,7 +3,7 @@ name: artifact-design
 title: "Decision: artifact production (HTML + PNG)"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [export-techniques, layout-visual-prototype]
 ---
 
