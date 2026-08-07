@@ -3,7 +3,7 @@ name: canvas-file-schema
 title: "Decision: the Canvas file schema"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [contexture-schema-lessons]
 ---
 
