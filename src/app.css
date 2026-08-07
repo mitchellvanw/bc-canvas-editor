@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 @import '@fontsource/archivo/latin-500.css';
+@import '@fontsource/archivo/latin-600.css';
 @import '@fontsource/archivo/latin-700.css';
 @import '@fontsource/archivo/latin-700-italic.css';
 @import '@fontsource/source-serif-4/latin-400.css';
@@ -9,11 +10,32 @@
 @import '@fontsource/ibm-plex-mono/latin-500.css';
 
 @theme {
-	/* Quiet-sheet tokens (SPEC §5) */
+	/* Quiet-sheet tokens (SPEC §5). AA-verified by src/lib/sheet/contrast.test.ts;
+	   if a pair fails there, the token shifts here — everywhere at once. */
 	--color-paper: #eae7de;
 	--color-sheet: #fdfdfb;
 	--color-line: #d8d4c8;
 	--color-ink: #1a1e20;
+	/* Secondary text — passes AA on sheet and paper. */
+	--color-ink-soft: #50564f;
+	/* Decorative only (hairline rules, neutral list markers) — fails AA as text. */
+	--color-ink-faint: #8e948c;
+
+	/* The seven palette meanings: EventStorming fill + same-hue ink border. */
+	--color-command: #85bce5;
+	--color-command-ink: #33688f;
+	--color-query: #93cb91;
+	--color-query-ink: #40733e;
+	--color-event: #f3a54e;
+	--color-event-ink: #a96517;
+	--color-policy: #c2abdd;
+	--color-policy-ink: #6f519b;
+	--color-collaborator: #f1a5cb;
+	--color-collaborator-ink: #a94879;
+	--color-hotspot: #f76ba3;
+	--color-hotspot-ink: #b92367;
+	--color-term: #efe08b;
+	--color-term-ink: #8a7a12;
 
 	--font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
 	--font-serif: 'Source Serif 4', ui-serif, Georgia, serif;
