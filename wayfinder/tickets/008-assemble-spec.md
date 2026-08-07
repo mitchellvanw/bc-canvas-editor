@@ -3,7 +3,7 @@ name: assemble-spec
 title: "Task: assemble the hand-off spec"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [canvas-file-schema, inline-editing-prototype, state-undo-autosave, artifact-design, empty-state-hints, keyboard-a11y, ui-copy, reference-material]
 ---
 
