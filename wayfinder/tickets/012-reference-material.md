@@ -3,7 +3,7 @@ name: reference-material
 title: "Decision: in-app reference material"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
