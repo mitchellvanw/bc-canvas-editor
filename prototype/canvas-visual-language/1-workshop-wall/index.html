@@ -1,0 +1,360 @@
+<!--
+  PROTOTYPE — throwaway. Three variants of the canvas visual language as sibling
+  folders, switchable via the floating bar (or ←/→ keys). This is variant 1/3:
+  "Workshop wall". Not production code; see REASONING.md.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canvas visual language — 1 Workshop wall</title>
+<style>
+  :root {
+    --cmd: #7CA7D8;      /* command blue */
+    --qry: #9CC97F;      /* query green */
+    --evt: #FFB74D;      /* event orange */
+    --policy: #C3A8E1;   /* business decision lilac */
+    --collab: #F2A7C3;   /* collaborator pink */
+    --hotspot: #E8686D;  /* open question red */
+    --note: #F5E17E;     /* neutral yellow sticky */
+    --card: #FFFDF5;     /* index card */
+    --ink: #33302a;
+    --wall: #E8E1D3;
+    --board: #F8F4EB;
+    --zone: #C9BEAC;
+    --marker: "Marker Felt", "Chalkboard SE", "Segoe Print", "Comic Sans MS", cursive;
+    --body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--wall);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 13px;
+    line-height: 1.35;
+    padding: 32px 24px 96px;
+  }
+  .board {
+    max-width: 1280px;
+    margin: 0 auto;
+    background: var(--board);
+    border: 1px solid #d8cfbe;
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgba(80, 70, 50, .18);
+    padding: 28px 28px 20px;
+    position: relative;
+  }
+
+  /* ---- header band ---- */
+  .band-top {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr;
+    gap: 20px;
+    padding-bottom: 20px;
+  }
+  h1 {
+    font-family: var(--marker);
+    font-size: 34px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    position: relative;
+    display: inline-block;
+    padding: 2px 10px;
+  }
+  h1::before { /* tape strip */
+    content: "";
+    position: absolute;
+    left: -18px; top: -10px;
+    width: 64px; height: 20px;
+    background: rgba(255,255,255,.55);
+    border: 1px solid rgba(0,0,0,.05);
+    transform: rotate(-4deg);
+  }
+  .desc-card {
+    background: var(--card);
+    border: 1px solid #e3dcc8;
+    box-shadow: 2px 3px 6px rgba(0,0,0,.12);
+    padding: 12px 14px;
+    margin-top: 12px;
+    max-width: 480px;
+    font-size: 14px;
+    transform: rotate(-.4deg);
+  }
+  .zone-label {
+    font-family: var(--marker);
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    color: #57503f;
+  }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* ---- stickies ---- */
+  .sticky {
+    padding: 10px 12px;
+    box-shadow: 2px 3px 6px rgba(0,0,0,.16);
+    font-size: 13px;
+    min-width: 110px;
+  }
+  .sticky b { display: block; font-size: 13.5px; }
+  .sticky small { display: block; margin-top: 3px; font-size: 11.5px; opacity: .8; }
+  .r1 { transform: rotate(-1.6deg); }
+  .r2 { transform: rotate(1.1deg); }
+  .r3 { transform: rotate(-.6deg); }
+  .r4 { transform: rotate(1.8deg); }
+  .cmd { background: var(--cmd); }
+  .qry { background: var(--qry); }
+  .evt { background: var(--evt); }
+  .policy { background: var(--policy); }
+  .collab { background: var(--collab); }
+  .hotspot { background: var(--hotspot); color: #fff; }
+  .note { background: var(--note); }
+  .card { background: var(--card); border: 1px solid #e3dcc8; }
+  .type-tag {
+    font-family: var(--marker);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: .65;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  /* ---- classification / roles ---- */
+  .class-group { margin-bottom: 4px; }
+  .axis {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7a7259;
+    margin: 8px 0 4px;
+  }
+
+  /* ---- middle band ---- */
+  .band-mid {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    gap: 20px;
+    border-top: 2px dashed var(--zone);
+    border-bottom: 2px dashed var(--zone);
+    padding: 18px 0;
+  }
+  .band-mid > section + section { border-left: 2px dashed var(--zone); padding-left: 20px; }
+  .center-stack > section + section { margin-top: 22px; }
+
+  /* ---- lanes ---- */
+  .lane { margin-bottom: 18px; }
+  .lane-head { margin-bottom: 8px; }
+  .lane-head .sticky { display: inline-block; font-family: var(--marker); font-size: 15px; padding: 8px 16px; }
+  .relationship {
+    display: inline-block;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(255,255,255,.6);
+    border: 1px solid rgba(0,0,0,.07);
+    padding: 2px 8px;
+    margin-left: 8px;
+    transform: rotate(-1deg);
+    vertical-align: middle;
+  }
+  .lane .stack { padding-left: 14px; }
+
+  /* ---- bottom band ---- */
+  .band-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    padding-top: 18px;
+  }
+  .band-bottom > section + section { border-left: 2px dashed var(--zone); padding-left: 20px; }
+
+  .attribution {
+    margin-top: 22px;
+    text-align: right;
+    font-family: var(--marker);
+    font-size: 12px;
+    color: #8a8168;
+  }
+  .attribution a { color: inherit; }
+
+  /* ---- prototype switcher (not part of the design) ---- */
+  .proto-bar {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #1c1c1e;
+    color: #fff;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    z-index: 999;
+  }
+  .proto-bar a { color: #fff; text-decoration: none; font-size: 15px; padding: 0 4px; }
+</style>
+</head>
+<body>
+
+<div class="board">
+
+  <div class="band-top">
+    <section>
+      <h1>Order Fulfillment</h1>
+      <div class="desc-card">Coordinates picking, packing and shipping once an order is paid. Owns the shipment lifecycle from payment confirmation to carrier hand-off.</div>
+    </section>
+
+    <section>
+      <div class="zone-label">Strategic classification</div>
+      <div class="class-group">
+        <div class="axis">Domain</div>
+        <span class="sticky note r1" style="display:inline-block">Core</span>
+        <div class="axis">Business model</div>
+        <span class="sticky note r2" style="display:inline-block">Revenue</span>
+        <div class="axis">Evolution</div>
+        <span class="sticky note r3" style="display:inline-block">Custom-built</span>
+      </div>
+    </section>
+
+    <section>
+      <div class="zone-label">Domain roles</div>
+      <div class="stack">
+        <div class="sticky card r2"><b>Execution context</b><small>Carries out the fulfillment workflow from paid order to dispatched shipment.</small></div>
+        <div class="sticky card r1"><b>Gateway context</b><small>Fronts the carrier integrations for the rest of the system.</small></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="band-mid">
+    <section>
+      <div class="zone-label">Inbound communication</div>
+
+      <div class="lane">
+        <div class="lane-head"><span class="sticky collab r1">Checkout</span><span class="relationship">customer–supplier</span></div>
+        <div class="stack">
+          <div class="sticky cmd r2"><span class="type-tag">Command</span><b>Place Order</b></div>
+          <div class="sticky evt r3"><span class="type-tag">Event</span><b>Payment Confirmed</b><small>Triggers fulfillment.</small></div>
+        </div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head"><span class="sticky collab r3">Customer Support</span></div>
+        <div class="stack">
+          <div class="sticky qry r1"><span class="type-tag">Query</span><b>Get Shipment Status</b></div>
+          <div class="sticky cmd r4"><span class="type-tag">Command</span><b>Cancel Fulfillment</b></div>
+        </div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head"><span class="sticky collab r2">Inventory</span><span class="relationship">conformist</span></div>
+        <div class="stack">
+          <div class="sticky evt r1"><span class="type-tag">Event</span><b>Stock Level Changed</b></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="center-stack">
+      <section>
+        <div class="zone-label">Ubiquitous language</div>
+        <div class="stack">
+          <div class="sticky card r1"><b>Shipment</b><small>A physical parcel dispatched against an order.</small></div>
+          <div class="sticky card r2"><b>Pick List</b><small>The ordered set of warehouse locations to visit for one shipment.</small></div>
+          <div class="sticky card r3"><b>Dispatch</b><small>The moment a packed shipment is handed to a carrier.</small></div>
+          <div class="sticky card r4"><b>Delivery Promise</b><small>The date shown at checkout that fulfillment must honor.</small></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="zone-label">Business decisions</div>
+        <div class="stack">
+          <div class="sticky policy r2"><b>No partial shipments</b><small>An order ships complete or not at all.</small></div>
+          <div class="sticky policy r1"><b>Cost-first carrier selection</b><small>The cheapest carrier that meets the delivery promise wins.</small></div>
+          <div class="sticky policy r3"><b>Hazardous goods go ground</b><small>Never booked onto air freight, whatever the promise.</small></div>
+        </div>
+      </section>
+    </div>
+
+    <section>
+      <div class="zone-label">Outbound communication</div>
+
+      <div class="lane">
+        <div class="lane-head"><span class="sticky collab r2">Notifications</span></div>
+        <div class="stack">
+          <div class="sticky evt r1"><span class="type-tag">Event</span><b>Order Shipped</b></div>
+          <div class="sticky evt r3"><span class="type-tag">Event</span><b>Delivery Delayed</b></div>
+        </div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head"><span class="sticky collab r4">Billing</span><span class="relationship">open-host service</span></div>
+        <div class="stack">
+          <div class="sticky evt r2"><span class="type-tag">Event</span><b>Shipment Completed</b></div>
+        </div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head"><span class="sticky collab r1">Carrier Gateway</span><span class="relationship">anticorruption layer</span></div>
+        <div class="stack">
+          <div class="sticky cmd r3"><span class="type-tag">Command</span><b>Book Shipment</b></div>
+          <div class="sticky qry r2"><span class="type-tag">Query</span><b>Get Tracking Status</b></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="band-bottom">
+    <section>
+      <div class="zone-label">Assumptions</div>
+      <div class="stack">
+        <div class="sticky note r1">Warehouse stock counts are accurate within the hour.</div>
+        <div class="sticky note r3">A single warehouse fulfills any given order.</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="zone-label">Verification metrics</div>
+      <div class="stack">
+        <div class="sticky note r2">Time from payment to dispatch under 4 hours.</div>
+        <div class="sticky note r4">Fewer than 1% of shipments re-booked with a second carrier.</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="zone-label">Open questions</div>
+      <div class="stack">
+        <div class="sticky hotspot r2">Who owns returns — this context or a new one?</div>
+        <div class="sticky hotspot r1">Does the carrier integration deserve its own context?</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="attribution">
+    Bounded Context Canvas by <a href="https://github.com/ddd-crew/bounded-context-canvas">the DDD Crew</a> — CC BY 4.0
+  </div>
+</div>
+
+<nav class="proto-bar" aria-label="Prototype variant switcher">
+  <a href="../3-product-panels/index.html" title="Previous variant">←</a>
+  <span>1 / 3 — Workshop wall</span>
+  <a href="../2-print-document/index.html" title="Next variant">→</a>
+</nav>
+<script>
+  const prev = "../3-product-panels/index.html", next = "../2-print-document/index.html";
+  document.addEventListener("keydown", (e) => {
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.key === "ArrowLeft") location.href = prev;
+    if (e.key === "ArrowRight") location.href = next;
+  });
+</script>
+
+</body>
+</html>
