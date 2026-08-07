@@ -1,7 +1,10 @@
 /**
  * Deterministic Canvas-file serialization (SPEC §3.2): ids stripped, fixed key
  * order, 2-space indent, optional fields omitted entirely when unset or empty.
- * An unchanged canvas serializes byte-identically.
+ * An unchanged canvas serializes byte-identically. `<` is written as its JSON
+ * unicode escape — it only ever occurs inside string values — so the HTML
+ * artifact can embed these exact bytes in a script block (SPEC §9.1) without
+ * `</script>` in user text ever terminating it.
  */
 
 import type {
@@ -73,5 +76,5 @@ export function toCanvasFile(doc: CanvasDoc): CanvasFile {
 }
 
 export function serializeCanvas(doc: CanvasDoc): string {
-	return JSON.stringify(toCanvasFile(doc), null, 2);
+	return JSON.stringify(toCanvasFile(doc), null, 2).replaceAll('<', '\\u003c');
 }

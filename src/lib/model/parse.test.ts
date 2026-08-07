@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { blankCanvas, stampIds } from '$lib/model/canvas';
-import { parseCanvasFile } from '$lib/model/parse';
+import { embeddedCanvasBlock, extractEmbeddedCanvas } from '$lib/model/embed';
+import { parseCanvasFile, parseCanvasImport } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
 import { serializeCanvas } from '$lib/model/serialize';
 
@@ -115,5 +116,74 @@ describe('parseCanvasFile', () => {
 		]
 	])('refuses %s as not a Canvas file', (_label, mutate) => {
 		expect(parseCanvasFile(referenceJson(mutate))).toEqual({ ok: false, reason: 'not-canvas' });
+	});
+});
+
+function artifactAround(block: string): string {
+	return `<!doctype html>\n<html lang="en"><head><title>T</title></head><body>\n${block}\n</body></html>`;
+}
+
+describe('embeddedCanvasBlock / extractEmbeddedCanvas', () => {
+	it('extracts the embedded JSON byte-identically to the Canvas-file export (SPEC §9.1)', () => {
+		const exported = serializeCanvas(stampIds(JSON.parse(REFERENCE_FILE)));
+		const artifact = artifactAround(embeddedCanvasBlock(exported));
+		expect(extractEmbeddedCanvas(artifact)).toBe(exported);
+	});
+
+	it('survives </script> in canvas content — the serializer keeps < out of the bytes', () => {
+		const doc = blankCanvas();
+		doc.description = 'Mind the </script> tag.';
+		const exported = serializeCanvas(doc);
+		expect(extractEmbeddedCanvas(artifactAround(embeddedCanvasBlock(exported)))).toBe(exported);
+	});
+
+	it('finds nothing in a document without the block', () => {
+		expect(extractEmbeddedCanvas('<!doctype html><html><body>hi</body></html>')).toBeNull();
+		expect(extractEmbeddedCanvas(REFERENCE_FILE)).toBeNull();
+	});
+});
+
+describe('parseCanvasImport — one path for .bcc.json and .bcc.html', () => {
+	const exported = serializeCanvas(stampIds(JSON.parse(REFERENCE_FILE)));
+
+	it('accepts a raw Canvas file', () => {
+		expect(parseCanvasImport(exported)).toEqual(parseCanvasFile(exported));
+	});
+
+	it('accepts an HTML artifact through the same validation', () => {
+		const result = parseCanvasImport(artifactAround(embeddedCanvasBlock(exported)));
+		if (!result.ok) throw new Error('expected ok');
+		expect(serializeCanvas(stampIds(result.file))).toBe(exported);
+	});
+
+	it('refuses a newer version inside the embedded block with the version notice', () => {
+		const newer = referenceJson((raw) => (raw.version = 4));
+		expect(parseCanvasImport(artifactAround(embeddedCanvasBlock(newer)))).toEqual({
+			ok: false,
+			reason: 'newer-version',
+			version: 4
+		});
+	});
+
+	it('refuses an HTML file with a missing embedded block as not a Canvas file', () => {
+		expect(parseCanvasImport('<!doctype html><html><body>plain page</body></html>')).toEqual({
+			ok: false,
+			reason: 'not-canvas'
+		});
+	});
+
+	it('refuses a corrupt embedded block as not a Canvas file', () => {
+		const corrupt = artifactAround(embeddedCanvasBlock(exported.slice(0, 40)));
+		expect(parseCanvasImport(corrupt)).toEqual({ ok: false, reason: 'not-canvas' });
+	});
+
+	it('imports a foreign Canvas file whose prose contains the embed marker as itself (SPEC §3.2)', () => {
+		// Only our serializer escapes <; a hand-authored file may carry the
+		// marker raw inside a string value and must not be routed to extraction.
+		const marker = '<script type="application/json" data-canvas-file>';
+		const foreign = referenceJson((raw) => (raw.description = `About ${marker} blocks.`));
+		const result = parseCanvasImport(foreign);
+		if (!result.ok) throw new Error('expected ok');
+		expect(result.file.description).toBe(`About ${marker} blocks.`);
 	});
 });

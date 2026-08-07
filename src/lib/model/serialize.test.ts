@@ -46,6 +46,16 @@ describe('serializeCanvas', () => {
 		);
 	});
 
+	it('escapes < as \\u003c so the exact export bytes embed in an HTML script block (SPEC §9.1)', () => {
+		const doc = blankCanvas();
+		doc.description = 'Renders </script> tags & other markup, e.g. a < b.';
+
+		const out = serializeCanvas(doc);
+		expect(out).not.toContain('<');
+		expect(out).toContain('\\u003c/script>');
+		expect(JSON.parse(out).description).toBe('Renders </script> tags & other markup, e.g. a < b.');
+	});
+
 	it('omits optional fields that are unset or emptied, never writes null', () => {
 		const doc = blankCanvas();
 		doc.strategicClassification = { domain: 'core', businessModel: undefined };

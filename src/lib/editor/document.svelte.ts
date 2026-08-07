@@ -31,9 +31,8 @@ class CanvasEditor {
 	 * The canvas has changed since it last left the browser in a re-importable
 	 * form (SPEC §6.1): its serialization differs from the export baseline.
 	 * Measured byte-exactly on every change, so undoing back to the exported
-	 * state runs clean again. Cleared by Canvas-file export and by the session
-	 * boundary (import/new). Ticket 09 extends clearing to the HTML artifact;
-	 * PNG export never clears it.
+	 * state runs clean again. Cleared by Canvas-file export, HTML-artifact
+	 * export, and the session boundary (import/new); PNG export never clears it.
 	 */
 	unexported = $state(false);
 
@@ -95,10 +94,19 @@ class CanvasEditor {
 		saveAutosave(this.doc);
 	}
 
-	/** Serialize for a re-importable export; exporting clears unexported changes. */
-	exportCanvasFile(): string {
+	/**
+	 * The canvas just left the browser in a re-importable form — the HTML
+	 * artifact embeds exactly these bytes (the serializer is deterministic), so
+	 * its export rebaselines here too, after the build has succeeded.
+	 */
+	markExported(): void {
 		this.#exported = serializeCanvas(this.doc);
 		this.unexported = false;
+	}
+
+	/** Serialize for a re-importable export; exporting clears unexported changes. */
+	exportCanvasFile(): string {
+		this.markExported();
 		return this.#exported;
 	}
 

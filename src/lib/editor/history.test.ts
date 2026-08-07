@@ -119,6 +119,17 @@ describe('undo/redo feeds the persistence pipeline', () => {
 		canvas.redo();
 		expect(canvas.unexported).toBe(true);
 	});
+
+	it('markExported rebaselines without serializing — the HTML artifact path (SPEC §9.1)', () => {
+		canvas.commit((doc) => (doc.name = 'Edited'));
+		expect(canvas.unexported).toBe(true);
+
+		canvas.markExported();
+		expect(canvas.unexported).toBe(false);
+		// The baseline moved: undoing away from the exported bytes dirties again.
+		canvas.undo();
+		expect(canvas.unexported).toBe(true);
+	});
 });
 
 describe('the session boundary clears history', () => {

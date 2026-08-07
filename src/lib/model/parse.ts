@@ -6,6 +6,7 @@
  * validated result is rebuilt key by key, so unknown extras never ride along.
  */
 
+import { extractEmbeddedCanvas } from '$lib/model/embed';
 import {
 	CANVAS_VERSION,
 	type BusinessDecision,
@@ -144,4 +145,20 @@ export function parseCanvasFile(text: string): ParseResult {
 		if (error instanceof Refusal) return NOT_CANVAS;
 		throw error;
 	}
+}
+
+/**
+ * The one import path for both importable forms (SPEC §9.1): the text is
+ * tried as a Canvas file first — so a foreign-serialized `.bcc.json` whose
+ * prose happens to contain the embed marker still imports as itself (§3.2:
+ * unknown values round-trip) — and only a text that isn't one yields its
+ * embedded block, a `.bcc.html` artifact's case. The same version check,
+ * migrations and refusals apply on either route; an HTML file without a
+ * readable block stays refused as not a Canvas file.
+ */
+export function parseCanvasImport(text: string): ParseResult {
+	const direct = parseCanvasFile(text);
+	if (direct.ok || direct.reason === 'newer-version') return direct;
+	const embedded = extractEmbeddedCanvas(text);
+	return embedded === null ? direct : parseCanvasFile(embedded);
 }

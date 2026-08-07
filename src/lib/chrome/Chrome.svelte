@@ -2,16 +2,18 @@
 	/**
 	 * App chrome (SPEC §10): Undo/Redo, Import…, the Export menu, New canvas,
 	 * and the quiet Unexported-changes indicator. File verbs are Import/Export,
-	 * never Open/Save. Owns the confirmation dialogs and file-refusal notices;
-	 * the Export menu's HTML entry arrives with ticket 09.
+	 * never Open/Save. Owns the confirmation dialogs and file-refusal notices.
+	 * Import… takes both importable forms — `.bcc.json` and `.bcc.html` —
+	 * through the one parseCanvasImport path (SPEC §9.1).
 	 */
 	import { downloadBlob } from '$lib/artifact/download';
+	import { exportHtmlArtifact } from '$lib/artifact/html';
 	import { exportPngArtifact } from '$lib/artifact/png';
 	import { canvas } from '$lib/editor/document.svelte';
 	import { performRedo, performUndo } from '$lib/editor/undo';
 	import { blankCanvas, stampIds, CANVAS_VERSION, type CanvasFile } from '$lib/model/canvas';
 	import { exportFileName } from '$lib/model/filename';
-	import { parseCanvasFile } from '$lib/model/parse';
+	import { parseCanvasImport } from '$lib/model/parse';
 
 	type Dialog =
 		| { kind: 'confirm-replace'; file: CanvasFile }
@@ -49,7 +51,7 @@
 		fileInput.value = '';
 		if (!file) return;
 
-		const result = parseCanvasFile(await file.text());
+		const result = parseCanvasImport(await file.text());
 		if (!result.ok) {
 			dialog =
 				result.reason === 'newer-version'
@@ -66,6 +68,19 @@
 		exportMenuOpen = false;
 		const blob = new Blob([canvas.exportCanvasFile()], { type: 'application/json' });
 		downloadBlob(blob, exportFileName(canvas.doc.name, 'json'));
+	}
+
+	// The HTML artifact carries the Canvas file within it, so exporting one
+	// clears Unexported changes — only once the build has succeeded (SPEC §9.1).
+	async function exportHtml() {
+		exportMenuOpen = false;
+		try {
+			await exportHtmlArtifact(canvas.doc);
+			canvas.markExported();
+		} catch (error) {
+			// SPEC §10 defines no export-failure notice; don't let it vanish silently.
+			console.error('HTML export failed', error);
+		}
 	}
 
 	// PNG export is pixels-only: it never clears Unexported changes (SPEC §6.1).
@@ -164,6 +179,15 @@
 					type="button"
 					role="menuitem"
 					class={menuItem}
+					onclick={exportHtml}
+					onkeydown={closeMenuOnEscape}
+				>
+					HTML artifact (.bcc.html)
+				</button>
+				<button
+					type="button"
+					role="menuitem"
+					class={menuItem}
 					onclick={exportPng}
 					onkeydown={closeMenuOnEscape}
 				>
@@ -177,7 +201,7 @@
 
 	<input
 		type="file"
-		accept=".json,application/json"
+		accept=".json,.html,application/json,text/html"
 		class="hidden"
 		bind:this={fileInput}
 		onchange={fileChosen}
