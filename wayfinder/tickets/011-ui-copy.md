@@ -3,7 +3,7 @@ name: ui-copy
 title: "Decision: UI copy"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [empty-state-hints]
 ---
 
