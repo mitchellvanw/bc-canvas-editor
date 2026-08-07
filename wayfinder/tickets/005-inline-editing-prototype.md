@@ -2,7 +2,7 @@
 name: inline-editing-prototype
 title: "Prototype: inline editing interactions"
 labels: [wayfinder:prototype]
-status: open
+status: closed
 assignee: mitchell
 blocked-by: [layout-visual-prototype]
 ---
@@ -24,3 +24,20 @@ Prototype on branch `prototype/inline-editing`, path `prototype/inline-editing/`
 3. **Marked-up sheet** — global Edit/Done pill: view mode is the untouched artifact with zero chrome; edit mode marks everything up at once (dashed slots, always-visible × / ⠿ handles, dropdown-styled vocabulary values; everything drag-reorders).
 
 All three headless-smoke-tested (edits, pickers, escape hatches, cancel path, mode gating — no console errors).
+
+## Resolution
+
+Settled in one round (2026-08-07): **variant 1 — Live sheet** approved. Primary source: branch `prototype/inline-editing`, `prototype/inline-editing/1-live-sheet/` (all three variants and the comparison table are on that branch).
+
+The interaction model, concretely:
+
+- **Modeless.** No edit mode, no per-section forms — the canvas is a document. Every free-text value is contenteditable (plaintext) in place, always. Blur commits; Enter commits single-line fields; Esc reverts the field.
+- **Affordances materialize on approach.** The presentation view carries zero editing chrome; hovering a panel fades in its ghost adds ("+ trait", "+ collaborator", "+ term", chip "+", "+ decision"…), hovering an item reveals its ×, hovering a lane reveals its ⠿ drag grip. Editable text shows a faint halo on hover, a hairline outline on focus.
+- **Curated vocabularies are popovers on the value itself.** Strategic classification and lane relationship values are clickable where they render → popover with the curated list, ✓ on the current value, "custom…" input as escape hatch (relationship also offers "— none —"). Custom values render identically to curated ones and round-trip through the serializer.
+- **Domain roles**: ghost "+ trait" chip → multi-select popover checklist of the 15 traits with one-line descriptions inline, plus a custom-trait input; chips removed via hover ×.
+- **Messages**: ghost "+" per lane → mini type popover (▶ command / ? query / ◆ event), then the new chip's name is focused for immediate typing. Chips drag-reorder within their lane; lanes drag-reorder by grip; lane × removes the collaborator.
+- **Commit granularity** (feeds [state-undo-autosave](wayfinder/tickets/006-state-undo-autosave.md)): one field blur = one commit; one structural action (add / remove / reorder / pick) = one commit.
+- **Empty fields show italic placeholders** in place — the seed of the empty-state guidance (graduated to [empty-state-hints](wayfinder/tickets/009-empty-state-hints.md)).
+- **Known risks accepted for now**, to be softened in build, not by changing model: discoverability of hover-only affordances, stray-click carets in prose.
+
+Variants 2 (Focus panel — per-section swap-in forms) and 3 (Marked-up sheet — global Edit/Done mode) rejected: both tax quick edits with ceremony the document-editor framing doesn't want.
