@@ -3,7 +3,7 @@ name: keyboard-a11y
 title: "Decision: keyboard model & accessibility"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
