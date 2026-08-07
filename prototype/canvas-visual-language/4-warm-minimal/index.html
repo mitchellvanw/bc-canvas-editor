@@ -1,0 +1,316 @@
+<!--
+  PROTOTYPE — throwaway. Round 2 of the canvas visual language (round 1 rejected).
+  This is variant 4: "Warm minimal craft". Sibling: 5-drafting-sheet. Switch via
+  the floating bar or ←/→ keys. Not production code; see REASONING.md.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canvas visual language — 4 Warm minimal craft</title>
+<style>
+  :root {
+    --paper: #FAF7F1;
+    --ink: #2B2925;
+    --ink-2: #57524A;
+    --muted: #8D8677;
+    --rule: #E4DED2;
+    --rule-strong: #C9C1B0;
+    /* inky, desaturated takes on the Event Storming hues — marks, not fills */
+    --cmd: #3D6FA8;
+    --qry: #4E7F45;
+    --evt: #C57219;
+    --policy: #7A5FA5;
+    --collab: #B25379;
+    --hotspot: #BE3D36;
+    --display: "Avenir Next", "Avenir", "Segoe UI", sans-serif;
+    --serif: "Charter", "Iowan Old Style", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 56px 40px 110px;
+  }
+  .sheet { max-width: 1220px; margin: 0 auto; }
+
+  /* ---- header ---- */
+  .eyebrow {
+    font-family: var(--display);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: 40px;
+    font-weight: 600;
+    letter-spacing: -.4px;
+    margin: 6px 0 10px;
+  }
+  .description { font-size: 16.5px; color: var(--ink-2); max-width: 62ch; }
+
+  .head-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 48px;
+    padding-bottom: 34px;
+    border-bottom: 1px solid var(--rule-strong);
+    margin-bottom: 34px;
+  }
+
+  .label {
+    font-family: var(--display);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 14px;
+  }
+
+  /* ---- classification ---- */
+  .axis { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; }
+  .axis + .axis { border-top: 1px dotted var(--rule); }
+  .axis dt { font-family: var(--display); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .axis dd { font-family: var(--display); font-size: 14px; font-weight: 600; }
+
+  /* ---- roles ---- */
+  .def + .def { margin-top: 12px; }
+  .def b { font-family: var(--display); font-size: 13.5px; font-weight: 600; letter-spacing: .2px; }
+  .def p { font-size: 13px; color: var(--ink-2); }
+
+  /* ---- main grid ---- */
+  .mid-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr 1fr;
+    gap: 0 48px;
+  }
+  .mid-grid > * + * { border-left: 1px solid var(--rule); padding-left: 48px; }
+  .center > section + section { margin-top: 34px; }
+
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0 48px;
+    border-top: 1px solid var(--rule-strong);
+    margin-top: 34px;
+    padding-top: 34px;
+  }
+  .bottom-grid > * + * { border-left: 1px solid var(--rule); padding-left: 48px; }
+
+  /* ---- lanes ---- */
+  .lane + .lane { margin-top: 22px; }
+  .lane-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .lane-head b {
+    font-family: var(--display);
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    color: var(--collab);
+  }
+  .rel { font-size: 12px; font-style: italic; color: var(--muted); margin-left: auto; }
+  .msg { display: flex; align-items: baseline; gap: 9px; padding: 4.5px 0; }
+  .mark {
+    flex: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 14px;
+    text-align: center;
+  }
+  .mark.cmd { color: var(--cmd); }
+  .mark.qry { color: var(--qry); }
+  .mark.evt { color: var(--evt); }
+  .msg small { color: var(--muted); font-size: 12px; font-style: italic; }
+
+  /* ---- terms / decisions / lists ---- */
+  .term + .term { margin-top: 11px; }
+  .term dt { font-family: var(--display); font-size: 13.5px; font-weight: 600; display: inline; }
+  .term dt::after { content: " — "; color: var(--muted); font-weight: 400; }
+  .term dd { display: inline; font-size: 13.5px; color: var(--ink-2); }
+
+  .tick-list li { list-style: none; padding: 5px 0 5px 18px; position: relative; font-size: 13.5px; }
+  .tick-list li::before {
+    content: "";
+    position: absolute; left: 0; top: .62em;
+    width: 7px; height: 7px; border-radius: 1px;
+  }
+  .tick-list li b { font-family: var(--display); font-size: 13px; font-weight: 600; display: block; }
+  .tick-list li p { color: var(--ink-2); font-size: 13px; }
+  .tick-list.policy li::before { background: var(--policy); }
+  .tick-list.hotspot li::before { background: var(--hotspot); transform: rotate(12deg); }
+  .tick-list.plain li::before { background: var(--rule-strong); border-radius: 50%; }
+
+  .attribution {
+    margin-top: 44px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule-strong);
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .attribution a { color: var(--ink-2); }
+
+  /* ---- prototype switcher (not part of the design) ---- */
+  .proto-bar {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    background: #1c1c1e; color: #fff;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    padding: 8px 14px; border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35); z-index: 999;
+  }
+  .proto-bar a { color: #fff; text-decoration: none; font-size: 15px; padding: 0 4px; }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <div class="head-grid">
+    <section>
+      <span class="eyebrow">Bounded Context Canvas · V5</span>
+      <h1>Order Fulfillment</h1>
+      <p class="description">Coordinates picking, packing and shipping once an order is paid. Owns the shipment lifecycle from payment confirmation to carrier hand-off.</p>
+    </section>
+
+    <section>
+      <div class="label">Strategic classification</div>
+      <dl>
+        <div class="axis"><dt>Domain</dt><dd>Core</dd></div>
+        <div class="axis"><dt>Business model</dt><dd>Revenue</dd></div>
+        <div class="axis"><dt>Evolution</dt><dd>Custom-built</dd></div>
+      </dl>
+    </section>
+
+    <section>
+      <div class="label">Domain roles</div>
+      <div class="def"><b>Execution context</b><p>Carries out the fulfillment workflow from paid order to dispatched shipment.</p></div>
+      <div class="def"><b>Gateway context</b><p>Fronts the carrier integrations for the rest of the system.</p></div>
+    </section>
+  </div>
+
+  <div class="mid-grid">
+    <section>
+      <div class="label">Inbound communication</div>
+
+      <div class="lane">
+        <div class="lane-head"><b>Checkout</b><span class="rel">customer–supplier</span></div>
+        <div class="msg"><span class="mark cmd">▶</span><span>Place Order</span></div>
+        <div class="msg"><span class="mark evt">◆</span><span>Payment Confirmed <small>triggers fulfillment</small></span></div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head"><b>Customer Support</b></div>
+        <div class="msg"><span class="mark qry">?</span><span>Get Shipment Status</span></div>
+        <div class="msg"><span class="mark cmd">▶</span><span>Cancel Fulfillment</span></div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head"><b>Inventory</b><span class="rel">conformist</span></div>
+        <div class="msg"><span class="mark evt">◆</span><span>Stock Level Changed</span></div>
+      </div>
+    </section>
+
+    <div class="center">
+      <section>
+        <div class="label">Ubiquitous language</div>
+        <dl>
+          <div class="term"><dt>Shipment</dt><dd>A physical parcel dispatched against an order.</dd></div>
+          <div class="term"><dt>Pick List</dt><dd>The ordered set of warehouse locations to visit for one shipment.</dd></div>
+          <div class="term"><dt>Dispatch</dt><dd>The moment a packed shipment is handed to a carrier.</dd></div>
+          <div class="term"><dt>Delivery Promise</dt><dd>The date shown at checkout that fulfillment must honor.</dd></div>
+        </dl>
+      </section>
+
+      <section>
+        <div class="label">Business decisions</div>
+        <ul class="tick-list policy">
+          <li><b>No partial shipments</b><p>An order ships complete or not at all.</p></li>
+          <li><b>Cost-first carrier selection</b><p>The cheapest carrier that meets the delivery promise wins.</p></li>
+          <li><b>Hazardous goods go ground</b><p>Never booked onto air freight, whatever the promise.</p></li>
+        </ul>
+      </section>
+    </div>
+
+    <section>
+      <div class="label">Outbound communication</div>
+
+      <div class="lane">
+        <div class="lane-head"><b>Notifications</b></div>
+        <div class="msg"><span class="mark evt">◆</span><span>Order Shipped</span></div>
+        <div class="msg"><span class="mark evt">◆</span><span>Delivery Delayed</span></div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head"><b>Billing</b><span class="rel">open-host service</span></div>
+        <div class="msg"><span class="mark evt">◆</span><span>Shipment Completed</span></div>
+      </div>
+
+      <div class="lane">
+        <div class="lane-head"><b>Carrier Gateway</b><span class="rel">anticorruption layer</span></div>
+        <div class="msg"><span class="mark cmd">▶</span><span>Book Shipment</span></div>
+        <div class="msg"><span class="mark qry">?</span><span>Get Tracking Status</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="bottom-grid">
+    <section>
+      <div class="label">Assumptions</div>
+      <ul class="tick-list plain">
+        <li>Warehouse stock counts are accurate within the hour.</li>
+        <li>A single warehouse fulfills any given order.</li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="label">Verification metrics</div>
+      <ul class="tick-list plain">
+        <li>Time from payment to dispatch under 4 hours.</li>
+        <li>Fewer than 1% of shipments re-booked with a second carrier.</li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="label">Open questions</div>
+      <ul class="tick-list hotspot">
+        <li>Who owns returns — this context or a new one?</li>
+        <li>Does the carrier integration deserve its own context?</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="attribution">
+    <span><span class="mark cmd">▶</span> command &nbsp; <span class="mark qry">?</span> query &nbsp; <span class="mark evt">◆</span> event</span>
+    <span>Bounded Context Canvas by <a href="https://github.com/ddd-crew/bounded-context-canvas">the DDD Crew</a> — CC BY 4.0</span>
+  </div>
+</div>
+
+<nav class="proto-bar" aria-label="Prototype variant switcher">
+  <a href="../5-drafting-sheet/index.html" title="Previous variant">←</a>
+  <span>1 / 2 — Warm minimal craft</span>
+  <a href="../5-drafting-sheet/index.html" title="Next variant">→</a>
+</nav>
+<script>
+  const prev = "../5-drafting-sheet/index.html", next = "../5-drafting-sheet/index.html";
+  document.addEventListener("keydown", (e) => {
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.key === "ArrowLeft") location.href = prev;
+    if (e.key === "ArrowRight") location.href = next;
+  });
+</script>
+
+</body>
+</html>

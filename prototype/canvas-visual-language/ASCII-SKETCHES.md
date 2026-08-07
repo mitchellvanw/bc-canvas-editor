@@ -114,3 +114,25 @@ Sketches 1–3 go to HTML: they occupy genuinely different registers (physical
 workshop / formal print / product app) and each applies the settled palette in a
 structurally different way (full fills / typed chips / colored tags). Sketch 4 is
 recorded as explored-and-rejected with reasoning above.
+
+---
+
+# Round 2 (2026-08-07)
+
+Round 1 rejected in full: **wrong registers entirely** (sticky-board, print form,
+SaaS cards) and **color handling wrong** (full fills too loud, chips too demoted,
+tints too candy). User direction for round 2: *warm minimal craft*, plus a design
+inspired by their reference files `~/Downloads/bounded-context-canvas-example.html`
+/ `-template.html` (identical CSS — one coherent design: warm paper + drafting
+grid, ink title block, Archivo / Source Serif 4 / IBM Plex Mono, sticky fills
+anchored by darker ink borders, message *shapes* per type, panel hints, legend
+footer).
+
+Direction being user-set, this round went straight to HTML:
+
+- **4 — Warm minimal craft**: no boxes at all; whitespace + hairline rules +
+  small-caps labels carry the structure; serif for user content; color only as
+  small desaturated inky marks (▶ ? ◆ glyphs, colored ticks).
+- **5 — Drafting sheet**: the reference design's language adapted to our content
+  and schema decisions (classification in the title block, full-string
+  relationship badges, plain metric rows, no metadata, static render).
