@@ -3,7 +3,7 @@ name: state-undo-autosave
 title: "Decision: document state, undo/redo & autosave model"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [canvas-file-schema, inline-editing-prototype]
 ---
 
