@@ -136,3 +136,21 @@ Direction being user-set, this round went straight to HTML:
 - **5 — Drafting sheet**: the reference design's language adapted to our content
   and schema decisions (classification in the title block, full-string
   relationship badges, plain metric rows, no metadata, static render).
+
+---
+
+# Round 3 (2026-08-07)
+
+Round 2 reaction: **5 — Drafting sheet wins** ("I like it the most, but it's
+still a bit rough"); 4 — Warm minimal craft not picked. "Rough" was not
+specified, so the two derivatives each interpret it differently:
+
+- **6 — Quiet sheet**: rough = *too busy*. Fainter/wider grid, cream paper,
+  rounded panels with soft shadow, hints removed, ONE message shape (uniform
+  chips + glyphs), label underlines instead of squares + rules, collaborators as
+  underlined names instead of pink stickies, highlighter-stroke terms, compact
+  one-line legend.
+- **7 — Technical sheet**: rough = *not committed enough*. Sheet border frame,
+  ink label tabs echoing the title block, mono panel numbers 01–09, ink-dark
+  panel borders with hard 2px print shadows, message shapes kept and tightened,
+  mono data-strip footer. Hints removed here too.

@@ -1,0 +1,442 @@
+<!--
+  PROTOTYPE — throwaway. Round 3: derivatives of 5-drafting-sheet (picked as the
+  winner, "still a bit rough"). This is variant 7: "Technical sheet" — the
+  drafting sheet sharpened into a numbered engineering drawing. Sibling:
+  6-quiet-sheet. Switch via the floating bar or ←/→ keys. Not production code;
+  see REASONING.md.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canvas visual language — 7 Technical sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after { box-sizing: border-box; }
+  :root {
+    --paper: #E2E5DC;
+    --sheet: #FCFCFA;
+    --ink: #14181A;
+    --ink-2: #4E5754;
+    --ink-3: #838B87;
+    --rule: #B9BEB2;
+    --es-event: #F5A03C;    --es-event-ink: #B96D18;
+    --es-command: #7CB9E8;  --es-command-ink: #35729F;
+    --es-query: #8CCB8A;    --es-query-ink: #457F49;
+    --es-policy: #BFA6DE;   --es-policy-ink: #7C5BA8;
+    --es-system: #F3A0CB;   --es-system-ink: #B84E88;
+    --es-hotspot: #FF5C9E;  --es-hotspot-ink: #CE2272;
+    --es-term: #F2E27A;     --es-term-ink: #9C8A12;
+    --dir: var(--ink-2);
+    --f-disp: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    --f-body: 'Source Serif 4', Georgia, serif;
+    --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    --gap: 14px;
+    --pad: 1.05rem;
+  }
+  body {
+    margin: 0;
+    font-family: var(--f-body);
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(to right, rgba(20,24,26,.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20,24,26,.055) 1px, transparent 1px);
+    background-size: 28px 28px;
+    line-height: 1.45;
+    padding-bottom: 80px;
+  }
+  .sheet {
+    max-width: 1460px; margin: 28px auto; padding: 28px;
+    outline: 1px solid var(--rule);
+    outline-offset: -14px;
+  }
+
+  /* ---- title block ---- */
+  .tb {
+    background: var(--ink); color: var(--paper);
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--gap) 2rem;
+    padding: 1.15rem 1.35rem;
+    margin-bottom: var(--gap);
+  }
+  .tb__id { flex: 1 1 320px; }
+  .eyebrow {
+    font-family: var(--f-mono); font-size: .62rem; font-weight: 500;
+    letter-spacing: .2em; text-transform: uppercase; color: #9DA79F;
+    display: block; margin-bottom: .5rem;
+  }
+  .ctx-name {
+    font-family: var(--f-disp); font-weight: 700;
+    font-size: 2.5rem; line-height: 1.02; text-transform: uppercase;
+    margin: 0; color: #F6F7F2;
+  }
+  .tb__class { display: flex; gap: 2rem; }
+  .tb__class div { border-left: 1px solid #3A423F; padding-left: .75rem; }
+  .tb__class dt {
+    font-family: var(--f-disp); font-size: .58rem; font-weight: 600; letter-spacing: .18em;
+    text-transform: uppercase; color: #8D9791; margin: 0 0 .2rem;
+  }
+  .tb__class dd { margin: 0; font-family: var(--f-mono); font-size: .78rem; color: #E7E9E2; }
+
+  /* ---- grid ---- */
+  .grid {
+    display: grid; gap: var(--gap);
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-areas:
+      "purpose purpose purpose purpose purpose purpose purpose roles roles roles roles roles"
+      "inb inb inb inb lang lang lang lang outb outb outb outb"
+      "inb inb inb inb dec dec dec dec outb outb outb outb"
+      "assum assum assum assum metrics metrics metrics metrics quest quest quest quest";
+  }
+  .a-purpose { grid-area: purpose; }
+  .a-roles { grid-area: roles; }
+  .a-inb { grid-area: inb; }
+  .a-lang { grid-area: lang; }
+  .a-dec { grid-area: dec; }
+  .a-outb { grid-area: outb; }
+  .a-assum { grid-area: assum; }
+  .a-metrics { grid-area: metrics; }
+  .a-quest { grid-area: quest; }
+
+  /* ---- panel: numbered drawing cell with ink tab ---- */
+  .panel {
+    position: relative; background: var(--sheet);
+    border: 1px solid var(--ink-2);
+    box-shadow: 2px 2px 0 rgba(20, 24, 26, .08);
+    padding: 2rem var(--pad) var(--pad); min-width: 0;
+    margin-top: 10px;
+  }
+  .panel__label {
+    position: absolute; top: -10px; left: 10px;
+    background: var(--ink); color: var(--paper);
+    font-family: var(--f-disp); font-size: .6rem; font-weight: 700; letter-spacing: .16em;
+    text-transform: uppercase; margin: 0;
+    padding: .28rem .55rem .24rem;
+    display: inline-flex; align-items: center; gap: .45rem;
+  }
+  .panel__label::before { content: ""; width: 7px; height: 7px; flex: none; background: var(--dir); }
+  .panel__num {
+    position: absolute; top: .55rem; right: .7rem;
+    font-family: var(--f-mono); font-size: .62rem; color: var(--ink-3);
+  }
+  .panel--lang { --dir: var(--es-term); background: color-mix(in srgb, var(--es-term) 6%, var(--sheet)); }
+  .panel--dec { --dir: var(--es-policy); background: color-mix(in srgb, var(--es-policy) 8%, var(--sheet)); }
+  .panel--in, .panel--out { --dir: var(--es-system); }
+  .panel--ask { --dir: var(--es-hotspot); }
+  .panel--ask .panel__label::before { transform: rotate(12deg); }
+  .panel--soft { border-style: dashed; background: transparent; box-shadow: none; }
+
+  /* flow chevrons on the spine */
+  .panel--in::after, .panel--out::after {
+    content: ""; position: absolute; top: 50%; width: 12px; height: 12px;
+    border-top: 2.5px solid var(--es-system-ink); border-right: 2.5px solid var(--es-system-ink);
+    transform: translateY(-50%) rotate(45deg);
+  }
+  .panel--in::after { right: -12px; }
+  .panel--out::after { left: -7px; }
+
+  .prose { font-size: .95rem; line-height: 1.5; margin: 0; }
+
+  /* ---- roles ---- */
+  .roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .35rem; }
+  .role {
+    font-family: var(--f-mono); font-size: .72rem; font-weight: 500;
+    border: 1px solid var(--ink); padding: .18rem .5rem;
+    background: var(--sheet);
+    box-shadow: 2px 2px 0 rgba(20, 24, 26, .08);
+  }
+  .role__note {
+    display: block; font-style: italic; font-size: .82rem; color: var(--ink-2); margin-top: .5rem;
+  }
+
+  /* ---- communication lanes ---- */
+  .lane + .lane { margin-top: .85rem; padding-top: .85rem; border-top: 1px dotted var(--rule); }
+  .lane__head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .4rem; }
+  .lane__who {
+    font-family: var(--f-disp); font-size: .8rem; font-weight: 600;
+    background: var(--es-system); border: 1px solid var(--es-system-ink);
+    box-shadow: 2px 2px 0 rgba(20, 24, 26, .08);
+    padding: .16rem .5rem; display: inline-block;
+  }
+  .badge {
+    font-family: var(--f-mono); font-size: .62rem; font-weight: 500; letter-spacing: .06em;
+    color: var(--ink-2); border: 1px solid var(--ink-3); border-radius: 2px; padding: .05rem .3rem;
+    white-space: nowrap;
+  }
+  .msgs { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .35rem; }
+  .msg {
+    font-family: var(--f-mono); font-size: .74rem; line-height: 1.25;
+    padding: .26rem .5rem; color: var(--ink); border: 1px solid;
+    box-shadow: 2px 2px 0 rgba(20, 24, 26, .08);
+  }
+  .msg::before { font-size: .7em; margin-right: .42em; vertical-align: .08em; opacity: .75; }
+  .msg--cmd { background: var(--es-command); border-color: var(--es-command-ink); border-left-width: 4px; }
+  .msg--cmd::before { content: "\25B6"; }
+  .msg--qry { background: var(--es-query); border-color: var(--es-query-ink); border-radius: 999px; padding-left: .62rem; padding-right: .62rem; }
+  .msg--qry::before { content: "?"; font-weight: 700; }
+  .msg--evt {
+    background: var(--es-event); border-color: var(--es-event-ink);
+    padding-right: .95rem;
+    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 0 100%);
+    box-shadow: none;
+  }
+  .msg--evt::before { content: "\25C6"; }
+
+  /* ---- ubiquitous language ---- */
+  .terms { margin: 0; }
+  .terms dt {
+    font-family: var(--f-mono); font-size: .76rem; font-weight: 600;
+    margin-top: .6rem; display: inline-block;
+    background: var(--es-term); border: 1px solid var(--es-term-ink);
+    box-shadow: 2px 2px 0 rgba(20, 24, 26, .08);
+    padding: .1rem .4rem;
+  }
+  .terms dt:first-of-type { margin-top: 0; }
+  .terms dd { margin: .15rem 0 0; font-size: .88rem; line-height: 1.4; color: var(--ink-2); }
+
+  /* ---- decisions / assumptions / questions ---- */
+  .stack { list-style: none; margin: 0; padding: 0; }
+  .stack li { position: relative; padding-left: 1.1rem; font-size: .88rem; line-height: 1.45; }
+  .stack li + li { margin-top: .5rem; }
+  .stack--rule li::before {
+    content: ""; position: absolute; left: 0; top: .42em; width: 8px; height: 8px;
+    background: var(--es-policy); border: 1px solid var(--es-policy-ink);
+  }
+  .stack--assume li { border-left: 2px dashed var(--ink-3); padding-left: .7rem; margin-left: .15rem; }
+  .stack--ask li::before {
+    content: ""; position: absolute; left: 0; top: .4em; width: 9px; height: 9px;
+    background: var(--es-hotspot); border: 1px solid var(--es-hotspot-ink);
+    transform: rotate(14deg);
+  }
+  .stack b { font-family: var(--f-disp); font-size: .8rem; letter-spacing: .01em; }
+
+  /* ---- footer: mono data strip ---- */
+  .foot {
+    margin-top: var(--gap);
+    border: 1px solid var(--ink-2);
+    background: var(--sheet);
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: .5rem 1.5rem;
+    padding: .55rem .8rem;
+    font-family: var(--f-mono); font-size: .68rem; color: var(--ink-2);
+  }
+  .key { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: center; }
+  .key__i { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; }
+  .sw { width: 10px; height: 10px; display: inline-block; border: 1px solid; }
+  .sw--cmd { background: var(--es-command); border-color: var(--es-command-ink); }
+  .sw--qry { background: var(--es-query); border-color: var(--es-query-ink); border-radius: 999px; }
+  .sw--evt { background: var(--es-event); border-color: var(--es-event-ink); clip-path: polygon(0 0, 60% 0, 100% 50%, 60% 100%, 0 100%); }
+  .sw--system { background: var(--es-system); border-color: var(--es-system-ink); }
+  .sw--policy { background: var(--es-policy); border-color: var(--es-policy-ink); }
+  .sw--hotspot { background: var(--es-hotspot); border-color: var(--es-hotspot-ink); transform: rotate(14deg); }
+  .foot a { color: var(--ink-2); }
+
+  /* ---- prototype switcher (not part of the design) ---- */
+  .proto-bar {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    background: #1c1c1e; color: #fff;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    padding: 8px 14px; border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35); z-index: 999;
+  }
+  .proto-bar a { color: #fff; text-decoration: none; font-size: 15px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="tb">
+    <div class="tb__id">
+      <span class="eyebrow">BCC·V5 / SHEET 1 OF 1</span>
+      <h1 class="ctx-name">Order Fulfillment</h1>
+    </div>
+    <dl class="tb__class">
+      <div><dt>Domain</dt><dd>core</dd></div>
+      <div><dt>Business model</dt><dd>revenue</dd></div>
+      <div><dt>Evolution</dt><dd>custom-built</dd></div>
+    </dl>
+  </header>
+
+  <main class="grid">
+    <section class="panel a-purpose">
+      <h2 class="panel__label">Description</h2>
+      <span class="panel__num">01</span>
+      <div>
+        <p class="prose">Coordinates picking, packing and shipping once an order is paid. Owns the shipment lifecycle from payment confirmation to carrier hand-off.</p>
+      </div>
+    </section>
+
+    <section class="panel a-roles">
+      <h2 class="panel__label">Domain roles</h2>
+      <span class="panel__num">02</span>
+      <div>
+        <ul class="roles">
+          <li class="role">execution context</li>
+          <li class="role">gateway context</li>
+        </ul>
+        <span class="role__note">Carries out the fulfillment workflow from paid order to dispatched shipment, and fronts the carrier integrations for the rest of the system.</span>
+      </div>
+    </section>
+
+    <section class="panel panel--in a-inb">
+      <h2 class="panel__label">Inbound communication</h2>
+      <span class="panel__num">03</span>
+      <div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Checkout</span>
+            <span class="badge">customer–supplier</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--cmd">Place Order</li>
+            <li class="msg msg--evt" title="Triggers fulfillment.">Payment Confirmed</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Customer Support</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--qry">Get Shipment Status</li>
+            <li class="msg msg--cmd">Cancel Fulfillment</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Inventory</span>
+            <span class="badge">conformist</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--evt">Stock Level Changed</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel--lang a-lang">
+      <h2 class="panel__label">Ubiquitous language</h2>
+      <span class="panel__num">04</span>
+      <div>
+        <dl class="terms">
+          <dt>Shipment</dt><dd>A physical parcel dispatched against an order.</dd>
+          <dt>Pick List</dt><dd>The ordered set of warehouse locations to visit for one shipment.</dd>
+          <dt>Dispatch</dt><dd>The moment a packed shipment is handed to a carrier.</dd>
+          <dt>Delivery Promise</dt><dd>The date shown at checkout that fulfillment must honor.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="panel panel--dec a-dec">
+      <h2 class="panel__label">Business decisions</h2>
+      <span class="panel__num">05</span>
+      <div>
+        <ul class="stack stack--rule">
+          <li><b>No partial shipments.</b> An order ships complete or not at all.</li>
+          <li><b>Cost-first carrier selection.</b> The cheapest carrier that meets the delivery promise wins.</li>
+          <li><b>Hazardous goods go ground.</b> Never booked onto air freight, whatever the promise.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel panel--out a-outb">
+      <h2 class="panel__label">Outbound communication</h2>
+      <span class="panel__num">06</span>
+      <div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Notifications</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--evt">Order Shipped</li>
+            <li class="msg msg--evt">Delivery Delayed</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Billing</span>
+            <span class="badge">open-host service</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--evt">Shipment Completed</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Carrier Gateway</span>
+            <span class="badge">anticorruption layer</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--cmd">Book Shipment</li>
+            <li class="msg msg--qry">Get Tracking Status</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel--soft a-assum">
+      <h2 class="panel__label">Assumptions</h2>
+      <span class="panel__num">07</span>
+      <div>
+        <ul class="stack stack--assume">
+          <li>Warehouse stock counts are accurate within the hour.</li>
+          <li>A single warehouse fulfills any given order.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel a-metrics">
+      <h2 class="panel__label">Verification metrics</h2>
+      <span class="panel__num">08</span>
+      <div>
+        <ul class="stack">
+          <li>Time from payment to dispatch under 4 hours.</li>
+          <li>Fewer than 1% of shipments re-booked with a second carrier.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel panel--soft panel--ask a-quest">
+      <h2 class="panel__label">Open questions</h2>
+      <span class="panel__num">09</span>
+      <div>
+        <ul class="stack stack--ask">
+          <li>Who owns returns &mdash; this context or a new one?</li>
+          <li>Does the carrier integration deserve its own context?</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="key">
+      <span class="key__i"><span class="sw sw--cmd"></span>CMD</span>
+      <span class="key__i"><span class="sw sw--qry"></span>QRY</span>
+      <span class="key__i"><span class="sw sw--evt"></span>EVT</span>
+      <span class="key__i"><span class="sw sw--system"></span>COLLABORATOR</span>
+      <span class="key__i"><span class="sw sw--policy"></span>POLICY</span>
+      <span class="key__i"><span class="sw sw--hotspot"></span>HOTSPOT</span>
+    </div>
+    <span>BCC·V5 · canvas &amp; colours <a href="https://github.com/ddd-crew/bounded-context-canvas">DDD CREW</a> · CC BY 4.0</span>
+  </footer>
+</div>
+
+<nav class="proto-bar" aria-label="Prototype variant switcher">
+  <a href="../6-quiet-sheet/index.html" title="Previous variant">←</a>
+  <span>2 / 2 — Technical sheet</span>
+  <a href="../6-quiet-sheet/index.html" title="Next variant">→</a>
+</nav>
+<script>
+  const prev = "../6-quiet-sheet/index.html", next = "../6-quiet-sheet/index.html";
+  document.addEventListener("keydown", (e) => {
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.key === "ArrowLeft") location.href = prev;
+    if (e.key === "ArrowRight") location.href = next;
+  });
+</script>
+</body>
+</html>

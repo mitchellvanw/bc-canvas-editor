@@ -1,0 +1,396 @@
+<!--
+  PROTOTYPE — throwaway. Round 3: derivatives of 5-drafting-sheet (picked as the
+  winner, "still a bit rough"). This is variant 6: "Quiet sheet" — the drafting
+  sheet calmed down. Sibling: 7-technical-sheet. Switch via the floating bar or
+  ←/→ keys. Not production code; see REASONING.md.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canvas visual language — 6 Quiet sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after { box-sizing: border-box; }
+  :root {
+    --paper: #EAE7DE;
+    --sheet: #FDFDFB;
+    --ink: #191C1E;
+    --ink-2: #50564F;
+    --ink-3: #8E948C;
+    --rule: #D8D4C8;
+    --es-event: #F3A54E;    --es-event-ink: #A96517;
+    --es-command: #85BCE5;  --es-command-ink: #33688F;
+    --es-query: #93CB91;    --es-query-ink: #40733E;
+    --es-policy: #C2ABDD;   --es-policy-ink: #6F519B;
+    --es-system: #F1A5CB;   --es-system-ink: #A94879;
+    --es-hotspot: #F76BA3;  --es-hotspot-ink: #B92367;
+    --es-term: #EFE08B;     --es-term-ink: #8A7A12;
+    --dir: var(--ink-3);
+    --f-disp: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    --f-body: 'Source Serif 4', Georgia, serif;
+    --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    --gap: 18px;
+    --pad: 1.35rem;
+  }
+  body {
+    margin: 0;
+    font-family: var(--f-body);
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(to right, rgba(20,24,26,.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20,24,26,.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    line-height: 1.5;
+    padding-bottom: 84px;
+  }
+  .sheet { max-width: 1440px; margin: 0 auto; padding: 32px; }
+
+  /* ---- title block ---- */
+  .tb {
+    background: #1A1E20; color: var(--paper);
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--gap) 2.5rem;
+    padding: 1.5rem 1.7rem;
+    border-radius: 6px; margin-bottom: var(--gap);
+  }
+  .tb__id { flex: 1 1 320px; }
+  .eyebrow {
+    font-family: var(--f-disp); font-size: .62rem; font-weight: 600;
+    letter-spacing: .24em; text-transform: uppercase; color: #98A29A;
+    display: block; margin-bottom: .55rem;
+  }
+  .ctx-name {
+    font-family: var(--f-disp); font-weight: 700;
+    font-size: 2.4rem; line-height: 1.04; letter-spacing: .01em;
+    margin: 0; color: #F6F7F2;
+  }
+  .tb__class { display: flex; gap: 2.2rem; }
+  .tb__class div { }
+  .tb__class dt {
+    font-family: var(--f-disp); font-size: .57rem; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: #8D9791; margin: 0 0 .25rem;
+  }
+  .tb__class dd { margin: 0; font-family: var(--f-mono); font-size: .8rem; color: #E7E9E2; }
+
+  /* ---- grid ---- */
+  .grid {
+    display: grid; gap: var(--gap);
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-areas:
+      "purpose purpose purpose purpose purpose purpose purpose roles roles roles roles roles"
+      "inb inb inb inb lang lang lang lang outb outb outb outb"
+      "inb inb inb inb dec dec dec dec outb outb outb outb"
+      "assum assum assum assum metrics metrics metrics metrics quest quest quest quest";
+  }
+  .a-purpose { grid-area: purpose; }
+  .a-roles { grid-area: roles; }
+  .a-inb { grid-area: inb; }
+  .a-lang { grid-area: lang; }
+  .a-dec { grid-area: dec; }
+  .a-outb { grid-area: outb; }
+  .a-assum { grid-area: assum; }
+  .a-metrics { grid-area: metrics; }
+  .a-quest { grid-area: quest; }
+
+  /* ---- panel ---- */
+  .panel {
+    background: var(--sheet); border: 1px solid var(--rule);
+    border-radius: 5px; padding: var(--pad); min-width: 0;
+    box-shadow: 0 1px 2px rgba(25, 28, 30, .04);
+  }
+  .panel__label {
+    font-family: var(--f-disp); font-size: .64rem; font-weight: 700; letter-spacing: .17em;
+    text-transform: uppercase; color: var(--ink); margin: 0;
+    display: inline-block;
+    padding-bottom: .5rem;
+    border-bottom: 2px solid var(--dir);
+  }
+  .panel__body { margin-top: 1rem; }
+  .panel--lang { --dir: var(--es-term-ink); }
+  .panel--dec { --dir: var(--es-policy-ink); }
+  .panel--in, .panel--out { --dir: var(--es-system-ink); }
+  .panel--ask { --dir: var(--es-hotspot-ink); }
+
+  .prose { font-size: 1rem; line-height: 1.55; margin: 0; }
+
+  /* ---- roles ---- */
+  .roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+  .role {
+    font-family: var(--f-disp); font-size: .74rem; font-weight: 600;
+    border: 1px solid var(--ink); border-radius: 999px; padding: .22rem .68rem;
+  }
+  .role__note {
+    display: block; font-style: italic; font-size: .84rem; color: var(--ink-2); margin-top: .6rem;
+  }
+
+  /* ---- communication lanes ---- */
+  .lane + .lane { margin-top: 1.05rem; padding-top: 1.05rem; border-top: 1px solid #EDEAE1; }
+  .lane__head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .45rem; }
+  .lane__who {
+    font-family: var(--f-disp); font-size: .8rem; font-weight: 600;
+    color: var(--es-system-ink);
+    border-bottom: 2px solid var(--es-system);
+    padding-bottom: .1rem;
+  }
+  .badge {
+    font-family: var(--f-mono); font-size: .62rem; letter-spacing: .06em;
+    color: var(--ink-3); white-space: nowrap; margin-left: auto;
+  }
+  .msgs { list-style: none; margin: .55rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .35rem; }
+  .msg {
+    font-family: var(--f-mono); font-size: .73rem; line-height: 1.25;
+    padding: .28rem .55rem; color: var(--ink);
+    border: 1px solid; border-radius: 4px;
+  }
+  .msg::before { font-size: .7em; margin-right: .42em; vertical-align: .08em; opacity: .7; }
+  .msg--cmd { background: var(--es-command); border-color: var(--es-command-ink); }
+  .msg--cmd::before { content: "\25B6"; }
+  .msg--qry { background: var(--es-query); border-color: var(--es-query-ink); }
+  .msg--qry::before { content: "?"; font-weight: 700; }
+  .msg--evt { background: var(--es-event); border-color: var(--es-event-ink); }
+  .msg--evt::before { content: "\25C6"; }
+
+  /* ---- ubiquitous language ---- */
+  .terms { margin: 0; }
+  .terms dt {
+    font-family: var(--f-mono); font-size: .76rem; font-weight: 600;
+    margin-top: .8rem; display: inline-block;
+    background: linear-gradient(transparent 45%, var(--es-term) 45%, var(--es-term) 92%, transparent 92%);
+    padding: 0 .15rem;
+  }
+  .terms dt:first-of-type { margin-top: 0; }
+  .terms dd { margin: .15rem 0 0; font-size: .9rem; line-height: 1.45; color: var(--ink-2); }
+
+  /* ---- decisions / assumptions / questions ---- */
+  .stack { list-style: none; margin: 0; padding: 0; }
+  .stack li { position: relative; padding-left: 1.15rem; font-size: .9rem; line-height: 1.5; }
+  .stack li + li { margin-top: .65rem; }
+  .stack li::before {
+    content: ""; position: absolute; left: 0; top: .48em;
+    width: 7px; height: 7px; border-radius: 2px;
+    background: var(--ink-3);
+  }
+  .stack--rule li::before { background: var(--es-policy); border: 1px solid var(--es-policy-ink); }
+  .stack--ask li::before { background: var(--es-hotspot); border: 1px solid var(--es-hotspot-ink); transform: rotate(14deg); }
+  .stack b { font-family: var(--f-disp); font-size: .8rem; letter-spacing: .01em; }
+
+  /* ---- footer ---- */
+  .foot {
+    margin-top: var(--gap);
+    display: flex; flex-wrap: wrap; gap: .6rem 2rem;
+    align-items: baseline; justify-content: space-between;
+    padding-top: 1rem; border-top: 1px solid var(--rule);
+  }
+  .key { display: flex; flex-wrap: wrap; gap: .45rem 1.05rem; align-items: center; }
+  .key__i { display: inline-flex; align-items: center; gap: .35rem; font-size: .74rem; color: var(--ink-2); }
+  .sw { width: 10px; height: 10px; display: inline-block; border: 1px solid; border-radius: 3px; }
+  .sw--cmd { background: var(--es-command); border-color: var(--es-command-ink); }
+  .sw--qry { background: var(--es-query); border-color: var(--es-query-ink); }
+  .sw--evt { background: var(--es-event); border-color: var(--es-event-ink); }
+  .sw--system { background: var(--es-system); border-color: var(--es-system-ink); }
+  .sw--policy { background: var(--es-policy); border-color: var(--es-policy-ink); }
+  .sw--hotspot { background: var(--es-hotspot); border-color: var(--es-hotspot-ink); }
+  .note { font-size: .74rem; color: var(--ink-3); margin: 0; }
+  .note a { color: var(--ink-2); }
+
+  /* ---- prototype switcher (not part of the design) ---- */
+  .proto-bar {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    background: #1c1c1e; color: #fff;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    padding: 8px 14px; border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35); z-index: 999;
+  }
+  .proto-bar a { color: #fff; text-decoration: none; font-size: 15px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="tb">
+    <div class="tb__id">
+      <span class="eyebrow">Bounded Context Canvas · V5</span>
+      <h1 class="ctx-name">Order Fulfillment</h1>
+    </div>
+    <dl class="tb__class">
+      <div><dt>Domain</dt><dd>core</dd></div>
+      <div><dt>Business model</dt><dd>revenue</dd></div>
+      <div><dt>Evolution</dt><dd>custom-built</dd></div>
+    </dl>
+  </header>
+
+  <main class="grid">
+    <section class="panel a-purpose">
+      <h2 class="panel__label">Description</h2>
+      <div class="panel__body">
+        <p class="prose">Coordinates picking, packing and shipping once an order is paid. Owns the shipment lifecycle from payment confirmation to carrier hand-off.</p>
+      </div>
+    </section>
+
+    <section class="panel a-roles">
+      <h2 class="panel__label">Domain roles</h2>
+      <div class="panel__body">
+        <ul class="roles">
+          <li class="role">Execution context</li>
+          <li class="role">Gateway context</li>
+        </ul>
+        <span class="role__note">Carries out the fulfillment workflow from paid order to dispatched shipment, and fronts the carrier integrations for the rest of the system.</span>
+      </div>
+    </section>
+
+    <section class="panel panel--in a-inb">
+      <h2 class="panel__label">Inbound communication</h2>
+      <div class="panel__body">
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Checkout</span>
+            <span class="badge">customer–supplier</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--cmd">Place Order</li>
+            <li class="msg msg--evt" title="Triggers fulfillment.">Payment Confirmed</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Customer Support</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--qry">Get Shipment Status</li>
+            <li class="msg msg--cmd">Cancel Fulfillment</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Inventory</span>
+            <span class="badge">conformist</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--evt">Stock Level Changed</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel--lang a-lang">
+      <h2 class="panel__label">Ubiquitous language</h2>
+      <div class="panel__body">
+        <dl class="terms">
+          <dt>Shipment</dt><dd>A physical parcel dispatched against an order.</dd>
+          <dt>Pick List</dt><dd>The ordered set of warehouse locations to visit for one shipment.</dd>
+          <dt>Dispatch</dt><dd>The moment a packed shipment is handed to a carrier.</dd>
+          <dt>Delivery Promise</dt><dd>The date shown at checkout that fulfillment must honor.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="panel panel--dec a-dec">
+      <h2 class="panel__label">Business decisions</h2>
+      <div class="panel__body">
+        <ul class="stack stack--rule">
+          <li><b>No partial shipments.</b> An order ships complete or not at all.</li>
+          <li><b>Cost-first carrier selection.</b> The cheapest carrier that meets the delivery promise wins.</li>
+          <li><b>Hazardous goods go ground.</b> Never booked onto air freight, whatever the promise.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel panel--out a-outb">
+      <h2 class="panel__label">Outbound communication</h2>
+      <div class="panel__body">
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Notifications</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--evt">Order Shipped</li>
+            <li class="msg msg--evt">Delivery Delayed</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Billing</span>
+            <span class="badge">open-host service</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--evt">Shipment Completed</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <div class="lane__head">
+            <span class="lane__who">Carrier Gateway</span>
+            <span class="badge">anticorruption layer</span>
+          </div>
+          <ul class="msgs">
+            <li class="msg msg--cmd">Book Shipment</li>
+            <li class="msg msg--qry">Get Tracking Status</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel a-assum">
+      <h2 class="panel__label">Assumptions</h2>
+      <div class="panel__body">
+        <ul class="stack">
+          <li>Warehouse stock counts are accurate within the hour.</li>
+          <li>A single warehouse fulfills any given order.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel a-metrics">
+      <h2 class="panel__label">Verification metrics</h2>
+      <div class="panel__body">
+        <ul class="stack">
+          <li>Time from payment to dispatch under 4 hours.</li>
+          <li>Fewer than 1% of shipments re-booked with a second carrier.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel panel--ask a-quest">
+      <h2 class="panel__label">Open questions</h2>
+      <div class="panel__body">
+        <ul class="stack stack--ask">
+          <li>Who owns returns &mdash; this context or a new one?</li>
+          <li>Does the carrier integration deserve its own context?</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="key">
+      <span class="key__i"><span class="sw sw--cmd"></span>command</span>
+      <span class="key__i"><span class="sw sw--qry"></span>query</span>
+      <span class="key__i"><span class="sw sw--evt"></span>event</span>
+      <span class="key__i"><span class="sw sw--system"></span>collaborator</span>
+      <span class="key__i"><span class="sw sw--policy"></span>policy</span>
+      <span class="key__i"><span class="sw sw--hotspot"></span>open question</span>
+    </div>
+    <p class="note">Canvas v5 and sticky colours from the DDD Crew <a href="https://github.com/ddd-crew/bounded-context-canvas">Bounded Context Canvas</a> and <a href="https://github.com/ddd-crew/eventstorming-glossary-cheat-sheet">EventStorming cheat sheet</a>, CC BY 4.0.</p>
+  </footer>
+</div>
+
+<nav class="proto-bar" aria-label="Prototype variant switcher">
+  <a href="../7-technical-sheet/index.html" title="Previous variant">←</a>
+  <span>1 / 2 — Quiet sheet</span>
+  <a href="../7-technical-sheet/index.html" title="Next variant">→</a>
+</nav>
+<script>
+  const prev = "../7-technical-sheet/index.html", next = "../7-technical-sheet/index.html";
+  document.addEventListener("keydown", (e) => {
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.key === "ArrowLeft") location.href = prev;
+    if (e.key === "ArrowRight") location.href = next;
+  });
+</script>
+</body>
+</html>
