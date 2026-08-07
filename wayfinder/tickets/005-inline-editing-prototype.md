@@ -3,7 +3,7 @@ name: inline-editing-prototype
 title: "Prototype: inline editing interactions"
 labels: [wayfinder:prototype]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [layout-visual-prototype]
 ---
 
