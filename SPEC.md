@@ -49,7 +49,7 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
     "evolution": "custom-built"
   },
   "domainRoles": [
-    { "name": "execution context", "description": "Carries out the fulfillment workflow." }
+    { "name": "execution context" }
   ],
   "inboundCommunication": [
     {
@@ -78,7 +78,7 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
 
 ### 3.2 Shape rules
 
-- **Sections:** `name` and `description` are strings; `strategicClassification` is an object of three optional axes; `domainRoles` and `businessDecisions` are `{ name, description? }` rows; `ubiquitousLanguage` is `{ term, definition? }` rows; `inboundCommunication`/`outboundCommunication` are lists of lanes; `assumptions`, `verificationMetrics`, `openQuestions` are plain string arrays (one-liner stickies).
+- **Sections:** `name` and `description` are strings; `strategicClassification` is an object of three optional axes; `domainRoles` are `{ name }` rows — no per-role description (sign-off amendment to the schema decision: the trait one-liners are app-side teaching text, never file content, and no approved interaction writes a per-role description); `businessDecisions` are `{ name, description? }` rows; `ubiquitousLanguage` is `{ term, definition? }` rows; `inboundCommunication`/`outboundCommunication` are lists of lanes; `assumptions`, `verificationMetrics`, `openQuestions` are plain string arrays (one-liner stickies).
 - **Lane:** `{ collaborator, relationship?, messages }`. `collaborator` is a plain name string — no `kind` field. `relationship` is a single optional escape-hatched string (context-mapping pattern); it only applies when the collaborator is another bounded context, but nothing enforces that — the distinction stays glossary prose.
 - **Message row:** `{ type, name, description? }`; `type` is a genuinely **closed** enum `command | query | event` — no escape hatch (it carries the Event Storming color semantics).
 - **Escape hatch = single string field.** Curated values are canonical well-known strings; any other string is a custom value the UI renders as-is. No tagged unions. Unknown values round-trip by construction.
@@ -107,6 +107,8 @@ All picker-plus-escape-hatch: the picker offers the canonical strings below; **c
 | `domain` | `core` · `supporting` · `generic` |
 | `businessModel` | `revenue` · `engagement` · `compliance` · `cost-reduction` |
 | `evolution` | `genesis` · `custom-built` · `product` · `commodity` |
+
+Each axis picker additionally offers **— none —** (clears the axis back to unset, rendering "—") and **custom…**.
 
 ### 4.2 Domain-role traits (the 15)
 
@@ -181,8 +183,8 @@ Winner of the inline-editing prototype; primary source `prototype/inline-editing
 
 - **Modeless.** No edit mode, no per-section forms — the canvas is a document. Every free-text value is contenteditable (plaintext) in place, always. Blur commits; Enter commits single-line fields; Esc reverts the field.
 - **Affordances materialize on approach.** The presentation view carries zero editing chrome. Hovering a panel fades in its ghost adds; hovering an item reveals its ×; hovering a lane reveals its ⠿ drag grip. Editable text shows a faint halo on hover, a hairline outline on focus. (Focus reveals the same affordances — §8.2.)
-- **Curated vocabularies are popovers on the value itself.** Classification and relationship values are clickable where they render → popover with the curated list, ✓ on the current value, **custom…** input as escape hatch (relationship also offers **— no relationship —**). Custom values render identically to curated ones.
-- **Domain roles:** ghost "+ trait" chip → multi-select popover checklist of the 15 traits with inline one-line descriptions, plus a custom-trait input; chips removed via hover ×.
+- **Curated vocabularies are popovers on the value itself.** Classification and relationship values are clickable where they render → popover with the curated list, ✓ on the current value, **custom…** input as escape hatch; classification axes offer **— none —** (clears the axis back to unset), relationship offers **— no relationship —**. Custom values render identically to curated ones.
+- **Domain roles:** ghost "+ trait" chip → multi-select popover checklist of the 15 traits with inline one-line descriptions, plus a custom-trait input; chips removed via hover ×. The prototype's "Why these roles?" free-text note is **dropped** (ui-copy decision) — domain roles are chips only; do not rebuild that field even though it appears in the primary-source prototype.
 - **Messages:** ghost "+" per lane → mini type popover (▶ command / ? query / ◆ event), then the new chip's name field is focused for immediate typing. Chips drag-reorder within their lane; lanes drag-reorder by grip; lane × removes the collaborator.
 - **Commit granularity:** one field blur = one commit; one structural action (add / remove / reorder / pick) = one commit. Commits are the unit of undo and autosave (§6.1).
 - **Known accepted risks** (soften in build, don't change the model): discoverability of hover-only affordances, stray-click carets in prose.
@@ -242,9 +244,9 @@ Non-text targets get a 2px ink-colored ring with small offset on `:focus-visible
 
 ### 8.5 Assistive-tech semantics
 
-- Every free-text field is `role="textbox"` (`aria-multiline` for prose); its accessible name is the field's **identity** ("Name", "Term"), never its content. Placeholder questions ride along as `aria-placeholder`/description.
+- Every free-text field is `role="textbox"` (`aria-multiline` for prose); its accessible name is the field's **identity** ("Name", "Description", "Term"), never its content. Placeholder questions ride along as `aria-placeholder`/description.
 - Repeating structures are native lists (lanes are lists of messages; sections are lists of lanes; traits a list of chips). Accessible names lead with the type where color/glyph carries meaning: "Command, Place Order".
-- **One polite live region**; announces only structural commits and non-local effects (strings in §10). Field-blur commits announce nothing. No assertive interruptions.
+- **One polite live region**; announces only structural commits and non-local effects (strings in §10), including the multi-tab notice when it appears. Field-blur commits announce nothing. No assertive interruptions.
 
 ### 8.6 Artifact AA, concretely
 
@@ -332,7 +334,7 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
 
 Terse row-field placeholders once a section has content: `Collaborator`, `Message name`, `Term`, `Rule`, `detail`, `…`.
 
-**Popover microcopy:** escape hatch **custom…** (lowercase, ellipsis signals it opens a field); clear/unset entry **— none —**, except the relationship picker where it reads **— no relationship —**. No hint lines in any picker — the descriptions are the teaching.
+**Popover microcopy:** escape hatch **custom…** (lowercase, ellipsis signals it opens a field); clear/unset entry **— none —** in the classification pickers, reading **— no relationship —** in the relationship picker. No hint lines in any picker — the descriptions are the teaching.
 
 **Live-region announcements** (terse, type-led): `Collaborator removed` · `Trait added` · `Moved up` / `Moved down` · `Undone: <section name>` / `Redone: <section name>` · `Canvas imported` · `New canvas`.
 
@@ -346,7 +348,7 @@ Canonical home: `wayfinder/tickets/012-reference-material.md`. The app's single 
 
 - **Entry:** the **Reference** chrome control (tooltip `Reference (⌘/)`), or **⌘/** (Ctrl+/ on Windows/Linux; modifier renders per platform).
 - **Form:** modal dialog; Esc closes; focus returns to the invoking control.
-- **Coverage:** the keyboard grammar plus one method link-out. No method primer, no trait/relationship glossary (those teach in their pickers), nothing in the HTML artifact beyond legend + attribution.
+- **Coverage:** the keyboard grammar plus one method link-out. No method primer, no trait/relationship glossary (those teach in their pickers), nothing in the HTML artifact beyond legend + attribution — explicitly no `title` tooltips or footnotes on relationship values in the artifact (pointer-only and print-invisible; they'd fail the artifact's AA bar).
 
 **Dialog contents (final strings)** — title **Reference**, four clusters, then the link line:
 
