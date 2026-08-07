@@ -1,0 +1,940 @@
+<!--
+  PROTOTYPE — throwaway. Empty-state round, variant 3: "Specimen ghosts".
+  A brand-new canvas teaches by example: structured sections render a faint
+  worked micro-example (one lane, one term, one decision…) at half opacity
+  with a small "example" tag. Nothing is seeded into the document — specimens
+  are pure presentation, never in the serialized JSON. Clicking a specimen
+  starts a real entry; a section's specimen dissolves at its first real
+  content; "hide examples" in the footer turns them all off. Prose fields
+  keep question placeholders. Built on the live-sheet editing model.
+  Switch variants via the floating bar or arrow keys. Not production code.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Empty state — 3 Specimen ghosts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after { box-sizing: border-box; }
+  :root {
+    --paper: #EAE7DE;
+    --sheet: #FDFDFB;
+    --ink: #191C1E;
+    --ink-2: #50564F;
+    --ink-3: #8E948C;
+    --rule: #D8D4C8;
+    --es-event: #F3A54E;    --es-event-ink: #A96517;
+    --es-command: #85BCE5;  --es-command-ink: #33688F;
+    --es-query: #93CB91;    --es-query-ink: #40733E;
+    --es-policy: #C2ABDD;   --es-policy-ink: #6F519B;
+    --es-system: #F1A5CB;   --es-system-ink: #A94879;
+    --es-hotspot: #F76BA3;  --es-hotspot-ink: #B92367;
+    --es-term: #EFE08B;     --es-term-ink: #8A7A12;
+    --dir: var(--ink-3);
+    --f-disp: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    --f-body: 'Source Serif 4', Georgia, serif;
+    --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    --gap: 18px;
+    --pad: 1.35rem;
+  }
+  body {
+    margin: 0;
+    font-family: var(--f-body);
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(to right, rgba(20,24,26,.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20,24,26,.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    line-height: 1.5;
+    padding-bottom: 84px;
+  }
+  .sheet { max-width: 1440px; margin: 0 auto; padding: 32px; }
+
+  /* ---- title block ---- */
+  .tb {
+    background: #1A1E20; color: var(--paper);
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--gap) 2.5rem;
+    padding: 1.5rem 1.7rem;
+    border-radius: 6px; margin-bottom: var(--gap);
+  }
+  .tb__id { flex: 1 1 320px; }
+  .eyebrow {
+    font-family: var(--f-disp); font-size: .62rem; font-weight: 600;
+    letter-spacing: .24em; text-transform: uppercase; color: #98A29A;
+    display: block; margin-bottom: .55rem;
+  }
+  .ctx-name {
+    font-family: var(--f-disp); font-weight: 700;
+    font-size: 2.4rem; line-height: 1.04; letter-spacing: .01em;
+    margin: 0; color: #F6F7F2;
+  }
+  .tb__class { display: flex; gap: 2.2rem; }
+  .tb__class dt {
+    font-family: var(--f-disp); font-size: .57rem; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: #8D9791; margin: 0 0 .25rem;
+  }
+  .tb__class dd { margin: 0; font-family: var(--f-mono); font-size: .8rem; color: #E7E9E2; }
+
+  /* ---- grid ---- */
+  .grid {
+    display: grid; gap: var(--gap);
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-areas:
+      "purpose purpose purpose purpose purpose purpose purpose roles roles roles roles roles"
+      "inb inb inb inb lang lang lang lang outb outb outb outb"
+      "inb inb inb inb dec dec dec dec outb outb outb outb"
+      "assum assum assum assum metrics metrics metrics metrics quest quest quest quest";
+  }
+  .a-purpose { grid-area: purpose; }
+  .a-roles { grid-area: roles; }
+  .a-inb { grid-area: inb; }
+  .a-lang { grid-area: lang; }
+  .a-dec { grid-area: dec; }
+  .a-outb { grid-area: outb; }
+  .a-assum { grid-area: assum; }
+  .a-metrics { grid-area: metrics; }
+  .a-quest { grid-area: quest; }
+
+  /* ---- panel ---- */
+  .panel {
+    background: var(--sheet); border: 1px solid var(--rule);
+    border-radius: 5px; padding: var(--pad); min-width: 0;
+    box-shadow: 0 1px 2px rgba(25, 28, 30, .04);
+  }
+  .panel__label {
+    font-family: var(--f-disp); font-size: .64rem; font-weight: 700; letter-spacing: .17em;
+    text-transform: uppercase; color: var(--ink); margin: 0;
+    display: inline-block;
+    padding-bottom: .5rem;
+    border-bottom: 2px solid var(--dir);
+  }
+  .panel__body { margin-top: 1rem; }
+  .panel--lang { --dir: var(--es-term-ink); }
+  .panel--dec { --dir: var(--es-policy-ink); }
+  .panel--in, .panel--out { --dir: var(--es-system-ink); }
+  .panel--ask { --dir: var(--es-hotspot-ink); }
+
+  .prose { font-size: 1rem; line-height: 1.55; margin: 0; }
+
+  /* ---- roles ---- */
+  .roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+  .role {
+    position: relative;
+    font-family: var(--f-disp); font-size: .74rem; font-weight: 600;
+    border: 1px solid var(--ink); border-radius: 999px; padding: .22rem .68rem;
+  }
+  .role__note {
+    display: block; font-style: italic; font-size: .84rem; color: var(--ink-2); margin-top: .6rem;
+  }
+
+  /* ---- communication lanes ---- */
+  .lane { position: relative; }
+  .lane + .lane { margin-top: 1.05rem; padding-top: 1.05rem; border-top: 1px solid #EDEAE1; }
+  .lane__head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .45rem; }
+  .lane__who {
+    font-family: var(--f-disp); font-size: .8rem; font-weight: 600;
+    color: var(--es-system-ink);
+    border-bottom: 2px solid var(--es-system);
+    padding-bottom: .1rem;
+  }
+  .badge {
+    font-family: var(--f-mono); font-size: .62rem; letter-spacing: .06em;
+    color: var(--ink-3); white-space: nowrap; margin-left: auto;
+  }
+  .msgs { list-style: none; margin: .55rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .35rem; }
+  .msg {
+    position: relative;
+    font-family: var(--f-mono); font-size: .73rem; line-height: 1.25;
+    padding: .28rem .55rem; color: var(--ink);
+    border: 1px solid; border-radius: 4px;
+  }
+  .msg::before { font-size: .7em; margin-right: .42em; vertical-align: .08em; opacity: .7; }
+  .msg--command { background: var(--es-command); border-color: var(--es-command-ink); }
+  .msg--command::before { content: "\25B6"; }
+  .msg--query { background: var(--es-query); border-color: var(--es-query-ink); }
+  .msg--query::before { content: "?"; font-weight: 700; }
+  .msg--event { background: var(--es-event); border-color: var(--es-event-ink); }
+  .msg--event::before { content: "\25C6"; }
+  .msg.dragging { opacity: .35; }
+
+  /* ---- ubiquitous language ---- */
+  .terms { margin: 0; }
+  .term-row { position: relative; }
+  .term-row + .term-row { margin-top: .8rem; }
+  .terms dt {
+    font-family: var(--f-mono); font-size: .76rem; font-weight: 600;
+    display: inline-block;
+    background: linear-gradient(transparent 45%, var(--es-term) 45%, var(--es-term) 92%, transparent 92%);
+    padding: 0 .15rem;
+  }
+  .terms dd { margin: .15rem 0 0; font-size: .9rem; line-height: 1.45; color: var(--ink-2); }
+
+  /* ---- decisions / assumptions / questions ---- */
+  .stack { list-style: none; margin: 0; padding: 0; }
+  .stack li { position: relative; padding-left: 1.15rem; font-size: .9rem; line-height: 1.5; }
+  .stack li + li { margin-top: .65rem; }
+  .stack li::before {
+    content: ""; position: absolute; left: 0; top: .48em;
+    width: 7px; height: 7px; border-radius: 2px;
+    background: var(--ink-3);
+  }
+  .stack--rule li::before { background: var(--es-policy); border: 1px solid var(--es-policy-ink); }
+  .stack--ask li::before { background: var(--es-hotspot); border: 1px solid var(--es-hotspot-ink); transform: rotate(14deg); }
+  .stack li.ghost-row::before { display: none; }
+  .stack b { font-family: var(--f-disp); font-size: .8rem; letter-spacing: .01em; }
+
+  /* ---- footer ---- */
+  .foot {
+    margin-top: var(--gap);
+    display: flex; flex-wrap: wrap; gap: .6rem 2rem;
+    align-items: baseline; justify-content: space-between;
+    padding-top: 1rem; border-top: 1px solid var(--rule);
+  }
+  .key { display: flex; flex-wrap: wrap; gap: .45rem 1.05rem; align-items: center; }
+  .key__i { display: inline-flex; align-items: center; gap: .35rem; font-size: .74rem; color: var(--ink-2); }
+  .sw { width: 10px; height: 10px; display: inline-block; border: 1px solid; border-radius: 3px; }
+  .sw--cmd { background: var(--es-command); border-color: var(--es-command-ink); }
+  .sw--qry { background: var(--es-query); border-color: var(--es-query-ink); }
+  .sw--evt { background: var(--es-event); border-color: var(--es-event-ink); }
+  .sw--system { background: var(--es-system); border-color: var(--es-system-ink); }
+  .sw--policy { background: var(--es-policy); border-color: var(--es-policy-ink); }
+  .sw--hotspot { background: var(--es-hotspot); border-color: var(--es-hotspot-ink); }
+  .note { font-size: .74rem; color: var(--ink-3); margin: 0; }
+  .note a { color: var(--ink-2); }
+
+  /* =====================================================================
+     EDITING CHROME — variant 1 "Live sheet". Everything below is the
+     modeless layer: hover halos on editable text, ghost affordances that
+     only surface on panel hover, popover pickers.
+     ===================================================================== */
+
+  .ed { cursor: text; border-radius: 3px; padding: 0 .1rem; margin: 0 -.1rem; min-width: 1ch; }
+  .ed:hover { background: rgba(25,28,30,.055); }
+  .ed:focus { outline: 1.5px solid #B9B4A4; background: #FFFEF9; }
+  .tb .ed:hover { background: rgba(246,247,242,.12); }
+  .tb .ed:focus { outline: 1.5px solid #5A625C; background: #22282A; }
+  .ed:empty::before { content: attr(data-ph); color: var(--ink-3); font-style: italic; }
+  .ed[data-multiline] { display: block; }
+
+  /* clickable (picker-backed) values */
+  .pick { cursor: pointer; border-radius: 3px; }
+  .pick:hover { background: rgba(25,28,30,.055); box-shadow: 0 1px 0 var(--ink-3); }
+  .tb .pick:hover { background: rgba(246,247,242,.12); box-shadow: 0 1px 0 #5A625C; }
+
+  /* ghost affordances: invisible until the panel is hovered */
+  .ghost {
+    opacity: 0; transition: opacity .12s ease;
+    font-family: var(--f-disp); font-size: .72rem; font-weight: 500;
+    color: var(--ink-3); cursor: pointer; user-select: none;
+    border: 1px dashed #C4BFAF; border-radius: 4px;
+    padding: .22rem .55rem; background: transparent;
+  }
+  .panel:hover .ghost, .tb:hover .ghost { opacity: .75; }
+  .ghost:hover { opacity: 1 !important; color: var(--ink-2); border-color: var(--ink-3); }
+  /* on an empty section the ghost is the only content — keep it visible */
+  .panel.is-empty .ghost { opacity: .75; }
+
+  /* specimen ghosts: a faint worked example shown while a section is empty */
+  .spec { opacity: .5; cursor: pointer; }
+  .spec:hover { opacity: .68; }
+  .spec-tag {
+    font-family: var(--f-mono); font-size: .6rem; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3);
+    display: inline-block; margin-bottom: .4rem;
+    border: 1px dashed #C4BFAF; border-radius: 3px; padding: .02rem .3rem;
+  }
+  .spec-toggle {
+    font-family: var(--f-disp); font-size: .72rem; font-weight: 500;
+    color: var(--ink-3); cursor: pointer; background: transparent;
+    border: 1px dashed #C4BFAF; border-radius: 4px; padding: .22rem .55rem;
+  }
+  .spec-toggle:hover { color: var(--ink-2); border-color: var(--ink-3); }
+  .ghost--chip { border-radius: 999px; }
+  .ghost--line { display: inline-block; margin-top: .65rem; }
+
+  /* delete crosses: appear on hover of their item */
+  .del {
+    position: absolute; top: -7px; right: -7px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--ink); color: var(--paper);
+    font-size: 10px; line-height: 16px; text-align: center;
+    font-family: var(--f-disp); cursor: pointer;
+    opacity: 0; transition: opacity .1s;
+    border: none; padding: 0;
+  }
+  .msg:hover > .del, .role:hover > .del, .term-row:hover > .del,
+  .stack li:hover > .del, .lane__head:hover > .del { opacity: 1; }
+  .stack li .del, .term-row .del { right: 0; top: .1em; }
+  .lane__head .del { position: static; margin-left: .35rem; align-self: center; }
+
+  /* drag handles */
+  .grip {
+    position: absolute; left: -1.05rem; top: 50%; transform: translateY(-50%);
+    color: var(--ink-3); font-size: .7rem; cursor: grab; opacity: 0;
+    user-select: none; padding: .2rem .25rem;
+  }
+  .lane:hover > .grip { opacity: .8; }
+  .lane.dragging { opacity: .4; }
+  .msg[draggable] { cursor: grab; }
+  .msg[draggable]:active { cursor: grabbing; }
+
+  /* ---- popover ---- */
+  .pop {
+    position: absolute; z-index: 500;
+    background: var(--sheet); border: 1px solid #B9B4A4; border-radius: 6px;
+    box-shadow: 0 6px 24px rgba(25,28,30,.18);
+    min-width: 200px; max-width: 340px; max-height: 380px; overflow-y: auto;
+    padding: .35rem;
+  }
+  .pop__opt {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    font-family: var(--f-mono); font-size: .76rem; color: var(--ink);
+    padding: .38rem .55rem; border-radius: 4px; cursor: pointer;
+  }
+  .pop__opt:hover { background: rgba(25,28,30,.06); }
+  .pop__opt.on { background: rgba(239,224,139,.4); }
+  .pop__opt .tick { display: inline-block; width: 1.1em; color: var(--es-term-ink); }
+  .pop__desc { display: block; font-family: var(--f-body); font-size: .78rem; color: var(--ink-2); margin: .1rem 0 0 1.1em; line-height: 1.35; }
+  .pop__rule { border: none; border-top: 1px solid var(--rule); margin: .35rem 0; }
+  .pop__custom { display: flex; gap: .35rem; padding: .25rem .3rem .3rem; }
+  .pop__custom input {
+    flex: 1; font-family: var(--f-mono); font-size: .76rem;
+    border: 1px solid var(--rule); border-radius: 4px; padding: .3rem .45rem;
+    background: #FFFEF9; color: var(--ink); min-width: 0;
+  }
+  .pop__custom button {
+    font-family: var(--f-disp); font-size: .7rem; font-weight: 600;
+    background: var(--ink); color: var(--paper); border: none; border-radius: 4px;
+    padding: 0 .6rem; cursor: pointer;
+  }
+  .pop__hint { font-family: var(--f-disp); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: .4rem .55rem .15rem; }
+  .pop--types { display: flex; gap: .25rem; min-width: 0; }
+  .pop--types .pop__opt { white-space: nowrap; }
+
+  /* ---- state drawer ---- */
+  .state-btn {
+    position: fixed; right: 18px; bottom: 18px; z-index: 998;
+    font-family: var(--f-mono); font-size: 12px;
+    background: #1c1c1e; color: #fff; border: none; border-radius: 999px;
+    padding: 8px 12px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  }
+  .state-panel {
+    position: fixed; right: 18px; bottom: 58px; z-index: 997;
+    width: 420px; max-height: 60vh; overflow: auto;
+    background: #1c1c1e; color: #d8e0d8; border-radius: 10px;
+    font-family: var(--f-mono); font-size: 11px; line-height: 1.45;
+    padding: 12px 14px; box-shadow: 0 8px 30px rgba(0,0,0,.4);
+    display: none; white-space: pre;
+  }
+  .state-panel.open { display: block; }
+
+  /* ---- prototype switcher (not part of the design) ---- */
+  .proto-bar {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    background: #1c1c1e; color: #fff;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    padding: 8px 14px; border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35); z-index: 999;
+  }
+  .proto-bar a { color: #fff; text-decoration: none; font-size: 15px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="tb">
+    <div class="tb__id">
+      <span class="eyebrow">Bounded Context Canvas · V5</span>
+      <h1 class="ctx-name" id="ctx-name"></h1>
+    </div>
+    <dl class="tb__class" id="tb-class"></dl>
+  </header>
+
+  <main class="grid">
+    <section class="panel a-purpose">
+      <h2 class="panel__label">Description</h2>
+      <div class="panel__body">
+        <p class="prose" id="f-description"></p>
+      </div>
+    </section>
+
+    <section class="panel a-roles">
+      <h2 class="panel__label">Domain roles</h2>
+      <div class="panel__body">
+        <ul class="roles" id="roles"></ul>
+        <span class="role__note" id="f-roles-note"></span>
+      </div>
+    </section>
+
+    <section class="panel panel--in a-inb">
+      <h2 class="panel__label">Inbound communication</h2>
+      <div class="panel__body" id="lanes-inbound"></div>
+    </section>
+
+    <section class="panel panel--lang a-lang">
+      <h2 class="panel__label">Ubiquitous language</h2>
+      <div class="panel__body"><dl class="terms" id="terms"></dl></div>
+    </section>
+
+    <section class="panel panel--dec a-dec">
+      <h2 class="panel__label">Business decisions</h2>
+      <div class="panel__body"><ul class="stack stack--rule" id="stack-decisions"></ul></div>
+    </section>
+
+    <section class="panel panel--out a-outb">
+      <h2 class="panel__label">Outbound communication</h2>
+      <div class="panel__body" id="lanes-outbound"></div>
+    </section>
+
+    <section class="panel a-assum">
+      <h2 class="panel__label">Assumptions</h2>
+      <div class="panel__body"><ul class="stack" id="stack-assumptions"></ul></div>
+    </section>
+
+    <section class="panel a-metrics">
+      <h2 class="panel__label">Verification metrics</h2>
+      <div class="panel__body"><ul class="stack" id="stack-metrics"></ul></div>
+    </section>
+
+    <section class="panel panel--ask a-quest">
+      <h2 class="panel__label">Open questions</h2>
+      <div class="panel__body"><ul class="stack stack--ask" id="stack-questions"></ul></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="key">
+      <span class="key__i"><span class="sw sw--cmd"></span>command</span>
+      <span class="key__i"><span class="sw sw--qry"></span>query</span>
+      <span class="key__i"><span class="sw sw--evt"></span>event</span>
+      <span class="key__i"><span class="sw sw--system"></span>collaborator</span>
+      <span class="key__i"><span class="sw sw--policy"></span>policy</span>
+      <span class="key__i"><span class="sw sw--hotspot"></span>open question</span>
+      <button class="spec-toggle" id="spec-toggle">hide examples</button>
+    </div>
+    <p class="note">Canvas v5 and sticky colours from the DDD Crew <a href="https://github.com/ddd-crew/bounded-context-canvas">Bounded Context Canvas</a> and <a href="https://github.com/ddd-crew/eventstorming-glossary-cheat-sheet">EventStorming cheat sheet</a>, CC BY 4.0.</p>
+  </footer>
+</div>
+
+<button class="state-btn" id="state-btn" title="Serialized Canvas JSON">{&hairsp;}</button>
+<pre class="state-panel" id="state-panel"></pre>
+
+<nav class="proto-bar" aria-label="Prototype variant switcher">
+  <a href="../2-section-preludes/index.html" title="Previous variant">←</a>
+  <span>3 / 3 — Specimen ghosts</span>
+  <a href="../1-placeholder-questions/index.html" title="Next variant">→</a>
+</nav>
+
+<script>
+/* ============================ data ============================ */
+
+const VOCAB = {
+  domain: ["core", "supporting", "generic"],
+  businessModel: ["revenue", "engagement", "compliance", "cost reduction"],
+  evolution: ["genesis", "custom-built", "product", "commodity"],
+  relationship: ["partnership", "shared kernel", "customer–supplier", "conformist",
+                 "anticorruption layer", "open-host service", "published language", "separate ways"],
+  roles: [
+    ["Specification model", "Encodes the detailed rules of a critical business calculation."],
+    ["Execution context", "Carries out a business workflow from trigger to outcome."],
+    ["Audit model", "Records what happened for traceability and compliance."],
+    ["Approver", "Decides whether a requested action may proceed."],
+    ["Enforcer", "Makes other contexts comply with a policy or standard."],
+    ["Octopus coordinator", "Orchestrates several contexts to fulfil one process."],
+    ["Interchange context", "Translates between two models so neither has to bend."],
+    ["Gateway context", "Fronts an external system or protocol for the rest of the system."],
+    ["Service context", "Offers a capability other contexts consume on demand."],
+    ["Analysis context", "Derives insight from data other contexts produce."],
+    ["Engagement context", "Drives user interaction and experience."],
+    ["Funnel context", "Condenses input from many sources into one stream."],
+    ["Draft context", "A model still being explored; expect churn."],
+    ["Brain context", "Concentrates the cleverest, most valuable logic."],
+    ["Autonomous bubble", "Deliberately isolated from legacy models so it can evolve freely."],
+  ],
+};
+
+/* A brand-new canvas: everything empty. */
+const canvas = {
+  version: 1,
+  name: "",
+  description: "",
+  classification: { domain: "", businessModel: "", evolution: "" },
+  domainRoles: [],
+  domainRolesNote: "",
+  inbound: [],
+  outbound: [],
+  ubiquitousLanguage: [],
+  businessDecisions: [],
+  assumptions: [],
+  verificationMetrics: [],
+  openQuestions: [],
+};
+
+/* Worked micro-example rendered as faint ghosts in empty sections. Pure
+   presentation — never part of the document, never serialized. */
+let SPECIMENS = true;
+const SPECIMEN = {
+  roles: ["Execution context", "Gateway context"],
+  inbound: { collaborator: "Checkout", relationship: "customer–supplier",
+             messages: [{ type: "command", name: "Place Order" }, { type: "event", name: "Payment Confirmed" }] },
+  outbound: { collaborator: "Notifications", relationship: "",
+              messages: [{ type: "event", name: "Order Shipped" }] },
+  lang: { term: "Shipment", definition: "A physical parcel dispatched against an order." },
+  decisions: { title: "No partial shipments.", detail: "An order ships complete or not at all." },
+  assumptions: "A single warehouse fulfills any given order.",
+  metrics: "Payment to dispatch in under 4 hours.",
+  questions: "Who owns returns — this context or a new one?",
+};
+
+/* ============================ helpers ============================ */
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+
+/* In-place editable text bound to a getter/setter. Commit on blur; Enter
+   commits single-line fields; Esc reverts. */
+function ed(node, get, set, opts = {}) {
+  node.classList.add("ed");
+  try { node.contentEditable = "plaintext-only"; } catch { node.contentEditable = "true"; }
+  if (node.contentEditable !== "plaintext-only") node.contentEditable = "true";
+  node.textContent = get();
+  if (opts.ph) node.dataset.ph = opts.ph;
+  if (opts.multiline) node.dataset.multiline = "1";
+  let before = "";
+  node.addEventListener("focus", () => { before = node.textContent; });
+  node.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !opts.multiline) { e.preventDefault(); node.blur(); }
+    if (e.key === "Escape") { node.textContent = before; node.blur(); e.stopPropagation(); }
+  });
+  node.addEventListener("blur", () => {
+    const v = node.textContent.trim();
+    node.textContent = v;
+    set(v);
+    if (opts.onCommit) opts.onCommit(v);
+    refreshState();
+  });
+  return node;
+}
+
+/* ---- popover ---- */
+let pop = null;
+function closePop() { if (pop) { pop.remove(); pop = null; } }
+function openPop(anchor, build, extraCls) {
+  closePop();
+  pop = el("div", "pop" + (extraCls ? " " + extraCls : ""));
+  build(pop);
+  document.body.appendChild(pop);
+  const r = anchor.getBoundingClientRect();
+  const left = Math.max(8, Math.min(scrollX + r.left, scrollX + innerWidth - pop.offsetWidth - 12));
+  pop.style.left = left + "px";
+  pop.style.top = scrollY + r.bottom + 6 + "px";
+}
+document.addEventListener("pointerdown", (e) => { if (pop && !pop.contains(e.target)) closePop(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePop(); });
+
+/* Single-choice vocabulary picker with a custom escape hatch. */
+function pickerPop(anchor, options, current, apply, { allowNone = false, descs = null } = {}) {
+  openPop(anchor, (p) => {
+    if (allowNone) {
+      const b = el("button", "pop__opt" + (current ? "" : " on"));
+      b.append(el("span", "tick", current ? "" : "✓"), document.createTextNode("— none —"));
+      b.onclick = () => { apply(""); closePop(); };
+      p.append(b);
+    }
+    options.forEach((o, i) => {
+      const name = Array.isArray(o) ? o[0] : o;
+      const b = el("button", "pop__opt" + (name === current ? " on" : ""));
+      b.append(el("span", "tick", name === current ? "✓" : ""), document.createTextNode(name));
+      if (descs && Array.isArray(o)) b.append(el("span", "pop__desc", o[1]));
+      b.onclick = () => { apply(name); closePop(); };
+      p.append(b);
+    });
+    p.append(el("hr", "pop__rule"));
+    const row = el("div", "pop__custom");
+    const inp = el("input");
+    inp.placeholder = "custom…";
+    if (current && !options.some((o) => (Array.isArray(o) ? o[0] : o) === current)) inp.value = current;
+    const ok = el("button", null, "set");
+    const commit = () => { if (inp.value.trim()) { apply(inp.value.trim()); closePop(); } };
+    ok.onclick = commit;
+    inp.onkeydown = (e) => { if (e.key === "Enter") commit(); };
+    row.append(inp, ok);
+    p.append(row);
+  });
+}
+
+/* Make direct children of `list` (matching selector) drag-sortable; on drop,
+   rearrange `arr` to match the DOM order and re-render. */
+function sortable(list, selector, arr, rerender, handleSel) {
+  let dragEl = null;
+  list.querySelectorAll(selector).forEach((item) => {
+    const handle = handleSel ? item.querySelector(handleSel) : item;
+    if (!handle) return;
+    if (handleSel) {
+      handle.addEventListener("pointerdown", () => { item.draggable = true; });
+      item.addEventListener("dragend", () => { item.draggable = false; });
+    } else {
+      item.draggable = true;
+    }
+    item.addEventListener("dragstart", (e) => {
+      dragEl = item; item.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.stopPropagation();
+    });
+    item.addEventListener("dragend", () => {
+      if (!dragEl) return;
+      dragEl.classList.remove("dragging");
+      const order = [...list.querySelectorAll(selector)].map((n) => +n.dataset.i);
+      const next = order.map((i) => arr[i]);
+      arr.splice(0, arr.length, ...next);
+      dragEl = null;
+      rerender();
+      refreshState();
+    });
+    item.addEventListener("dragover", (e) => {
+      if (!dragEl || dragEl === item) return;
+      e.preventDefault();
+      const r = item.getBoundingClientRect();
+      const horizontal = getComputedStyle(list).display === "flex" && getComputedStyle(list).flexDirection !== "column";
+      const after = horizontal ? e.clientX > r.left + r.width / 2 : e.clientY > r.top + r.height / 2;
+      item.parentNode.insertBefore(dragEl, after ? item.nextSibling : item);
+    });
+  });
+}
+
+function delBtn(onClick, title) {
+  const b = el("button", "del", "×");
+  b.title = title || "Remove";
+  b.onclick = (e) => { e.stopPropagation(); onClick(); refreshState(); };
+  return b;
+}
+
+/* ============================ renderers ============================ */
+
+function renderTitle() {
+  const h = document.getElementById("ctx-name");
+  h.innerHTML = "";
+  const span = el("span");
+  ed(span, () => canvas.name, (v) => (canvas.name = v), { ph: "Name this context" });
+  h.append(span);
+
+  const dl = document.getElementById("tb-class");
+  dl.innerHTML = "";
+  [["Domain", "domain"], ["Business model", "businessModel"], ["Evolution", "evolution"]].forEach(([label, key]) => {
+    const wrap = el("div");
+    wrap.append(el("dt", null, label));
+    const dd = el("dd", "pick", canvas.classification[key] || "—");
+    dd.title = "Choose " + label.toLowerCase();
+    dd.onclick = () => pickerPop(dd, VOCAB[key], canvas.classification[key], (v) => {
+      canvas.classification[key] = v; renderTitle(); refreshState();
+    });
+    wrap.append(dd);
+    dl.append(wrap);
+  });
+}
+
+function renderDescription() {
+  const p = document.getElementById("f-description");
+  ed(p, () => canvas.description, (v) => (canvas.description = v),
+     { multiline: true, ph: "What does this context exist to do? A few sentences in business language." });
+}
+
+function renderRoles() {
+  const ul = document.getElementById("roles");
+  ul.closest(".panel").classList.toggle("is-empty", canvas.domainRoles.length === 0);
+  ul.innerHTML = "";
+  canvas.domainRoles.forEach((r, i) => {
+    const li = el("li", "role", r);
+    li.append(delBtn(() => { canvas.domainRoles.splice(i, 1); renderRoles(); }));
+    ul.append(li);
+  });
+  if (!canvas.domainRoles.length && SPECIMENS) {
+    const spec = el("li", "spec");
+    spec.title = "Example — click to pick real traits";
+    spec.append(el("span", "spec-tag", "example"));
+    SPECIMEN.roles.forEach((r) => spec.append(el("span", "role", r)));
+    spec.style.display = "flex";
+    spec.style.flexWrap = "wrap";
+    spec.style.gap = ".4rem";
+    spec.style.alignItems = "center";
+    spec.style.flexBasis = "100%";
+    spec.onclick = () => add.click();
+    ul.append(spec);
+  }
+  const add = el("li", "ghost ghost--chip", "+ trait");
+  add.onclick = () => {
+    openPop(add, (p) => {
+      p.append(el("div", "pop__hint", "Domain role traits"));
+      VOCAB.roles.forEach(([name, desc]) => {
+        const on = canvas.domainRoles.includes(name);
+        const b = el("button", "pop__opt" + (on ? " on" : ""));
+        b.append(el("span", "tick", on ? "✓" : ""), document.createTextNode(name), el("span", "pop__desc", desc));
+        b.onclick = () => {
+          const j = canvas.domainRoles.indexOf(name);
+          if (j >= 0) canvas.domainRoles.splice(j, 1); else canvas.domainRoles.push(name);
+          renderRoles(); refreshState();
+          add.click(); // reopen to keep multi-selecting
+        };
+        p.append(b);
+      });
+      p.append(el("hr", "pop__rule"));
+      const row = el("div", "pop__custom");
+      const inp = el("input"); inp.placeholder = "custom trait…";
+      const ok = el("button", null, "add");
+      const commit = () => { if (inp.value.trim()) { canvas.domainRoles.push(inp.value.trim()); renderRoles(); refreshState(); closePop(); } };
+      ok.onclick = commit; inp.onkeydown = (e) => { if (e.key === "Enter") commit(); };
+      row.append(inp, ok); p.append(row);
+    });
+  };
+  ul.append(add);
+
+  ed(document.getElementById("f-roles-note"),
+     () => canvas.domainRolesNote, (v) => (canvas.domainRolesNote = v),
+     { multiline: true, ph: "Why these roles?" });
+}
+
+function renderLanes(key) {
+  const host = document.getElementById("lanes-" + key);
+  const lanes = canvas[key];
+  host.closest(".panel").classList.toggle("is-empty", lanes.length === 0);
+  host.innerHTML = "";
+  lanes.forEach((lane, li) => {
+    const box = el("div", "lane");
+    box.dataset.i = li;
+    box.append(el("span", "grip", "⠿"));
+
+    const head = el("div", "lane__head");
+    const who = el("span", "lane__who");
+    ed(who, () => lane.collaborator, (v) => (lane.collaborator = v), { ph: "Collaborator" });
+    head.append(who);
+
+    const badge = el("span", "badge pick", lane.relationship || "···");
+    badge.title = "Relationship type";
+    badge.onclick = () => pickerPop(badge, VOCAB.relationship, lane.relationship, (v) => {
+      lane.relationship = v; renderLanes(key); refreshState();
+    }, { allowNone: true });
+    head.append(badge);
+    head.append(delBtn(() => { lanes.splice(li, 1); renderLanes(key); }, "Remove collaborator"));
+    box.append(head);
+
+    const ul = el("ul", "msgs");
+    lane.messages.forEach((m, mi) => {
+      const chip = el("li", "msg msg--" + m.type);
+      chip.dataset.i = mi;
+      const name = el("span");
+      ed(name, () => m.name, (v) => (m.name = v), { ph: "Message name" });
+      chip.append(name);
+      chip.append(delBtn(() => { lane.messages.splice(mi, 1); renderLanes(key); }));
+      ul.append(chip);
+    });
+    const add = el("li", "ghost ghost--chip", "+");
+    add.title = "Add message";
+    add.onclick = () => {
+      openPop(add, (p) => {
+        [["command", "▶ command"], ["query", "? query"], ["event", "◆ event"]].forEach(([t, label]) => {
+          const b = el("button", "pop__opt", label);
+          b.onclick = () => {
+            lane.messages.push({ type: t, name: "" });
+            closePop(); renderLanes(key); refreshState();
+            const chips = document.getElementById("lanes-" + key)
+              .querySelectorAll(".lane")[li].querySelectorAll(".msg .ed");
+            const last = chips[chips.length - 1];
+            if (last) last.focus();
+          };
+          p.append(b);
+        });
+      }, "pop--types");
+    };
+    ul.append(add);
+    box.append(ul);
+    sortable(ul, ".msg", lane.messages, () => renderLanes(key));
+    host.append(box);
+  });
+
+  const addLane = el("button", "ghost ghost--line", "+ collaborator");
+  addLane.onclick = () => {
+    lanes.push({ collaborator: "", relationship: "", messages: [] });
+    renderLanes(key); refreshState();
+    const whos = host.querySelectorAll(".lane__who");
+    whos[whos.length - 1].focus();
+  };
+  if (!lanes.length && SPECIMENS) {
+    const s = SPECIMEN[key];
+    const box = el("div", "lane spec");
+    box.title = "Example — click to add a real collaborator";
+    box.append(el("span", "spec-tag", "example"));
+    const head = el("div", "lane__head");
+    head.append(el("span", "lane__who", s.collaborator));
+    if (s.relationship) head.append(el("span", "badge", s.relationship));
+    box.append(head);
+    const specMsgs = el("ul", "msgs");
+    s.messages.forEach((m) => specMsgs.append(el("li", "msg msg--" + m.type, m.name)));
+    box.append(specMsgs);
+    box.onclick = () => addLane.click();
+    host.append(box);
+  }
+  host.append(addLane);
+  sortable(host, ".lane", lanes, () => renderLanes(key), ".grip");
+}
+
+function renderTerms() {
+  const dl = document.getElementById("terms");
+  dl.closest(".panel").classList.toggle("is-empty", canvas.ubiquitousLanguage.length === 0);
+  dl.innerHTML = "";
+  canvas.ubiquitousLanguage.forEach((t, i) => {
+    const row = el("div", "term-row");
+    const dt = el("dt");
+    ed(dt, () => t.term, (v) => (t.term = v), { ph: "Term" });
+    const dd = el("dd");
+    ed(dd, () => t.definition, (v) => (t.definition = v), { multiline: true, ph: "What it means here" });
+    row.append(dt, dd, delBtn(() => { canvas.ubiquitousLanguage.splice(i, 1); renderTerms(); }));
+    dl.append(row);
+  });
+  const add = el("button", "ghost ghost--line", "+ term");
+  add.onclick = () => {
+    canvas.ubiquitousLanguage.push({ term: "", definition: "" });
+    renderTerms(); refreshState();
+    const dts = dl.querySelectorAll("dt");
+    dts[dts.length - 1].focus();
+  };
+  if (!canvas.ubiquitousLanguage.length && SPECIMENS) {
+    const row = el("div", "term-row spec");
+    row.title = "Example — click to add a real term";
+    row.append(el("span", "spec-tag", "example"), el("dt", null, SPECIMEN.lang.term),
+               el("dd", null, SPECIMEN.lang.definition));
+    row.onclick = () => add.click();
+    dl.append(row);
+  }
+  dl.append(add);
+}
+
+function renderStack(id, arr, opts = {}) {
+  const ul = document.getElementById("stack-" + id);
+  ul.closest(".panel").classList.toggle("is-empty", arr.length === 0);
+  ul.innerHTML = "";
+  arr.forEach((item, i) => {
+    const li = el("li");
+    if (opts.titled) {
+      const b = el("b");
+      ed(b, () => item.title, (v) => (item.title = v), { ph: "Rule" });
+      const span = el("span");
+      ed(span, () => item.detail, (v) => (item.detail = v), { multiline: true, ph: "detail" });
+      li.append(b, document.createTextNode(" "), span);
+    } else {
+      const span = el("span");
+      ed(span, () => arr[i], (v) => (arr[i] = v), { multiline: true, ph: "…" });
+      li.append(span);
+    }
+    li.append(delBtn(() => { arr.splice(i, 1); renderStack(id, arr, opts); }));
+    ul.append(li);
+  });
+  const li = el("li", "ghost-row");
+  const add = el("button", "ghost", opts.addLabel || "+ add");
+  add.onclick = () => {
+    arr.push(opts.titled ? { title: "", detail: "" } : "");
+    renderStack(id, arr, opts); refreshState();
+    const eds = ul.querySelectorAll("li .ed");
+    const idx = opts.titled ? eds.length - 2 : eds.length - 1;
+    if (eds[idx]) eds[idx].focus();
+  };
+  if (!arr.length && SPECIMENS && opts.spec !== undefined) {
+    const specLi = el("li", "spec");
+    specLi.title = "Example — click to add your own";
+    const tagRow = el("div");
+    tagRow.append(el("span", "spec-tag", "example"));
+    specLi.append(tagRow);
+    if (opts.titled) {
+      specLi.append(el("b", null, opts.spec.title), document.createTextNode(" "),
+                    el("span", null, opts.spec.detail));
+    } else {
+      specLi.append(el("span", null, opts.spec));
+    }
+    specLi.onclick = () => add.click();
+    ul.append(specLi);
+  }
+  li.append(add);
+  ul.append(li);
+}
+
+/* ============================ state drawer ============================ */
+
+function serialize() {
+  const lane = (l) => {
+    const o = { collaborator: l.collaborator };
+    if (l.relationship) o.relationship = l.relationship;
+    o.messages = l.messages.map((m) => ({ type: m.type, name: m.name }));
+    return o;
+  };
+  return {
+    version: canvas.version,
+    name: canvas.name,
+    description: canvas.description,
+    classification: { ...canvas.classification },
+    domainRoles: [...canvas.domainRoles],
+    domainRolesNote: canvas.domainRolesNote,
+    inbound: canvas.inbound.map(lane),
+    outbound: canvas.outbound.map(lane),
+    ubiquitousLanguage: canvas.ubiquitousLanguage.map((t) => ({ ...t })),
+    businessDecisions: canvas.businessDecisions.map((d) => ({ ...d })),
+    assumptions: [...canvas.assumptions],
+    verificationMetrics: [...canvas.verificationMetrics],
+    openQuestions: [...canvas.openQuestions],
+  };
+}
+function refreshState() {
+  document.getElementById("state-panel").textContent = JSON.stringify(serialize(), null, 2);
+}
+document.getElementById("state-btn").onclick = () =>
+  document.getElementById("state-panel").classList.toggle("open");
+
+/* ============================ boot ============================ */
+
+function renderStacks() {
+  renderStack("decisions", canvas.businessDecisions, { titled: true, addLabel: "+ decision", spec: SPECIMEN.decisions });
+  renderStack("assumptions", canvas.assumptions, { addLabel: "+ assumption", spec: SPECIMEN.assumptions });
+  renderStack("metrics", canvas.verificationMetrics, { addLabel: "+ metric", spec: SPECIMEN.metrics });
+  renderStack("questions", canvas.openQuestions, { addLabel: "+ question", spec: SPECIMEN.questions });
+}
+
+renderTitle();
+renderDescription();
+renderRoles();
+renderLanes("inbound");
+renderLanes("outbound");
+renderTerms();
+renderStacks();
+refreshState();
+
+const specToggle = document.getElementById("spec-toggle");
+specToggle.onclick = () => {
+  SPECIMENS = !SPECIMENS;
+  specToggle.textContent = SPECIMENS ? "hide examples" : "show examples";
+  renderRoles();
+  renderLanes("inbound");
+  renderLanes("outbound");
+  renderTerms();
+  renderStacks();
+};
+
+/* variant switcher */
+const prev = "../2-section-preludes/index.html", next = "../1-placeholder-questions/index.html";
+document.addEventListener("keydown", (e) => {
+  if (pop) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  if (e.key === "ArrowLeft") location.href = prev;
+  if (e.key === "ArrowRight") location.href = next;
+});
+</script>
+</body>
+</html>
