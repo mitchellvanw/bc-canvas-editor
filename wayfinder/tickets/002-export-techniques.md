@@ -3,7 +3,7 @@ name: export-techniques
 title: "Research: client-side export techniques (PNG + self-contained HTML)"
 labels: [wayfinder:research]
 status: open
-assignee:
+assignee: research-subagent
 blocked-by: []
 ---
 

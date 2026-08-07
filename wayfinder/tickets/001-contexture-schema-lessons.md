@@ -3,7 +3,7 @@ name: contexture-schema-lessons
 title: "Research: Contexture's canvas JSON — lessons for our schema"
 labels: [wayfinder:research]
 status: open
-assignee:
+assignee: research-subagent
 blocked-by: []
 ---
 
