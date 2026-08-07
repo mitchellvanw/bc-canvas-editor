@@ -3,16 +3,19 @@
 	 * The quiet sheet (SPEC §5): the one shared read-only render of a canvas —
 	 * the canonical visual truth the editor wraps and both artifacts mount
 	 * offscreen (SPEC §9). It carries zero editing affordances; the only seam
-	 * for the editor is the optional title-name snippet, so ticket 01's inline
-	 * name editing keeps working while everything else stays presentation.
+	 * for the editor is the optional `field` snippet, offered a TextSlot for
+	 * every free-text location. Without it every slot renders its plain value.
+	 * Picker-backed values — classification axes, domain roles, relationship —
+	 * are deliberately not slots: they get popovers, not carets (ticket 07).
 	 *
 	 * Palette pairs are AA-verified by contrast.test.ts; secondary text uses
 	 * ink-soft (the prototype's faint gray fails AA and is decorative-only).
 	 */
 	import type { Snippet } from 'svelte';
 	import type { CanvasDoc, LaneRow, MessageType } from '$lib/model/canvas';
+	import type { TextSlot } from './text-slot';
 
-	let { doc, titleName }: { doc: CanvasDoc; titleName?: Snippet } = $props();
+	let { doc, field }: { doc: CanvasDoc; field?: Snippet<[TextSlot]> } = $props();
 
 	// One uniform chip shape; type is carried by color + glyph (SPEC §5).
 	const GLYPHS: Record<MessageType, string> = { command: '▶', query: '?', event: '◆' };
@@ -37,6 +40,8 @@
 	]);
 </script>
 
+{#snippet text(slot: TextSlot)}{#if field}{@render field(slot)}{:else}{slot.value}{/if}{/snippet}
+
 {#snippet communication(label: string, lanes: LaneRow[], area: string)}
 	<section class="panel panel--collab {area}">
 		<h2 class="panel__label">{label}</h2>
@@ -46,7 +51,13 @@
 					{#each lanes as lane (lane.id)}
 						<li class="lane">
 							<div class="lane__head">
-								<h3 class="lane__who">{lane.collaborator}</h3>
+								<h3 class="lane__who">
+									{@render text({
+										value: lane.collaborator,
+										label: 'Collaborator',
+										set: (value) => (lane.collaborator = value)
+									})}
+								</h3>
 								{#if lane.relationship}<span class="lane__rel">{lane.relationship}</span>{/if}
 							</div>
 							{#if lane.messages.length > 0}
@@ -54,8 +65,18 @@
 									{#each lane.messages as message (message.id)}
 										<li class="msg" data-meaning={message.type}>
 											<span class="msg__glyph" aria-hidden="true">{GLYPHS[message.type]}</span
-											><span class="sr-only">{message.type}, </span>{message.name}
-											{#if message.description}<span class="msg__desc">{message.description}</span
+											><span class="sr-only">{message.type}, </span>{@render text({
+												value: message.name,
+												label: 'Message name',
+												set: (value) => (message.name = value)
+											})}
+											{#if field || message.description}<span class="msg__desc"
+													>{@render text({
+														value: message.description ?? '',
+														label: 'Message description',
+														multiline: true,
+														set: (value) => (message.description = value)
+													})}</span
 												>{/if}
 										</li>
 									{/each}
@@ -69,14 +90,20 @@
 	</section>
 {/snippet}
 
-{#snippet stickies(label: string, items: string[], area: string, hotspot: boolean)}
+{#snippet stickies(label: string, itemLabel: string, items: string[], area: string, hotspot: boolean)}
 	<section class="panel {area}" class:panel--hotspot={hotspot}>
 		<h2 class="panel__label">{label}</h2>
 		<div class="panel__body">
 			{#if items.length > 0}
 				<ul class="stack" class:stack--hotspot={hotspot}>
 					{#each items as item, index (index)}
-						<li>{item}</li>
+						<li>
+							{@render text({
+								value: item,
+								label: itemLabel,
+								set: (value) => (items[index] = value)
+							})}
+						</li>
 					{/each}
 				</ul>
 			{/if}
@@ -89,7 +116,13 @@
 		<div class="tb__id">
 			<p class="tb__eyebrow">Bounded Context Canvas&nbsp;·&nbsp;V5</p>
 			<h1 class="tb__name">
-				{#if titleName}{@render titleName()}{:else}{doc.name}{/if}
+				{@render text({
+					value: doc.name,
+					label: 'Name',
+					placeholder: 'Name this context',
+					tone: 'ink',
+					set: (value) => (doc.name = value)
+				})}
 			</h1>
 		</div>
 		<dl class="tb__class">
@@ -106,7 +139,16 @@
 		<section class="panel area-description">
 			<h2 class="panel__label">Description</h2>
 			<div class="panel__body">
-				{#if doc.description}<p class="prose">{doc.description}</p>{/if}
+				{#if field || doc.description}
+					<p class="prose">
+						{@render text({
+							value: doc.description,
+							label: 'Description',
+							multiline: true,
+							set: (value) => (doc.description = value)
+						})}
+					</p>
+				{/if}
 			</div>
 		</section>
 
@@ -132,8 +174,23 @@
 					<dl class="terms">
 						{#each doc.ubiquitousLanguage as entry (entry.id)}
 							<div class="terms__row">
-								<dt>{entry.term}</dt>
-								{#if entry.definition}<dd>{entry.definition}</dd>{/if}
+								<dt>
+									{@render text({
+										value: entry.term,
+										label: 'Term',
+										set: (value) => (entry.term = value)
+									})}
+								</dt>
+								{#if field || entry.definition}
+									<dd>
+										{@render text({
+											value: entry.definition ?? '',
+											label: 'Definition',
+											multiline: true,
+											set: (value) => (entry.definition = value)
+										})}
+									</dd>
+								{/if}
 							</div>
 						{/each}
 					</dl>
@@ -148,8 +205,20 @@
 					<ul class="stack stack--policy">
 						{#each doc.businessDecisions as decision (decision.id)}
 							<li>
-								<b>{decision.name}</b>
-								{#if decision.description}<span class="stack__detail">{decision.description}</span
+								<b
+									>{@render text({
+										value: decision.name,
+										label: 'Decision',
+										set: (value) => (decision.name = value)
+									})}</b
+								>
+								{#if field || decision.description}<span class="stack__detail"
+										>{@render text({
+											value: decision.description ?? '',
+											label: 'Decision description',
+											multiline: true,
+											set: (value) => (decision.description = value)
+										})}</span
 									>{/if}
 							</li>
 						{/each}
@@ -160,9 +229,15 @@
 
 		{@render communication('Outbound communication', doc.outboundCommunication, 'area-outbound')}
 
-		{@render stickies('Assumptions', doc.assumptions, 'area-assumptions', false)}
-		{@render stickies('Verification metrics', doc.verificationMetrics, 'area-metrics', false)}
-		{@render stickies('Open questions', doc.openQuestions, 'area-questions', true)}
+		{@render stickies('Assumptions', 'Assumption', doc.assumptions, 'area-assumptions', false)}
+		{@render stickies(
+			'Verification metrics',
+			'Verification metric',
+			doc.verificationMetrics,
+			'area-metrics',
+			false
+		)}
+		{@render stickies('Open questions', 'Open question', doc.openQuestions, 'area-questions', true)}
 	</div>
 
 	<footer class="foot">
