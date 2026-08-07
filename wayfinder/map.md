@@ -22,6 +22,7 @@ A hand-off-ready spec (`SPEC.md`) for a client-side bounded context canvas edito
 
 - [Research: Contexture's canvas JSON — lessons for our schema](wayfinder/tickets/001-contexture-schema-lessons.md) — nest messages under collaborator lanes with explicit command/query/event types (Contexture can't express V5 lanes); versioned root + ordered migrations; escape-hatch values must round-trip through the UI. Full notes on branch `research/contexture-schema`.
 - [Research: client-side export techniques (PNG + self-contained HTML)](wayfinder/tickets/002-export-techniques.md) — PNG via SnapDOM (foreignObject rasterization sidesteps Tailwind v4's oklch entirely; fallbacks modern-screenshot → html2canvas-pro); HTML artifact via dedicated template + inlined compiled CSS + data-URI fonts + embedded canvas JSON; Safari foreignObject flakiness is the risk to test first. Full notes on branch `research/export-techniques`.
+- [Decision: the Canvas file schema](wayfinder/tickets/003-canvas-file-schema.md) — flat camelCase JSON, integer `version` + ordered migrations (newer versions refused, never mutated); single-string escape hatches; lanes `{collaborator, relationship?, messages}` with no collaborator kind and no row ids; closed `command|query|event` message type; `.bcc.json`; deterministic serialization, no metadata envelope.
 
 ## Not yet specified
 

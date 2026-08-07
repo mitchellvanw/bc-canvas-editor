@@ -10,7 +10,9 @@ Glossary for the bounded context canvas editor. The app's own domain — not the
 
 **Message** — an item of communication in the Inbound or Outbound Communication sections, typed as **Command**, **Query**, or **Event**. Rendered in Event Storming colors: Command = blue, Query = green, Event = orange.
 
-**Collaborator** — the other party in an inbound/outbound communication lane: another bounded context, a frontend, or a direct user. Carries a relationship type (context-mapping pattern).
+**Collaborator** — the other party in an inbound/outbound communication lane: another bounded context, a frontend, or a direct user. Identified by name alone; may carry a relationship type (context-mapping pattern), which only applies when the collaborator is another bounded context.
+
+**Lane** — one Collaborator together with the Messages exchanged with it, within the Inbound or Outbound Communication section. The unit of structure in those sections: a Canvas's communication is a list of Lanes, each holding its own Messages.
 
 **Artifact** — a read-only export of a Canvas for sharing: a self-contained single-file HTML render, or a PNG. An Artifact is not re-importable; it is presentation only.
 
