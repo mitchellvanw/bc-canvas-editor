@@ -15,4 +15,8 @@ Use `/prototype` and `visual-design-brainstorming` (explore a few directions bef
 
 ## Asset
 
-Prototype built (2026-08-07), awaiting reaction: branch `prototype/canvas-visual-language`, path `prototype/canvas-visual-language/` (checked out in worktree `.claude/worktrees/prototype-canvas-visual-language`). Three self-contained HTML variants of the same filled-in "Order Fulfillment" canvas, switchable in-browser (floating bar / arrow keys): **1 Workshop wall** (stickies, marker headings, full Event Storming fills), **2 Print document** (ruled ink grid, serif, color as typed chips), **3 Product panels** (app-register cards, tags and pills, soft tints). A fourth direction (dark blueprint) was sketched in ASCII and rejected — reasoning in `ASCII-SKETCHES.md`; each variant folder carries a `REASONING.md`.
+Prototype on branch `prototype/canvas-visual-language`, path `prototype/canvas-visual-language/` (checked out in worktree `.claude/worktrees/prototype-canvas-visual-language`). HTML variants of the same filled-in "Order Fulfillment" canvas, switchable in-browser (floating bar / arrow keys); each folder carries a `REASONING.md`, exploration record in `ASCII-SKETCHES.md`.
+
+**Round 1 (rejected 2026-08-07** — wrong registers entirely, color handling wrong): 1 Workshop wall (stickies, full fills), 2 Print document (ruled ink grid, chips), 3 Product panels (SaaS cards, tints). A dark-blueprint direction was rejected at ASCII stage.
+
+**Round 2 (2026-08-07, awaiting reaction)** — user direction: warm minimal craft + a design inspired by `~/Downloads/bounded-context-canvas-example.html`/`-template.html`: **4 Warm minimal craft** (no boxes, hairline rules, serif content, color as small inky marks), **5 Drafting sheet** (the reference design's language — paper + drafting grid, ink title block, sticky fills with ink borders, shaped messages — adapted to our content and schema decisions).
