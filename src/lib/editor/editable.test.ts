@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { editableText, type EditableTextOptions } from '$lib/editor/editable';
+import { flushPendingEdits } from '$lib/editor/flush';
 
 function mount(options: Partial<EditableTextOptions> = {}) {
 	const node = document.createElement('h1');
@@ -119,6 +120,40 @@ describe('editableText', () => {
 		type(node, 'Shipp');
 		action.update({ value: 'Fulfillment', onCommit });
 		expect(node.textContent).toBe('Shipp');
+	});
+
+	describe('unload flush (SPEC §6.1)', () => {
+		it('commits a mid-edit field on flush without blurring it', () => {
+			const { node, onCommit } = mount();
+			node.focus();
+			type(node, 'Shipping');
+			flushPendingEdits();
+			expect(onCommit).toHaveBeenCalledExactlyOnceWith('Shipping');
+			expect(document.activeElement).toBe(node);
+		});
+
+		it('commits nothing on flush when every field is pristine', () => {
+			const { onCommit } = mount();
+			flushPendingEdits();
+			expect(onCommit).not.toHaveBeenCalled();
+		});
+
+		it('does not double-commit when blur follows a flush', () => {
+			const { node, onCommit } = mount();
+			type(node, 'Shipping');
+			flushPendingEdits();
+			blur(node);
+			expect(onCommit).toHaveBeenCalledTimes(1);
+		});
+
+		it('drops out of the flush when the action is destroyed', () => {
+			const { node, onCommit, action } = mount();
+			type(node, 'Shipping');
+			action.destroy();
+			flushPendingEdits();
+			expect(onCommit).not.toHaveBeenCalled();
+			expect(node).toBeDefined();
+		});
 	});
 
 	describe('⌘Z inside a field (SPEC §6.1)', () => {

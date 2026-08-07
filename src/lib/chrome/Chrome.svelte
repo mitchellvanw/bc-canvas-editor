@@ -10,6 +10,7 @@
 	import { exportHtmlArtifact } from '$lib/artifact/html';
 	import { exportPngArtifact } from '$lib/artifact/png';
 	import { canvas } from '$lib/editor/document.svelte';
+	import { MULTI_TAB_NOTICE, multiTab } from '$lib/editor/multi-tab.svelte';
 	import { performRedo, performUndo } from '$lib/editor/undo';
 	import { blankCanvas, stampIds, CANVAS_VERSION, type CanvasFile } from '$lib/model/canvas';
 	import { exportFileName } from '$lib/model/filename';
@@ -29,6 +30,10 @@
 
 	// Unnamed canvas substitutes "this canvas" for the name (SPEC §10).
 	const canvasName = $derived(canvas.doc.name.trim());
+
+	// One string owns the SPEC §10 copy; the banner bolds its lead sentence.
+	const noticeLead = MULTI_TAB_NOTICE.slice(0, MULTI_TAB_NOTICE.indexOf('.') + 1);
+	const noticeRest = MULTI_TAB_NOTICE.slice(noticeLead.length + 1);
 
 	const chromeButton =
 		'rounded-[4px] border border-line bg-sheet px-3 py-1.5 text-sm font-medium hover:bg-paper disabled:opacity-40 disabled:hover:bg-sheet';
@@ -207,6 +212,17 @@
 		onchange={fileChosen}
 	/>
 </header>
+
+{#if multiTab.detected}
+	<!-- Persistent multi-tab notice (SPEC §6.1/§10) — not a toast, never retracts.
+	     No live-region role here: the one polite live region announces it (§8.5). -->
+	<div role="note" class="mx-auto max-w-[1440px] px-10 pt-4">
+		<p class="rounded-[6px] border border-line bg-sheet px-4 py-2.5 text-sm text-ink/75">
+			<strong class="font-bold text-ink">{noticeLead}</strong>
+			{noticeRest}
+		</p>
+	</div>
+{/if}
 
 {#if dialog}
 	<dialog

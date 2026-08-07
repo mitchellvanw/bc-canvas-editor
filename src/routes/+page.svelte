@@ -3,9 +3,19 @@
 	import Chrome from '$lib/chrome/Chrome.svelte';
 	import { canvas } from '$lib/editor/document.svelte';
 	import EditableSheet from '$lib/editor/EditableSheet.svelte';
+	import { wireUnloadFlush } from '$lib/editor/flush';
+	import { multiTab } from '$lib/editor/multi-tab.svelte';
 	import { windowTitle } from '$lib/model/title';
 
-	onMount(() => canvas.restore());
+	onMount(() => {
+		canvas.restore();
+		const unwireFlush = wireUnloadFlush();
+		const unwatchTabs = multiTab.watch();
+		return () => {
+			unwireFlush();
+			unwatchTabs();
+		};
+	});
 </script>
 
 <svelte:head>

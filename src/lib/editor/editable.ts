@@ -7,6 +7,7 @@
  * global history handler; a pristine field lets it bubble to app undo.
  */
 
+import { registerFlushable } from './flush';
 import { undoShortcut } from './undo';
 
 export interface EditableTextOptions {
@@ -60,6 +61,9 @@ export function editableText(node: HTMLElement, options: EditableTextOptions): E
 
 	node.addEventListener('blur', onBlur);
 	node.addEventListener('keydown', onKeydown);
+	// The unload flush (flush.ts) commits this field if the tab closes or
+	// backgrounds mid-edit — same no-op-when-pristine commit, no blur.
+	const unregisterFlush = registerFlushable(commit);
 
 	return {
 		update(next: EditableTextOptions) {
@@ -75,6 +79,7 @@ export function editableText(node: HTMLElement, options: EditableTextOptions): E
 		destroy() {
 			node.removeEventListener('blur', onBlur);
 			node.removeEventListener('keydown', onKeydown);
+			unregisterFlush();
 		}
 	};
 }

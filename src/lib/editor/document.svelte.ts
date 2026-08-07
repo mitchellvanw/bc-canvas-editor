@@ -4,7 +4,7 @@
  * and immediately autosaves — one commit is one history entry. Undo/redo
  * swaps the whole document and reports which sheet region changed so the
  * editor can reveal it. The beforeunload/visibilitychange flush of a
- * mid-edit field (SPEC §6.1) belongs to ticket 11 (multi-tab & unload flush).
+ * mid-edit field (SPEC §6.1) lives in flush.ts and feeds this same pipeline.
  */
 
 import { loadAutosave, saveAutosave } from '$lib/model/autosave';
