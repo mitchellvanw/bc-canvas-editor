@@ -3,7 +3,7 @@ name: layout-visual-prototype
 title: "Prototype: canvas layout & visual language"
 labels: [wayfinder:prototype]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
