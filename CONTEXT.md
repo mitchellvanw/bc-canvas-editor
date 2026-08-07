@@ -23,3 +23,5 @@ Glossary for the bounded context canvas editor. The app's own domain — not the
 **Commit** — one discrete accepted change to the Canvas: a field edit accepted on blur, or a single structural action (add, remove, reorder, pick). The unit of undo/redo and of autosave.
 
 **Unexported changes** — the Canvas has changed since it was last carried out of the browser in a re-importable form: cleared by Canvas-file export/import and by HTML-Artifact export/import, never by PNG export. The only dirtiness that can cost the user work.
+
+**Reference** — the app's single consult-and-dismiss teaching surface: a dialog listing the keyboard shortcuts and linking to the ddd-crew method material. Everything else the app teaches at point of use (picker descriptions, placeholder questions, the footer legend); the Reference exists for what cannot be taught in place.
