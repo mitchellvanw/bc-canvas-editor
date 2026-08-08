@@ -3,7 +3,7 @@ name: live-verification
 title: "Task: live verification checkpoint"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [create-pages-project, deploy-repo-config, web-analytics]
 ---
 
