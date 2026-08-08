@@ -106,6 +106,25 @@ describe('buildHtmlArtifact', () => {
 		expect(html).toContain('break-inside: avoid');
 	});
 
+	it('never carries the analytics beacon injected into the served page', async () => {
+		// Cloudflare Web Analytics injects its beacon at serve time, so the
+		// script exists in the live DOM the exporter runs in — never in the
+		// repo. Plant it where the edge would and prove the artifact stays
+		// script-free apart from the embedded Canvas file.
+		const beacon = document.createElement('script');
+		beacon.type = 'module';
+		beacon.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+		beacon.setAttribute('data-cf-beacon', '{"token": "site-token"}');
+		document.head.append(beacon);
+		document.body.append(beacon.cloneNode(true));
+
+		const html = await buildHtmlArtifact(referenceDoc());
+		expect(html).not.toContain('cloudflareinsights');
+		expect(html).not.toContain('data-cf-beacon');
+		const scripts = html.match(/<script\b[^>]*/g) ?? [];
+		expect(scripts).toEqual(['<script type="application/json" data-canvas-file']);
+	});
+
 	it('titles an unnamed canvas Untitled and escapes markup in the name', async () => {
 		const doc = referenceDoc();
 		doc.name = '';
