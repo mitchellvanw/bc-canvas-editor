@@ -21,6 +21,8 @@ BC Canvas live at `bc-canvas.pages.dev` (fallbacks `bccanvas`, `bc-canvas-editor
 
 <!-- one line per closed ticket -->
 
+- [Research: Cloudflare Pages deployment mechanics for this repo](wayfinder/tickets/013-pages-deploy-mechanics.md) — Node 22 default (no pin; `.nvmrc 22` as insurance); SvelteKit preset's output dir must be overridden to `build`; previews via Custom branches Include `*` / Exclude `prototype/*`,`research/*` (no PRs-only option exists); one `_headers` rule (immutable-year on `/_app/immutable/*`) atop Pages' revalidate default; Web Analytics toggle injects at serve time and the export builder verifiably can't leak the beacon; name collisions silently suffix — check the URL at creation. Full notes on branch `research/pages-deploy-mechanics`.
+
 ## Not yet specified
 
 - Public-URL polish — the app ships no favicon (`static/` holds only `robots.txt`) and no page description/social metadata; once the site is live, judge what a shared `bc-canvas.pages.dev` link deserves. Coarser than a ticket until the live checkpoint shows how bare it looks.
