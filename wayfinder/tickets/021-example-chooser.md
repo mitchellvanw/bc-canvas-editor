@@ -3,7 +3,7 @@ name: example-chooser
 title: "Prototype: how does \"open an example\" present in the chrome?"
 labels: [wayfinder:prototype]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
