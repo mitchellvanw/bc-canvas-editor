@@ -20,6 +20,8 @@ Glossary for the bounded context canvas editor. The app's own domain — not the
 
 **Canvas file** — the portable, re-importable serialization of a Canvas (JSON; schema owned by this project, versioned). The durable format; localStorage autosave is only a safety net.
 
+**Example** — one of a fixed, curated set of Canvases bundled with the app, choosable from the chrome. Opening one reuses the import path (confirmation over unexported changes, history cleared) and lands clean; its Canvas file is published as a downloadable, re-importable `examples/*.bcc.json`.
+
 **Commit** — one discrete accepted change to the Canvas: a field edit accepted on blur, or a single structural action (add, remove, reorder, pick). The unit of undo/redo and of autosave.
 
 **Unexported changes** — the Canvas has changed since it was last carried out of the browser in a re-importable form: cleared by Canvas-file export/import and by HTML-Artifact export/import, never by PNG export. The only dirtiness that can cost the user work.
