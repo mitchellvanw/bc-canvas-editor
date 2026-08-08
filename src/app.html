@@ -3,6 +3,17 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="An editor for the ddd-crew Bounded Context Canvas. Runs in the browser; the canvas stays on your machine until you export it." />
+		<!-- Unfurlers read og:title, so a pasted link leads with the app name;
+		     the tab title stays live-derived per SPEC §10. No social-card
+		     image — the unfurl is a name and one sentence. -->
+		<meta property="og:title" content="BC Canvas" />
+		<meta property="og:description" content="An editor for the ddd-crew Bounded Context Canvas. Runs in the browser; the canvas stays on your machine until you export it." />
+		<meta name="theme-color" content="#eae7de" />
+		<!-- PNG before SVG: WebKit renders no SVG favicons and picks the PNG. -->
+		<link rel="icon" href="/favicon.png" sizes="48x48" />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
