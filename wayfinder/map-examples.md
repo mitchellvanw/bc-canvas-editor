@@ -21,6 +21,8 @@ The live app at `bc-canvas.pages.dev` offers 3–5 curated example canvases — 
 
 <!-- one line per closed ticket -->
 
+- [Research: published example canvases & what CC BY asks of derived ones](wayfinder/tickets/019-example-canvas-sources.md) — only one complete V5 example exists publicly (ddd-crew's "Scoring", sparse fill is canonical); deriving costs per-example TASL attribution atop a BY-vs-BY-SA license ambiguity, so invent our own domains under the existing attribution line.
+
 ## Not yet specified
 
 _(empty — the effort is small enough that charting saw the whole route; the tickets cover it.)_
