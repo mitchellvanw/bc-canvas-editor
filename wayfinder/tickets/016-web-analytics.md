@@ -3,7 +3,7 @@ name: web-analytics
 title: "Task: enable Cloudflare Web Analytics"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [pages-deploy-mechanics, create-pages-project]
 ---
 
