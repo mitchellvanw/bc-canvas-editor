@@ -20,12 +20,25 @@
 	import { blankCanvas, stampIds, CANVAS_VERSION, type CanvasFile } from '$lib/model/canvas';
 	import { exportFileName } from '$lib/model/filename';
 	import { parseCanvasImport } from '$lib/model/parse';
+	// PROTOTYPE (wayfinder/tickets/021-example-chooser.md) — three example-chooser
+	// variants behind ?variant=, switchable via the floating bar / arrow keys.
+	// This block and the prototype-examples/ folder live only on the
+	// prototype/example-chooser branch; they never merge.
+	import ExamplesDialog from '$lib/chrome/prototype-examples/ExamplesDialog.svelte';
+	import ExamplesMenu from '$lib/chrome/prototype-examples/ExamplesMenu.svelte';
+	import NewCanvasMenu from '$lib/chrome/prototype-examples/NewCanvasMenu.svelte';
+	import PrototypeSwitcher from '$lib/chrome/prototype-examples/PrototypeSwitcher.svelte';
+	import type { ExampleEntry } from '$lib/chrome/prototype-examples/roster';
 
 	type Dialog =
 		| { kind: 'confirm-replace'; file: CanvasFile }
 		| { kind: 'confirm-new' }
+		| { kind: 'confirm-example'; entry: ExampleEntry }
 		| { kind: 'newer-version'; version: number }
 		| { kind: 'not-canvas' };
+
+	const CHOOSER_VARIANTS = ['Examples menu', 'Examples dialog', 'Inside New canvas'];
+	let chooserVariant = $state(1);
 
 	let dialog = $state<Dialog | null>(null);
 	let dialogEl = $state<HTMLDialogElement>();
@@ -145,6 +158,21 @@
 		}
 	}
 
+	// PROTOTYPE — opening an example runs the import path: same gate over
+	// unexported changes, same replacement, history cleared by replace().
+	function openExample(entry: ExampleEntry) {
+		if (canvas.unexported) {
+			dialog = { kind: 'confirm-example', entry };
+		} else {
+			loadExample(entry);
+		}
+	}
+
+	function loadExample(entry: ExampleEntry) {
+		canvas.replace(stampIds(entry.file));
+		announce('Example opened');
+	}
+
 	function proceed() {
 		if (dialog?.kind === 'confirm-replace') {
 			canvas.replace(stampIds(dialog.file));
@@ -153,6 +181,9 @@
 		if (dialog?.kind === 'confirm-new') {
 			canvas.replace(blankCanvas());
 			announce('New canvas');
+		}
+		if (dialog?.kind === 'confirm-example') {
+			loadExample(dialog.entry);
 		}
 		dialogEl?.close();
 	}
@@ -191,6 +222,14 @@
 	</button>
 
 	<button type="button" class={chromeButton} onclick={() => fileInput.click()}>Import…</button>
+
+	<!-- PROTOTYPE — variants 1 & 2 add an Examples control on the input side,
+	     right after Import…; an example is an import sourced from the app. -->
+	{#if chooserVariant === 1}
+		<ExamplesMenu {openExample} />
+	{:else if chooserVariant === 2}
+		<ExamplesDialog {openExample} />
+	{/if}
 
 	{#if canvas.unexported}
 		<span class="mx-1 text-xs text-ink/55">Unexported changes</span>
@@ -249,7 +288,12 @@
 		{/if}
 	</div>
 
-	<button type="button" class={chromeButton} onclick={newCanvas}>New canvas</button>
+	<!-- PROTOTYPE — variant 3 folds the examples into a New-canvas menu. -->
+	{#if chooserVariant === 3}
+		<NewCanvasMenu {newCanvas} {openExample} />
+	{:else}
+		<button type="button" class={chromeButton} onclick={newCanvas}>New canvas</button>
+	{/if}
 
 	<button
 		type="button"
@@ -268,6 +312,9 @@
 		onchange={fileChosen}
 	/>
 </header>
+
+<!-- PROTOTYPE — the loud floating switcher; not part of the design. -->
+<PrototypeSwitcher bind:variant={chooserVariant} labels={CHOOSER_VARIANTS} />
 
 {#if multiTab.detected}
 	<!-- Persistent multi-tab notice (SPEC §6.1/§10) — not a toast, never retracts.
@@ -349,6 +396,14 @@
 				{canvasName === '' ? 'This canvas' : `"${canvasName}"`} has changes that haven't been
 				exported. Starting fresh discards them and clears undo history.
 			</p>
+		{:else if dialog.kind === 'confirm-example'}
+			<h2 class="font-bold">
+				Replace {canvasName === '' ? 'this canvas' : `"${canvasName}"`}?
+			</h2>
+			<p class="mt-2 text-sm text-ink/75">
+				Its latest changes haven't been exported. Opening an example replaces the canvas and clears
+				undo history.
+			</p>
 		{:else if dialog.kind === 'newer-version'}
 			<h2 class="font-bold">This file is from a newer version of BC Canvas.</h2>
 			<p class="mt-2 text-sm text-ink/75">
@@ -364,7 +419,7 @@
 		{/if}
 
 		<div class="mt-6 flex justify-end gap-2">
-			{#if dialog.kind === 'confirm-replace' || dialog.kind === 'confirm-new'}
+			{#if dialog.kind === 'confirm-replace' || dialog.kind === 'confirm-new' || dialog.kind === 'confirm-example'}
 				<button type="button" class={chromeButton} onclick={() => dialogEl?.close()}>
 					Cancel
 				</button>
@@ -373,7 +428,7 @@
 					class="rounded-[4px] bg-ink px-3 py-1.5 text-sm font-medium text-sheet hover:bg-ink/85"
 					onclick={proceed}
 				>
-					{dialog.kind === 'confirm-replace' ? 'Replace' : 'Start new'}
+					{dialog.kind === 'confirm-new' ? 'Start new' : 'Replace'}
 				</button>
 			{:else}
 				<button type="button" class={chromeButton} onclick={() => dialogEl?.close()}>OK</button>
