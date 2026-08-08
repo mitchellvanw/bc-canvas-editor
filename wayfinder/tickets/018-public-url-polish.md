@@ -3,7 +3,7 @@ name: public-url-polish
 title: "Grilling: what does a shared bc-canvas.pages.dev link deserve?"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
