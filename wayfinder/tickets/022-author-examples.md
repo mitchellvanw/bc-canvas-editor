@@ -3,7 +3,7 @@ name: author-examples
 title: "Task: author the example canvases"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [example-roster]
 ---
 
