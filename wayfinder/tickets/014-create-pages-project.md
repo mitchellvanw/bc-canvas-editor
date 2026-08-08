@@ -2,7 +2,7 @@
 name: create-pages-project
 title: "Task: create the Pages project & first production deploy"
 labels: [wayfinder:task]
-status: open
+status: closed
 assignee: mitchell
 blocked-by: [pages-deploy-mechanics]
 ---
@@ -33,3 +33,21 @@ Built from [pages-deploy-mechanics](wayfinder/tickets/013-pages-deploy-mechanics
 8. Report back: the final URL, that the build went green, and that the preview policy is set.
 
 Verification (agent, on report-back): probe the live URL and confirm the app shell loads.
+
+## Resolution
+
+**Resolved 2026-08-08.** BC Canvas is live at **https://bc-canvas.pages.dev** — the exact name landed, no collision suffix (confirmed via the API's `subdomain` field, not just the dashboard hint).
+
+**How it actually went (hybrid, not pure checklist):**
+
+- A July `wrangler login` OAuth token (with `pages:write` and `offline_access`) still authenticates against the REST API — an API-first attempt at git-connected creation was refused with error **8000011** because the Cloudflare Workers & Pages GitHub App had never been installed on the account; that authorization is browser-only, so Mitchell ran the dashboard wizard: single-repo GitHub grant (`mitchellvanw/bc-canvas-editor` only), project `bc-canvas`, production branch `main`, SvelteKit preset with output dir overridden to `build`.
+- **First build failed** on the checklist's own insurance: `.nvmrc 22` resolved to Node 22.22.0 on the v3 image, below `jsdom@30.0.1`'s `^22.22.2` floor, and the repo's `.npmrc` `engine-strict=true` turned the engine warning into a hard install failure. Fixed by pinning **`.nvmrc` to `26`** (mirrors local dev's 26.3.0, satisfies every engine range) — commit `8fae7ea`, whose push auto-triggered the successful production deploy (`https://fb7e8597.bc-canvas.pages.dev`).
+- **Preview policy set via API PATCH**, not the dashboard: `preview_deployment_setting: custom`, include `*`, exclude `prototype/*`, `research/*` — confirmed in the PATCH response.
+- Live probe: transient 522 immediately after deploy, then stable HTTP 200 on HEAD and GET; title `Untitled — BC Canvas`; hashed assets under `/_app/immutable/` served.
+
+**Facts downstream tickets depend on:**
+
+- URL: `https://bc-canvas.pages.dev`; project name `bc-canvas`; account `e8b6411f00bc1074c63dd934211560b9`.
+- Build settings: `npm run build` → `build`, root ``, Node pinned by repo `.nvmrc` = `26` (no `NODE_VERSION` env var).
+- Preview config: custom, include `*`, exclude `prototype/*`, `research/*`.
+- The wrangler OAuth token works for Pages API reads and PATCHes ([web-analytics](wayfinder/tickets/016-web-analytics.md) and [live-verification](wayfinder/tickets/017-live-verification.md) can reuse it); the project's `build_config` currently shows `web_analytics_tag`/`web_analytics_token` as `null` — the field the analytics toggle presumably fills.

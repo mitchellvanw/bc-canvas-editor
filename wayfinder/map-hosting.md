@@ -22,6 +22,7 @@ BC Canvas live at `bc-canvas.pages.dev` (fallbacks `bccanvas`, `bc-canvas-editor
 <!-- one line per closed ticket -->
 
 - [Research: Cloudflare Pages deployment mechanics for this repo](wayfinder/tickets/013-pages-deploy-mechanics.md) — Node 22 default (no pin; `.nvmrc 22` as insurance); SvelteKit preset's output dir must be overridden to `build`; previews via Custom branches Include `*` / Exclude `prototype/*`,`research/*` (no PRs-only option exists); one `_headers` rule (immutable-year on `/_app/immutable/*`) atop Pages' revalidate default; Web Analytics toggle injects at serve time and the export builder verifiably can't leak the beacon; name collisions silently suffix — check the URL at creation. Full notes on branch `research/pages-deploy-mechanics`.
+- [Task: create the Pages project & first production deploy](wayfinder/tickets/014-create-pages-project.md) — live at `bc-canvas.pages.dev`, exact name, no suffix; dashboard wizard for the browser-only GitHub App install (single-repo grant), everything else driven via the wrangler-OAuth REST API; `.nvmrc` had to move 22→26 (jsdom 30's engine floor + `engine-strict`); preview policy (custom, exclude `prototype/*` `research/*`) confirmed via API PATCH.
 
 ## Not yet specified
 
