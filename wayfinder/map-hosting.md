@@ -25,10 +25,11 @@ BC Canvas live at `bc-canvas.pages.dev` (fallbacks `bccanvas`, `bc-canvas-editor
 - [Task: create the Pages project & first production deploy](wayfinder/tickets/014-create-pages-project.md) — live at `bc-canvas.pages.dev`, exact name, no suffix; dashboard wizard for the browser-only GitHub App install (single-repo grant), everything else driven via the wrangler-OAuth REST API; `.nvmrc` had to move 22→26 (jsdom 30's engine floor + `engine-strict`); preview policy (custom, exclude `prototype/*` `research/*`) confirmed via API PATCH.
 - [Task: repo-side deploy config (_headers caching)](wayfinder/tickets/015-deploy-repo-config.md) — `static/_headers` committed with the one immutable-year rule on `/_app/immutable/*`; local build confirms byte-identical passthrough to `build/_headers`, and Pages docs confirm the file is parsed, never served. Live header proof stays with live-verification.
 - [Task: enable Cloudflare Web Analytics](wayfinder/tickets/016-web-analytics.md) — dashboard toggle (serve-time injection, no snippet in the repo); the toggle filled `build_config`'s `web_analytics_tag`/`token`, a fresh API-triggered deploy picked the beacon up, and a real WebKit visit's RUM POST was accepted (204). Artifact leak check green at close.
+- [Task: live verification checkpoint](wayfinder/tickets/017-live-verification.md) — **destination gate passed**: WebKit checkpoint against the live origin green on every line (load audit, edit+autosave, all three exports, offline artifact with zero network, both import round-trips, immutable-vs-shell headers, main-push redeploy, skipped-not-built probe pushes to `research/*` and `prototype/*`, RUM 204). Dashboard visit count stays Mitchell's eyeball (API closed to the token, per web-analytics).
 
 ## Not yet specified
 
-- Public-URL polish — the app ships no favicon (`static/` holds only `robots.txt`) and no page description/social metadata; once the site is live, judge what a shared `bc-canvas.pages.dev` link deserves. Coarser than a ticket until the live checkpoint shows how bare it looks.
+<!-- empty — the last fog patch graduated into public-url-polish when the live checkpoint showed how the link presents -->
 
 ## Out of scope
 
