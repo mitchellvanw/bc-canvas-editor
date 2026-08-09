@@ -1,17 +1,19 @@
 <script lang="ts">
 	/**
-	 * App chrome (SPEC §10): Undo/Redo, Import…, the Export menu, New canvas,
-	 * the quiet Unexported-changes indicator, and the Reference control at the
-	 * far end. File verbs are Import/Export, never Open/Save. Owns the
-	 * confirmation dialogs, file-refusal notices, and the Reference dialog
-	 * with its global ⌘/ shortcut (SPEC §12). Import… takes both importable
-	 * forms — `.bcc.json` and `.bcc.html` — through the one parseCanvasImport
-	 * path (SPEC §9.1).
+	 * App chrome (SPEC §10): Undo/Redo, Import…, the Examples menu, the Export
+	 * menu, New canvas, the quiet Unexported-changes indicator, and the
+	 * Reference control at the far end. File verbs are Import/Export, never
+	 * Open/Save. Owns the confirmation dialogs, file-refusal notices, and the
+	 * Reference dialog with its global ⌘/ shortcut (SPEC §12). Import… takes
+	 * both importable forms — `.bcc.json` and `.bcc.html` — through the one
+	 * parseCanvasImport path (SPEC §9.1); opening an example is an import
+	 * sourced from the app, through the same gate and replacement.
 	 */
 	import { announce } from '$lib/a11y/announce';
 	import { downloadBlob } from '$lib/artifact/download';
 	import { exportHtmlArtifact } from '$lib/artifact/html';
 	import { exportPngArtifact } from '$lib/artifact/png';
+	import { EXAMPLES, type ExampleEntry } from '$lib/chrome/examples';
 	import { REFERENCE_CLUSTERS, REFERENCE_URL, renderKeys } from '$lib/chrome/reference';
 	import { canvas } from '$lib/editor/document.svelte';
 	import { PICKER_SURFACES } from '$lib/editor/keyboard';
@@ -24,12 +26,15 @@
 	type Dialog =
 		| { kind: 'confirm-replace'; file: CanvasFile }
 		| { kind: 'confirm-new' }
+		| { kind: 'confirm-example'; file: CanvasFile }
 		| { kind: 'newer-version'; version: number }
 		| { kind: 'not-canvas' };
 
 	let dialog = $state<Dialog | null>(null);
 	let dialogEl = $state<HTMLDialogElement>();
 	let fileInput: HTMLInputElement;
+	let examplesButton: HTMLButtonElement;
+	let examplesMenuOpen = $state(false);
 	let exportButton: HTMLButtonElement;
 	let exportMenuOpen = $state(false);
 	let referenceOpen = $state(false);
@@ -48,10 +53,17 @@
 	const menuItem =
 		'block w-full px-4 py-1.5 text-left text-sm hover:bg-paper focus:bg-paper focus:outline-none';
 
-	function closeMenuOnEscape(event: KeyboardEvent) {
+	function closeExportMenuOnEscape(event: KeyboardEvent) {
 		if (event.key === 'Escape') {
 			exportMenuOpen = false;
 			exportButton.focus();
+		}
+	}
+
+	function closeExamplesMenuOnEscape(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			examplesMenuOpen = false;
+			examplesButton.focus();
 		}
 	}
 
@@ -145,6 +157,23 @@
 		}
 	}
 
+	// Opening an example runs the import path (SPEC §6.1): same gate over
+	// unexported changes, same replacement, history cleared — and it lands
+	// clean, because the example's bytes exist as a published re-importable file.
+	function openExample(entry: ExampleEntry) {
+		examplesMenuOpen = false;
+		if (canvas.unexported) {
+			dialog = { kind: 'confirm-example', file: entry.file };
+		} else {
+			loadExample(entry.file);
+		}
+	}
+
+	function loadExample(file: CanvasFile) {
+		canvas.replace(stampIds(file));
+		announce('Example opened');
+	}
+
 	function proceed() {
 		if (dialog?.kind === 'confirm-replace') {
 			canvas.replace(stampIds(dialog.file));
@@ -153,6 +182,9 @@
 		if (dialog?.kind === 'confirm-new') {
 			canvas.replace(blankCanvas());
 			announce('New canvas');
+		}
+		if (dialog?.kind === 'confirm-example') {
+			loadExample(dialog.file);
 		}
 		dialogEl?.close();
 	}
@@ -163,10 +195,22 @@
 			exportMenuOpen = false;
 		}
 	}
+
+	function closeExamplesMenu(event: FocusEvent | MouseEvent) {
+		const next = 'relatedTarget' in event && event.relatedTarget ? event.relatedTarget : event.target;
+		if (!(next instanceof Node) || !examplesButton.parentElement?.contains(next)) {
+			examplesMenuOpen = false;
+		}
+	}
+
+	function closeMenusOnOutsideClick(event: MouseEvent) {
+		if (exportMenuOpen) closeExportMenu(event);
+		if (examplesMenuOpen) closeExamplesMenu(event);
+	}
 </script>
 
 <svelte:window
-	onclick={exportMenuOpen ? closeExportMenu : undefined}
+	onclick={exportMenuOpen || examplesMenuOpen ? closeMenusOnOutsideClick : undefined}
 	onkeydown={handleReferenceShortcut}
 />
 
@@ -191,6 +235,44 @@
 	</button>
 
 	<button type="button" class={chromeButton} onclick={() => fileInput.click()}>Import…</button>
+
+	<div class="relative" onfocusout={closeExamplesMenu}>
+		<button
+			type="button"
+			class={chromeButton}
+			aria-haspopup="menu"
+			aria-expanded={examplesMenuOpen}
+			bind:this={examplesButton}
+			onclick={(event) => {
+				event.stopPropagation();
+				examplesMenuOpen = !examplesMenuOpen;
+			}}
+			onkeydown={(event) => {
+				if (event.key === 'Escape') examplesMenuOpen = false;
+			}}
+		>
+			Examples
+		</button>
+		{#if examplesMenuOpen}
+			<div
+				role="menu"
+				class="absolute right-0 z-10 mt-1 w-80 rounded-[6px] border border-line bg-sheet py-1 shadow-md"
+			>
+				{#each EXAMPLES as entry (entry.name)}
+					<button
+						type="button"
+						role="menuitem"
+						class="block w-full px-4 py-2 text-left hover:bg-paper focus:bg-paper focus:outline-none"
+						onclick={() => openExample(entry)}
+						onkeydown={closeExamplesMenuOnEscape}
+					>
+						<span class="block text-sm font-medium">{entry.name}</span>
+						<span class="block text-xs leading-snug text-ink-soft">{entry.description}</span>
+					</button>
+				{/each}
+			</div>
+		{/if}
+	</div>
 
 	{#if canvas.unexported}
 		<span class="mx-1 text-xs text-ink/55">Unexported changes</span>
@@ -223,7 +305,7 @@
 					role="menuitem"
 					class={menuItem}
 					onclick={exportCanvasFile}
-					onkeydown={closeMenuOnEscape}
+					onkeydown={closeExportMenuOnEscape}
 				>
 					Canvas file (.bcc.json)
 				</button>
@@ -232,7 +314,7 @@
 					role="menuitem"
 					class={menuItem}
 					onclick={exportHtml}
-					onkeydown={closeMenuOnEscape}
+					onkeydown={closeExportMenuOnEscape}
 				>
 					HTML artifact (.bcc.html)
 				</button>
@@ -241,7 +323,7 @@
 					role="menuitem"
 					class={menuItem}
 					onclick={exportPng}
-					onkeydown={closeMenuOnEscape}
+					onkeydown={closeExportMenuOnEscape}
 				>
 					PNG image (2x)
 				</button>
@@ -349,6 +431,14 @@
 				{canvasName === '' ? 'This canvas' : `"${canvasName}"`} has changes that haven't been
 				exported. Starting fresh discards them and clears undo history.
 			</p>
+		{:else if dialog.kind === 'confirm-example'}
+			<h2 class="font-bold">
+				Replace {canvasName === '' ? 'this canvas' : `"${canvasName}"`}?
+			</h2>
+			<p class="mt-2 text-sm text-ink/75">
+				Its latest changes haven't been exported. Opening an example replaces the canvas and clears
+				undo history.
+			</p>
 		{:else if dialog.kind === 'newer-version'}
 			<h2 class="font-bold">This file is from a newer version of BC Canvas.</h2>
 			<p class="mt-2 text-sm text-ink/75">
@@ -364,7 +454,7 @@
 		{/if}
 
 		<div class="mt-6 flex justify-end gap-2">
-			{#if dialog.kind === 'confirm-replace' || dialog.kind === 'confirm-new'}
+			{#if dialog.kind === 'confirm-replace' || dialog.kind === 'confirm-new' || dialog.kind === 'confirm-example'}
 				<button type="button" class={chromeButton} onclick={() => dialogEl?.close()}>
 					Cancel
 				</button>
@@ -373,7 +463,7 @@
 					class="rounded-[4px] bg-ink px-3 py-1.5 text-sm font-medium text-sheet hover:bg-ink/85"
 					onclick={proceed}
 				>
-					{dialog.kind === 'confirm-replace' ? 'Replace' : 'Start new'}
+					{dialog.kind === 'confirm-new' ? 'Start new' : 'Replace'}
 				</button>
 			{:else}
 				<button type="button" class={chromeButton} onclick={() => dialogEl?.close()}>OK</button>

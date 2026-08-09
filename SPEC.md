@@ -15,6 +15,7 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 - Export of a self-contained, re-importable HTML artifact (`.bcc.html`) and a 2x PNG (`.bcc.png`).
 - Autosave to localStorage as a safety net; single linear undo/redo.
 - Full keyboard operability of the editor; WCAG AA for the HTML artifact.
+- Four bundled example canvases, opened from the chrome through the import path (§3.5, §10).
 
 **Out of scope (v1):**
 
@@ -95,6 +96,14 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
 ### 3.4 File naming
 
 Slugified context name as stem, family-signaling extensions: `<slug>.bcc.json` / `<slug>.bcc.html` / `<slug>.bcc.png` (e.g. `order-fulfillment.bcc.json`). Unnamed canvas falls back to `bounded-context-canvas`. No date stamps.
+
+### 3.5 Bundled examples
+
+Four curated example canvases — Order Fulfillment (core, every section filled), Notifications (generic, receiving Order Fulfillment's `Order Shipped` event), Appointment Scheduling (supporting), Royalty Distribution (deliberately mid-workshop, classification unset) — chosen and authored via `wayfinder/tickets/020-example-roster.md` / `022-author-examples.md`. All invented domains; no derivation beyond the standing ddd-crew attribution (§11).
+
+- The committed `examples/*.bcc.json` files are the **single source**: serializer-canonical bytes plus a trailing newline, bundled into the app as raw text and linked from the README as plain downloads. Nothing is duplicated in `src/`.
+- Opening one goes through the **same parse path as any import** — version check and migrations included — so a schema bump reaches the examples through its migration; a pinning test (`src/lib/chrome/examples.test.ts`) holds every file byte-exact through that path at the current version.
+- The chooser itself is chrome (§10); its entry one-liners are app copy, never file content.
 
 ## 4. Curated vocabularies
 
@@ -206,7 +215,8 @@ Full decision record: `wayfinder/tickets/006-state-undo-autosave.md`.
 - **Multi-tab:** last write wins, softened by a persistent notice in both tabs (via the `storage` event) — no locking. Wording in §10.
 
 **Unexported changes (the dirty state).** The Canvas has changed since it last left the browser in a re-importable form. Cleared by Canvas-file export/import **and HTML-artifact export/import**; never by PNG export. Drives the quiet indicator (§10) and the confirmation gate:
-- **Import or New over unexported changes:** confirmation dialog first (§10); on proceed the document is replaced and history cleared — a session boundary, not an undoable edit. With nothing unexported, import/new proceeds without ceremony.
+- **Import, New, or opening an example over unexported changes:** confirmation dialog first (§10); on proceed the document is replaced and history cleared — a session boundary, not an undoable edit. With nothing unexported, import/new/example proceeds without ceremony.
+- **An opened example lands clean:** its bytes exist as a published re-importable file (§3.5), so nothing is unexported until the first edit dirties as usual.
 
 ## 7. Empty state & teaching
 
@@ -237,6 +247,8 @@ One linear sequence in reading order — every editable field, chip, and pickabl
 ### 8.3 Popovers
 
 The rendered value is a button (Enter/Space opens). Pick-one pickers are **listboxes** — arrows move, type-ahead jumps, Enter picks-and-closes, Esc closes unchanged. The 15-trait checklist is a **checkbox group** — Space toggles (each toggle one commit), stays open until Esc/blur. **custom…** is the last option; Enter moves focus into its text input, Enter commits, Esc backs out to the list.
+
+**Chrome menus** (Export, Examples) share one grammar: the control is a button with `aria-haspopup="menu"`; the dropdown is `role="menu"` with `menuitem` buttons in the tab flow; Esc closes and returns focus to the control; focus-out and click-outside close.
 
 ### 8.4 Focus visibility & motion
 
@@ -284,6 +296,11 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
 
 **Chrome controls** (file verbs are Import/Export, never Open/Save):
 - **Import…** — one control, accepts `.bcc.json` and `.bcc.html`.
+- **Examples** menu, right after Import… — an example is an import sourced from the app (§3.5). Two-line entries, name over one-liner:
+  - **Order Fulfillment** — *Coordinates picking, packing and shipping once an order is paid.*
+  - **Notifications** — *Delivers order updates to customers on their preferred channel.*
+  - **Appointment Scheduling** — *Books patients into clinic slots and keeps no-shows down.*
+  - **Royalty Distribution** — *Splits streaming revenue among rights holders. Captured mid-workshop.* (the trailing flag marks the deliberately half-finished canvas)
 - **Export** menu: **Canvas file (.bcc.json)** · **HTML artifact (.bcc.html)** · **PNG image (2x)**.
 - **New canvas**.
 - Undo/Redo with shortcut in tooltip: `Undo (⌘Z)` / `Redo (⇧⌘Z)`.
@@ -300,6 +317,10 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
 > **Start a new canvas?**
 > "Order Fulfillment" has changes that haven't been exported. Starting fresh discards them and clears undo history.
 > [ Cancel ] [ **Start new** ]
+
+> **Replace "Order Fulfillment"?**
+> Its latest changes haven't been exported. Opening an example replaces the canvas and clears undo history.
+> [ Cancel ] [ **Replace** ]
 
 **File-refusal notices:**
 
@@ -336,7 +357,7 @@ Terse row-field placeholders once a section has content: `Collaborator`, `Messag
 
 **Popover microcopy:** escape hatch **custom…** (lowercase, ellipsis signals it opens a field); clear/unset entry **— none —** in the classification pickers, reading **— no relationship —** in the relationship picker. No hint lines in any picker — the descriptions are the teaching.
 
-**Live-region announcements** (terse, type-led): `Collaborator removed` · `Trait added` · `Moved up` / `Moved down` · `Undone: <section name>` / `Redone: <section name>` · `Canvas imported` · `New canvas`.
+**Live-region announcements** (terse, type-led): `Collaborator removed` · `Trait added` · `Moved up` / `Moved down` · `Undone: <section name>` / `Redone: <section name>` · `Canvas imported` · `New canvas` · `Example opened`.
 
 ## 11. License & attribution
 
@@ -393,5 +414,5 @@ Link line: **Learn the method: the ddd-crew's Bounded Context Canvas** → `gith
 ## 14. Research & prototype provenance
 
 - Research notes: `docs/research/contexture-schema.md` (branch `research/contexture-schema`), `docs/research/export-techniques.md` (branch `research/export-techniques`).
-- Prototypes (all variants + reasoning on their branches): visual language `prototype/canvas-visual-language` (winner `6-quiet-sheet/`), inline editing `prototype/inline-editing` (winner `1-live-sheet/`), empty state `prototype/empty-state` (winner `1-placeholder-questions/`).
+- Prototypes (all variants + reasoning on their branches): visual language `prototype/canvas-visual-language` (winner `6-quiet-sheet/`), inline editing `prototype/inline-editing` (winner `1-live-sheet/`), empty state `prototype/empty-state` (winner `1-placeholder-questions/`), example chooser `prototype/example-chooser` (winner variant 1, the Examples menu).
 - Decision detail: `wayfinder/tickets/*.md`; glossary: `CONTEXT.md`.
