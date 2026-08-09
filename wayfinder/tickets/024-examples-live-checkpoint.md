@@ -3,7 +3,7 @@ name: examples-live-checkpoint
 title: "Task: live checkpoint — the examples work on the real origin"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [ship-example-chooser]
 ---
 
