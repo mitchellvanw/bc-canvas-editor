@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { realpathSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { OutsideRoot, openRoot, type CanvasRoot } from './root';
+import { OutsideRoot, openRoot, whyUnservable, type CanvasRoot } from './root';
 
 let root: CanvasRoot;
 let outside: string;
@@ -98,5 +98,36 @@ describe('relative', () => {
 
 	it('refuses to name a path outside the root', () => {
 		expect(() => root.relative(join(outside, 'secrets.txt'))).toThrow(OutsideRoot);
+	});
+});
+
+/**
+ * The one root that already ends in a separator, so `root + sep` is `//` and
+ * every containment check silently inverts. `main.ts` refuses to serve it, but
+ * containment is the security seam and it must not depend on that: a rule that
+ * is wrong for one root is a rule nobody can reason about.
+ */
+describe('the filesystem root', () => {
+	const slash = openRoot('/');
+
+	it('holds everything, rather than nothing', () => {
+		expect(slash.resolve('/etc')).toBe(realpathSync('/etc'));
+		expect(slash.resolve('etc')).toBe(realpathSync('/etc'));
+	});
+
+	it('names a path below it without eating the first character', () => {
+		expect(slash.relative('/etc/hosts')).toBe('etc/hosts');
+		expect(slash.relative('/etc')).toBe('etc');
+	});
+
+	it('is refused at launch anyway, saying what to pass instead', () => {
+		const why = whyUnservable('/');
+		expect(why).toContain('is the filesystem root, not a project');
+		expect(why).toContain('--root <directory>');
+	});
+
+	it('is the only root refused', () => {
+		expect(whyUnservable(root.path)).toBeNull();
+		expect(whyUnservable(outside)).toBeNull();
 	});
 });

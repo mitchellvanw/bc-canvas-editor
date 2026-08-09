@@ -89,7 +89,11 @@ Worth recording that the model routed around it unaided: it noticed the wrong ro
 
 Verified against the built bundle on the failing shape: `--root '/Library/Application Support/Apple'` now lists cleanly and closes with *"2 directories could not be opened, so a canvas under them would not appear above: AssetCache/Data, ParentalControls/Users."* Script at `.scratch/mcp-hosts-checkpoint/unreadable-root.mjs`.
 
-The `bc-canvas-cwd` entry has done its job and should come out of the Desktop config; `bc-canvas`, on the staged root, is the one the remaining steps use.
+**Finding 6, fixed — containment was inverted for a root of `/`, and the whole disk was a bad root anyway.** The next Desktop run showed a different error in the same place: `/Library/Application Support/Apple/AssetCache/Data: outside the canvas root. Paths are relative to /`. Every path on the machine reads as outside a root of `/`, because `inside()` compared against `root + sep` and `/` already ends in one — `//`, which nothing starts with. `relative()` had the matching arithmetic bug, slicing `path.length + 1` and eating the first character. Latent since [mcp-package-scaffold](wayfinder/tickets/027-mcp-package-scaffold.md); finding 5's catch handler is what surfaced it, by calling `relative()` where an unguarded `readdirSync` used to throw first. A single `boundary()` now supplies the one trailing separator both callers need, and `openRoot('/')` is tested for containment directly — a seam that is wrong for one root is a seam nobody can reason about.
+
+Containment being right does not make `/` a sensible root, so the second half is policy: **the server now refuses to start on the filesystem root**, naming `--root` and the folder to pass. It costs nothing — nobody keeps a project at `/` — and it fails at launch, where a reader can act on it, instead of as a first listing that never comes back. `whyUnservable()` sits beside the containment rule as a pure function, so it is unit-tested rather than driven through a subprocess; the guard fires identically on an explicit `--root /` and on the default working directory, both checked against the built bundle. Suite is 87. Both README sentences updated.
+
+The `bc-canvas-cwd` entry has done its job — it would now refuse to start — and has been removed from the Desktop config. `bc-canvas`, on the staged root, is the one the remaining steps use.
 
 Remaining, by hand:
 

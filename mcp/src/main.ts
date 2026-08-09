@@ -3,7 +3,7 @@
 import { fail } from './stderr';
 
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
-import { openRoot, type CanvasRoot } from './root';
+import { openRoot, whyUnservable, type CanvasRoot } from './root';
 import { buildServer } from './server';
 
 const USAGE = 'usage: bc-canvas-mcp [--root <directory>]';
@@ -39,6 +39,9 @@ function openRequestedRoot(requested: string): CanvasRoot {
 }
 
 const root = openRequestedRoot(rootArgument(process.argv.slice(2)));
+
+const unservable = whyUnservable(root.path);
+if (unservable !== null) fail(`${unservable}\n${USAGE}`);
 
 console.error(`bc-canvas-mcp: serving ${root.path}`);
 

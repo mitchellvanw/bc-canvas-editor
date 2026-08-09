@@ -61,8 +61,37 @@ function realAncestor(path: string): string {
 	}
 }
 
+/**
+ * The root with exactly one trailing separator — what a child path must start
+ * with. Almost every root needs one appended; the filesystem root already has
+ * it, and appending anyway gives `//`, which nothing starts with, so every path
+ * on the machine would read as outside. Both callers go through here.
+ */
+function boundary(root: string): string {
+	return root.endsWith(sep) ? root : root + sep;
+}
+
 function inside(path: string, root: string): boolean {
-	return path === root || path.startsWith(root + sep);
+	return path === root || path.startsWith(boundary(root));
+}
+
+/**
+ * Why an otherwise valid root will not be served, or null.
+ *
+ * Only one rule, and it is policy rather than containment — the seam above
+ * holds for `/` like any other directory, and is tested there. Claude Desktop
+ * starts a stdio server at the filesystem root, so the default lands on `/`
+ * whenever `--root` is left off; serving it is legal and useless, because the
+ * first listing would try to walk the whole disk. Refusing costs nothing —
+ * nobody keeps a project at `/` — and it fails at launch, where a reader can
+ * still act on it, rather than as a listing that never comes back.
+ */
+export function whyUnservable(path: string): string | null {
+	if (dirname(path) !== path) return null;
+	return (
+		`${path} is the filesystem root, not a project — listing it would walk the whole disk.\n` +
+		`Pass --root <directory>, naming the folder your canvases live under.`
+	);
 }
 
 /**
@@ -88,7 +117,7 @@ export function openRoot(input: string): CanvasRoot {
 		},
 		relative(absolutePath: string): string {
 			if (!inside(absolutePath, path)) throw new OutsideRoot(absolutePath, path);
-			return absolutePath.slice(path.length + 1).split(sep).join('/');
+			return absolutePath.slice(boundary(path).length).split(sep).join('/');
 		}
 	};
 }

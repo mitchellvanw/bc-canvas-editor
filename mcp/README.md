@@ -24,7 +24,7 @@ No `--root` needed. The server defaults to its working directory, which is the p
 
 ## Claude Desktop
 
-Desktop starts the server at the filesystem root, so `--root` is not optional here — leave it out and the first listing tries to walk your whole disk. In `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Desktop starts the server at the filesystem root, so `--root` is not optional here. Leave it out and the server refuses to start rather than walk your whole disk, saying so on stderr. In `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
