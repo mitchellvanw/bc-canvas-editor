@@ -28,4 +28,6 @@ Glossary for the bounded context canvas editor. The app's own domain — not the
 
 **Canvas root** — the one directory the MCP server may read and write (`--root`, defaulting to where it was launched). Every path a tool accepts is resolved inside it before anything touches the filesystem, symlinks resolved first; there is no second root, and nothing outside it exists as far as the server is concerned.
 
+**Plugin** — the installable bundle that carries the MCP server together with its facilitation layer (the workshop and drafting skills, the reviewer agent) into Claude surfaces. The server is the floor any MCP host gets on its own; the Plugin is choreography on top of it, owning procedure and never content.
+
 **Reference** — the app's single consult-and-dismiss teaching surface: a dialog listing the keyboard shortcuts and linking to the ddd-crew method material. Everything else the app teaches at point of use (picker descriptions, placeholder questions, the footer legend); the Reference exists for what cannot be taught in place.
