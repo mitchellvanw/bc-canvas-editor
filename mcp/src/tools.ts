@@ -27,7 +27,7 @@ import { readRefusal, refuse } from './errors';
 import { explain, TOPICS } from './explain';
 import { readCanvas } from './read';
 import { OutsideRoot, type CanvasRoot } from './root';
-import { WRITE_INPUT, WRITE_OUTPUT } from './schema';
+import { WRITE_INPUT } from './schema';
 import { emptySections, SECTIONS } from './sections';
 import { canvasBytes, writeAtomic } from './write';
 
@@ -50,21 +50,6 @@ function listCanvases(server: McpServer, root: CanvasRoot): void {
 			title: 'List canvases',
 			description:
 				'Every Bounded Context Canvas under this project, with how far along each one is. Start here: a canvas from this codebase calibrates a new one better than any example, and reading a neighbouring context is usually how you learn what this one is not responsible for.',
-			outputSchema: z.object({
-				canvases: z.array(
-					z.object({
-						path: z.string(),
-						uri: z.string(),
-						name: z.string(),
-						description: z.string(),
-						filled: z.number().int(),
-						empty: z.array(z.string())
-					})
-				),
-				problems: z.array(z.object({ path: z.string(), uri: z.string(), problem: z.string() })),
-				unreadable: z.array(z.string()),
-				sections: z.array(z.string())
-			}),
 			annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false }
 		},
 		async (): Promise<CallToolResult> => {
@@ -73,7 +58,7 @@ function listCanvases(server: McpServer, root: CanvasRoot): void {
 
 			if (found.canvases.length === 0) {
 				lines.push(
-					`No canvases under ${root.path} yet. A canvas is a ${CANVAS_EXTENSION} file, or a .bcc.html artifact carrying one; bcc_write_canvas creates the first.`
+					`No canvases under ${root.path} yet. Hidden and generated directories were not searched — any name starting with a dot, plus node_modules, dist and build. A canvas is a ${CANVAS_EXTENSION} file, or a .bcc.html artifact carrying one; bcc_write_canvas creates the first.`
 				);
 			} else {
 				lines.push(
@@ -95,10 +80,7 @@ function listCanvases(server: McpServer, root: CanvasRoot): void {
 				);
 			}
 
-			return {
-				content: [{ type: 'text', text: lines.join('\n').trimEnd() }],
-				structuredContent: found
-			};
+			return { content: [{ type: 'text', text: lines.join('\n').trimEnd() }] };
 		}
 	);
 }
@@ -153,7 +135,6 @@ function writeCanvasTool(server: McpServer, root: CanvasRoot): void {
 			description:
 				'Write a whole canvas to a .bcc.json file, in the exact form the BC Canvas editor reads. Whole document every time — send every section, including the ones with nothing in them, and the result names which came out empty so a section is never dropped by accident. Call bcc_explain first if you are unsure what belongs in one.',
 			inputSchema: WRITE_INPUT,
-			outputSchema: WRITE_OUTPUT,
 			annotations: {
 				readOnlyHint: false,
 				destructiveHint: true,
@@ -232,10 +213,7 @@ function writeCanvasTool(server: McpServer, root: CanvasRoot): void {
 			);
 			if (warnings.length > 0) lines.push(...warnings);
 
-			return {
-				content: [{ type: 'text', text: lines.join(' ') }],
-				structuredContent: { path: written, uri: canvasUri(written), created, empty, warnings }
-			};
+			return { content: [{ type: 'text', text: lines.join(' ') }] };
 		}
 	);
 }
@@ -260,6 +238,12 @@ function explainTool(server: McpServer): void {
 	);
 }
 
+// No tool here declares an `outputSchema`, as a standing rule. Declaring one
+// entitles a host to treat the text block as a duplicate serialization of the
+// structured content and drop it — the spec says as much, both day-one hosts
+// do it, and that is how these results' prose got thrown away (hosts
+// checkpoint, finding 1). Every result speaks in prose, so the prose must be
+// the only serialization there is.
 export function registerTools(server: McpServer, root: CanvasRoot): void {
 	listCanvases(server, root);
 	readCanvasTool(server, root);

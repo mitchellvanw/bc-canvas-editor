@@ -114,16 +114,15 @@ describe('tools/list', () => {
 		expect(canvas.strategicClassification.properties.domain.enum).toBeUndefined();
 	});
 
-	it('declares an output schema everywhere a result is structured, and not on the read', async () => {
+	it('declares no output schema on any tool, so the prose is the result', async () => {
 		const { tools } = await client.listTools();
-		const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
 
-		expect(byName.bcc_write_canvas.outputSchema).toBeDefined();
-		expect(byName.bcc_list_canvases.outputSchema).toBeDefined();
-		// A declared output schema is a promise that *every* result carries
-		// conforming structured content — which would make view: 'json' dead
-		// weight, since the file would ride along on every digest read too.
-		expect(byName.bcc_read_canvas.outputSchema).toBeUndefined();
+		// A declared output schema entitles a host to drop the text block as a
+		// duplicate serialization, and both day-one hosts do — the standing rule
+		// at the registration site in tools.ts.
+		for (const tool of tools) {
+			expect(tool.outputSchema, `${tool.name} declares an outputSchema`).toBeUndefined();
+		}
 	});
 });
 
@@ -167,34 +166,34 @@ describe('bcc_list_canvases', () => {
 		put('docs/contexts/half.bcc.json', readFileSync(join(EXAMPLES, 'royalty-distribution.bcc.json'), 'utf8'));
 
 		const result = await call('bcc_list_canvases');
-		const { canvases, sections } = result.structuredContent;
+		const body = text(result);
 
-		expect(sections).toHaveLength(11);
-		expect(canvases.map((canvas: any) => canvas.path)).toEqual([
-			'docs/contexts/half.bcc.json',
-			'docs/contexts/orders.bcc.json'
-		]);
-		const orders = canvases.find((canvas: any) => canvas.path === 'docs/contexts/orders.bcc.json');
-		expect(orders.name).toBe('Order Fulfillment');
-		expect(orders.uri).toBe('bcc://canvas/docs/contexts/orders.bcc.json');
-		expect(orders.filled).toBeGreaterThan(8);
-		expect(text(result)).toContain('bcc://canvas/docs/contexts/orders.bcc.json');
+		expect(body).toContain('2 canvases under');
+		expect(body).toContain('docs/contexts/orders.bcc.json — Order Fulfillment');
+		// Sorted by path, so the listing reads the same tomorrow.
+		expect(body.indexOf('half.bcc.json')).toBeLessThan(body.indexOf('orders.bcc.json'));
+		expect(body).toMatch(/\d+ of 11 sections filled\./);
+		expect(body).toContain('bcc://canvas/docs/contexts/orders.bcc.json');
 	});
 
 	it('reports a file it cannot read rather than dropping it', async () => {
 		put('broken.bcc.json', '{"version":1,"name":42}');
 
 		const result = await call('bcc_list_canvases');
+		const body = text(result);
 
-		expect(result.structuredContent.canvases).toEqual([]);
-		expect(result.structuredContent.problems[0]).toMatchObject({
-			path: 'broken.bcc.json',
-			problem: 'name: expected a string, got a number.'
-		});
+		expect(body).toContain('Files that look like canvases and could not be read:');
+		expect(body).toContain('broken.bcc.json — name: expected a string, got a number.');
 	});
 
-	it('tells the model what to do when there is nothing there', async () => {
-		expect(text(await call('bcc_list_canvases'))).toContain('bcc_write_canvas creates the first');
+	it('tells the model what to do when there is nothing there, and where it did not look', async () => {
+		// A canvas sitting in a skipped directory is the one case where an empty
+		// listing misleads, so the empty listing is where the skip rule is spent.
+		put('.scratch/hidden.bcc.json', '{}');
+
+		const body = text(await call('bcc_list_canvases'));
+		expect(body).toContain('bcc_write_canvas creates the first');
+		expect(body).toContain('Hidden and generated directories were not searched');
 	});
 });
 
@@ -301,10 +300,10 @@ describe('bcc_write_canvas', () => {
 		});
 
 		expect(result.isError).toBeFalsy();
-		expect(result.structuredContent.created).toBe(true);
-		expect(result.structuredContent.empty).toContain('Open questions');
-		expect(result.structuredContent.empty).not.toContain('Name');
-		expect(text(result)).toContain('Nothing came out under:');
+		const body = text(result);
+		expect(body).toContain('Wrote thin.bcc.json — Thin.');
+		expect(body).toMatch(/Nothing came out under: .*Open questions/);
+		expect(body).not.toContain('Name');
 	});
 
 	it('notes a custom vocabulary value instead of refusing it', async () => {
@@ -321,10 +320,10 @@ describe('bcc_write_canvas', () => {
 		});
 
 		expect(result.isError).toBeFalsy();
-		const [trait, relationship] = result.structuredContent.warnings;
-		expect(trait).toContain('"strangler" is a custom domain-role trait, kept as written');
-		expect(relationship).toContain('"strangler-fig" is a custom relationship pattern');
-		expect(relationship).toContain('anticorruption-layer');
+		const body = text(result);
+		expect(body).toContain('"strangler" is a custom domain-role trait, kept as written');
+		expect(body).toContain('"strangler-fig" is a custom relationship pattern');
+		expect(body).toContain('anticorruption-layer');
 		// And the custom values are in the file, unchanged.
 		expect(readFileSync(join(base, 'custom.bcc.json'), 'utf8')).toContain('strangler-fig');
 	});
@@ -336,7 +335,6 @@ describe('bcc_write_canvas', () => {
 			canvas: { ...blank(), name: 'Two' }
 		});
 
-		expect(again.structuredContent.created).toBe(false);
 		expect(text(again)).toContain('Replaced x.bcc.json — Two.');
 	});
 
@@ -367,6 +365,16 @@ describe('bcc_explain', () => {
 
 		expect(canvas).toContain('Ubiquitous language — which words mean something precise here?');
 		expect(canvas).toContain('ddd-crew · CC BY 4.0');
+	});
+
+	it('tells a model drafting from code where the judgment sections go', async () => {
+		const canvas = text(await call('bcc_explain', { topic: 'canvas' }));
+
+		// The five sections code cannot answer, and the honest place for them —
+		// method knowledge that lives server-side so every MCP client gets it.
+		expect(canvas).toContain('business judgments a codebase cannot answer');
+		expect(canvas).toContain('verification metrics');
+		expect(canvas).toContain('under Open questions');
 	});
 
 	it('covers the canvas and all eleven sections', async () => {

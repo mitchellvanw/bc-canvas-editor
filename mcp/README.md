@@ -60,7 +60,7 @@ Canvases are resources too, at `bcc://canvas/<path>`. Attach one from the host's
 
 ## What counts as a canvas
 
-`*.bcc.json` and `*.bcc.html`, found by walking the root and skipping `node_modules`, `.git`, `dist`, `build` and `.svelte-kit`. An HTML artifact is read through the Canvas file embedded in it. The server never writes one — that would mean rendering the sheet, which needs a browser.
+`*.bcc.json` and `*.bcc.html`, found by walking the root and skipping every hidden directory — any name starting with a dot — plus `node_modules`, `dist` and `build`. A canvas you mean to keep lives in neither, and scratch fixtures under a `.scratch/` or a cache should not turn up in a listing. An HTML artifact is read through the Canvas file embedded in it. The server never writes one — that would mean rendering the sheet, which needs a browser.
 
 A directory the walk cannot open stops that branch and nothing else, and the listing names it at the end — a wide root usually has one or two, and losing every canvas already found to a directory the OS keeps to itself would be a poor trade.
 

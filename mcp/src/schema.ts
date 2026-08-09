@@ -134,11 +134,3 @@ export const WRITE_INPUT = z.object({
 		'The whole canvas. Every section is required; a section with nothing in it is an empty array or an empty string, and the result names which ones came out that way.'
 	)
 });
-
-export const WRITE_OUTPUT = z.object({
-	path: z.string(),
-	uri: z.string(),
-	created: z.boolean().describe('False when an existing canvas was replaced.'),
-	empty: z.array(z.string()).describe('The sections that came out with nothing in them.'),
-	warnings: z.array(z.string()).describe('Values outside the curated vocabularies, kept as written.')
-});

@@ -130,6 +130,13 @@ const CANVAS_OVERVIEW = [
 		return asked === undefined ? `  ${section.label}` : `  ${section.label} — ${asked}`;
 	}),
 	'',
+	'Five of the eleven are business judgments a codebase cannot answer: strategic',
+	'classification, domain roles, business decisions, assumptions, and',
+	'verification metrics. Reading code will still produce plausible entries for',
+	'all five. When drafting from code alone, leave them empty and raise what you',
+	'would have written under Open questions instead — a filled row reads as a',
+	'decision someone made, and a question is the honest form of a guess.',
+	'',
 	'Call bcc_explain again with any section name for its shape, its vocabulary and',
 	'an example row. bcc_list_canvases shows the canvases already under this root —',
 	'read one before drafting, since a real neighbouring canvas calibrates better',

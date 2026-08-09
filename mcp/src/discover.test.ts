@@ -62,13 +62,16 @@ describe('findCanvases', () => {
 		expect(findCanvases(root).paths).toEqual(['orders.bcc.json']);
 	});
 
-	it('skips generated and vendored trees', () => {
+	it('skips every dot-directory, and the generated trees', () => {
 		put('node_modules/pkg/fixture.bcc.json');
-		put('.git/stash.bcc.json');
 		put('dist/orders.bcc.json');
 		put('build/orders.bcc.json');
-		put('.svelte-kit/orders.bcc.json');
 		put('examples/orders.bcc.json');
+		// Any name starting with a dot — not a fixed list of well-known ones.
+		put('.git/stash.bcc.json');
+		put('.svelte-kit/orders.bcc.json');
+		put('.scratch/fixtures/mangled.bcc.json');
+		put('docs/.cache/orders.bcc.json');
 
 		expect(findCanvases(root).paths).toEqual(['examples/orders.bcc.json']);
 	});

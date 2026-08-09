@@ -4,11 +4,12 @@
  * ours. Both importable forms count: `.bcc.json` files and the `.bcc.html`
  * artifacts that carry one embedded.
  *
- * Directories that hold generated or vendored trees are skipped outright: a
- * canvas committed to the repo never lives in one, and walking them turns a
- * listing into a crawl. Symlinks are skipped too — discovery reports what is
- * really under the root, and following a link is how a walk leaves it or loops
- * forever.
+ * Hidden directories — any name starting with a dot — and generated or
+ * vendored trees are skipped outright: a canvas someone means to keep never
+ * lives in one, and walking them puts every scratch fixture and cache file
+ * into the tool whose description says to start there. Symlinks are skipped
+ * too — discovery reports what is really under the root, and following a link
+ * is how a walk leaves it or loops forever.
  *
  * A directory the process cannot open stops that branch and nothing else. The
  * walk covers a root the server did not choose — a host may hand it one far
@@ -23,7 +24,12 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { CanvasRoot } from './root';
 
-const SKIPPED = new Set(['node_modules', '.git', 'dist', 'build', '.svelte-kit']);
+const SKIPPED = new Set(['node_modules', 'dist', 'build']);
+
+/** The skip rule: dot-directories, plus the generated trees named above. */
+function skipped(name: string): boolean {
+	return name.startsWith('.') || SKIPPED.has(name);
+}
 
 const EXTENSIONS = ['.bcc.json', '.bcc.html'];
 
@@ -60,7 +66,7 @@ export function findCanvases(root: CanvasRoot): Discovery {
 			if (entry.isSymbolicLink()) continue;
 			const path = join(directory, entry.name);
 			if (entry.isDirectory()) {
-				if (!SKIPPED.has(entry.name)) walk(path);
+				if (!skipped(entry.name)) walk(path);
 			} else if (entry.isFile() && isCanvasPath(entry.name)) {
 				paths.push(root.relative(path));
 			}
