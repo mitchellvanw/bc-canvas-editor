@@ -2,7 +2,7 @@
 name: bcc-plugin
 title: "Task: the plugin — server bundled, two skills, one agent"
 labels: [wayfinder:task]
-status: open
+status: closed
 assignee: mitchell
 blocked-by: [mcp-prose-and-discovery]
 ---
@@ -24,3 +24,15 @@ Build the facilitation layer [workshop-shape](wayfinder/tickets/031-workshop-sha
 **Docs.** `mcp/README.md` gains the install path and the two-config story — Claude Code gets the server free via the plugin, Desktop/Cowork keeps the explicit-root entry, the skills ride on whichever is connected. Root README pointer updated.
 
 `writing-copy` throughout — skill descriptions, agent description and every body sentence are copy, and the model is a reader. Suite green, `tsc` clean.
+
+## Resolution
+
+Built and green (2026-08-09). The layout fact was verified first, against the official plugin docs (code.claude.com/docs/en/plugin-marketplaces.md, plugins-reference.md), and it decided everything: a marketplace install clones the repo, copies **only the plugin's `source` subdirectory** into `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`, runs no build step, and `../` paths never resolve afterwards. So the plugin root is **`mcp/` itself** — the package that already existed becomes the plugin, the committed bundle sits inside it as `${CLAUDE_PLUGIN_ROOT}/dist/server.js`, and nothing is committed twice.
+
+**The bundle.** `.claude-plugin/marketplace.json` at the repo root (marketplace `bc-canvas-editor`) points `source: "./mcp"`; `mcp/.claude-plugin/plugin.json` names the plugin `bc-canvas`, so installing is `/plugin marketplace add mitchellvanw/bc-canvas-editor` then `/plugin install bc-canvas@bc-canvas-editor`. Two consequences the ticket's text had not priced: with no `npm install` at install time, the committed `dist/server.js` must run with nothing beside it but Node, so **the build now inlines its dependencies** (`packages: 'external'` dropped; 1.2 MB, byte-deterministic across rebuilds, no machine paths in the output) — and the sourcemap is dropped rather than committed, since it would double the price to serve a file only ever read in this checkout. `mcp/dist` left `.gitignore`; `build.js` takes an optional outfile argument. The staleness check is the suite's shape now: `server.test.ts` stopped rebuilding `dist/` in `beforeAll` and instead **drives the committed bundle**, with a first test that builds to a scratch path and byte-compares, failing with "run `npm run build` in mcp/ and commit the result". `mcp/.mcp.json` launches the server with no `--root` — correct in Claude Code, refused at launch in Cowork exactly as decided, with the hand-written Desktop entry as the documented remedy.
+
+**The seam, held.** `skills/canvas-workshop/SKILL.md` and `skills/draft-canvas-from-code/SKILL.md` carry procedure only: both open by taking the sheet's order and the sections' meaning from `bcc_explain` rather than restating them — no section questions, no vocabulary, no digest shapes anywhere in the plugin. The workshop skill pins the disk-truth loop (write whole document after every section, read back as `view: 'json'` before the next) and closes on a review-style readback; its done-line requires every section filled in the human's words or accounted for under Open questions. The draft skill's ground rules are the evidence discipline (an inbound message is a handler that exists, a collaborator a caller you can name; a row you cannot back with a file is a question, not a row), delegation of the judgment sections to what `bcc_explain('canvas')` says, and the code's own vocabulary; it closes by handing the draft back for correction. `agents/canvas-reviewer.md` is the stance plus the two tools, four sentences of body.
+
+**Docs.** `mcp/README.md`: Install now leads with the plugin and the line "what the install gives you differs by host, and the difference is `--root`" — Claude Code needs nothing more, Desktop keeps the explicit-root entry with the skills riding on whichever server is connected; a "What the plugin adds" section names the three components; Development documents the committed bundle and the diff check. Root README pointer updated.
+
+Validated by the plugin-dev structure validator (pass, no issues), `npm test` green in `mcp/` (89) and at the root (313), `tsc`/`svelte-check` clean in both. Not driven in a real host here — that is [workshop-drive](wayfinder/tickets/034-workshop-drive.md)'s whole job, now the sole frontier ticket.

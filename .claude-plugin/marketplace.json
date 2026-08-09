@@ -1,0 +1,13 @@
+{
+	"name": "bc-canvas-editor",
+	"owner": {
+		"name": "Mitchell van Wijngaarden"
+	},
+	"plugins": [
+		{
+			"name": "bc-canvas",
+			"source": "./mcp",
+			"description": "Bounded Context Canvas tools for a codebase: a local MCP server over the canvas files in a project, a facilitated workshop, a disciplined draft-from-code, and a reviewer that asks rather than fills."
+		}
+	]
+}

@@ -1,0 +1,10 @@
+{
+	"name": "bc-canvas",
+	"version": "0.0.1",
+	"description": "Draft, workshop and review Bounded Context Canvases over the files in your project. Bundles the bc-canvas MCP server; the canvases it writes open unchanged in the BC Canvas editor.",
+	"author": {
+		"name": "Mitchell van Wijngaarden"
+	},
+	"homepage": "https://bc-canvas.pages.dev",
+	"repository": "https://github.com/mitchellvanw/bc-canvas-editor"
+}

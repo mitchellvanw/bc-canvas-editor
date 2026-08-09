@@ -15,7 +15,7 @@ Four curated example canvases ship in the app's **Examples** menu. The same file
 
 ## MCP server
 
-`mcp/` is a local stdio MCP server over the canvas files in a project — listing them, reading them as prose or as bytes, and writing them back in the form this editor imports. See [`mcp/README.md`](mcp/README.md) to install it into Claude Code or Claude Desktop.
+`mcp/` is a local stdio MCP server over the canvas files in a project — listing them, reading them as prose or as bytes, and writing them back in the form this editor imports. It ships as the **bc-canvas** plugin (`/plugin marketplace add mitchellvanw/bc-canvas-editor`), which adds a facilitated workshop skill, a draft-from-code skill, and a reviewer agent beside the server. See [`mcp/README.md`](mcp/README.md) for both hosts.
 
 ## Developing
 

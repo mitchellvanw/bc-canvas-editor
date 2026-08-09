@@ -6,25 +6,28 @@ The canvases are meant to be committed alongside the code they describe. That is
 
 ## Install
 
-```sh
-cd mcp
-npm install
-npm run build
+The server ships inside the **bc-canvas** plugin, together with two skills — a facilitated canvas workshop and a disciplined draft-from-code — and a reviewer agent:
+
+```
+/plugin marketplace add mitchellvanw/bc-canvas-editor
+/plugin install bc-canvas@bc-canvas-editor
 ```
 
-`npm run build` bundles `dist/server.js`, which is what a host launches. The package is not published, so the snippets below need the path to this checkout.
+There is nothing to build: the plugin carries `dist/server.js` ready to run, and Node is its only requirement. What the install gives you differs by host, and the difference is `--root`.
 
 ## Claude Code
+
+The plugin is the whole setup. Its server entry passes no `--root`, and none is needed: the server defaults to its working directory, which is the project Claude Code started it in.
+
+Without the plugin, a checkout works too:
 
 ```sh
 claude mcp add bc-canvas -- node /path/to/bc-canvas-editor/mcp/dist/server.js
 ```
 
-No `--root` needed. The server defaults to its working directory, which is the project Claude Code started it in.
-
 ## Claude Desktop
 
-Desktop starts the server at the filesystem root, so `--root` is not optional here. Leave it out and the server refuses to start rather than walk your whole disk, saying so on stderr. In `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Desktop starts the server at the filesystem root, so `--root` is not optional here — the plugin's own server entry leaves it out and is refused at launch, saying so on stderr rather than walking your whole disk. Keep the plugin for its skills, and connect the server yourself with an explicit root in `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -45,6 +48,8 @@ Desktop starts the server at the filesystem root, so `--root` is not optional he
 
 It is also fixed for the life of the config, and that is worth knowing before you pick it. A Cowork session opened on a project does not move the root: whatever folder you name here is the folder every Desktop conversation sees, whichever project you happen to be standing in. Name the directory your canvases live under, not a single project — or run one entry per project under different server names.
 
+The plugin's skills ride on whichever server entry is connected — they call the same tools either way.
+
 ## What it offers
 
 Four tools:
@@ -57,6 +62,14 @@ Four tools:
 One prompt, **Review a canvas**, which is the thing to reach for from Desktop. It embeds the canvas you pick and asks the model to name what is missing and put the open questions back to you, rather than answering them itself.
 
 Canvases are resources too, at `bcc://canvas/<path>`. Attach one from the host's own UI to give a conversation a context to work against.
+
+## What the plugin adds
+
+Beside the server, the plugin carries the facilitation layer — findable by typing `/` and the name in any Claude surface:
+
+- **canvas-workshop** — a facilitated session. The model asks, one section at a time; you answer; the sheet fills in your words, and what you defer lands under Open questions instead of staying silently blank.
+- **draft-canvas-from-code** — a draft drawn from what the code shows, handed back for correction. The business judgments a codebase cannot answer arrive as open questions rather than invented rows.
+- **canvas-reviewer** — an agent that reviews by asking: it names what is missing or thin and puts the open questions back to you, answering none of them.
 
 ## What counts as a canvas
 
@@ -79,9 +92,13 @@ Serves revision **2026-07-28** over stdio through `serveStdio`, and accepts 2025
 ## Development
 
 ```sh
+npm install
 npm test          # vitest, including the round trip over every committed example
 npm run check     # tsc --noEmit
+npm run build     # refresh dist/server.js after changing src/
 ```
+
+`dist/server.js` is committed, because a plugin install copies files as they sit in the repo and runs no build step. It inlines everything but Node itself. The suite diffs the committed bytes against a fresh build, so a bundle left stale after a source change fails the tests instead of shipping.
 
 The server reuses `src/lib/model/*` from the app unchanged, through a `$lib/*` path mapping. That is deliberate: one parser and one serializer decide what a Canvas file is, so the bytes this server writes open in the editor and the bytes the editor exports read here.
 

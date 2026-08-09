@@ -6,10 +6,15 @@
  * Deliberately spoken as raw lines rather than through the client SDK: half of
  * what is being proved is what does *not* appear on stdout, and only the bytes
  * can show that.
+ *
+ * What is driven is the *committed* `dist/server.js` — the file a plugin
+ * install copies verbatim, since a marketplace install runs no build step. The
+ * first test rebuilds to a scratch path and diffs, so the committed bundle
+ * cannot drift from the sources without the suite going red.
  */
 
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtempSync, realpathSync } from 'node:fs';
+import { mkdtempSync, readFileSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -61,9 +66,25 @@ function replies(run: Run): Record<string, any>[] {
 let root: string;
 
 beforeAll(() => {
-	execFileSync(process.execPath, ['build.js'], { cwd: PACKAGE, stdio: 'inherit' });
 	root = realpathSync(mkdtempSync(join(tmpdir(), 'bcc-serve-')));
-}, 60_000);
+});
+
+describe('the committed bundle', () => {
+	it(
+		'matches a fresh build byte for byte',
+		() => {
+			const scratch = join(mkdtempSync(join(tmpdir(), 'bcc-build-')), 'server.js');
+			execFileSync(process.execPath, ['build.js', scratch], { cwd: PACKAGE, stdio: 'inherit' });
+			const fresh = readFileSync(scratch);
+			const committed = readFileSync(SERVER);
+			expect(
+				fresh.equals(committed),
+				'dist/server.js is stale — run `npm run build` in mcp/ and commit the result'
+			).toBe(true);
+		},
+		60_000
+	);
+});
 
 describe('the built server over stdio', () => {
 	it('answers a 2026-07-28 client with the four tools', async () => {

@@ -2,7 +2,6 @@ node_modules
 
 # Output
 .output
-mcp/dist
 .vercel
 .netlify
 .wrangler
