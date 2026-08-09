@@ -1,0 +1,8 @@
+{
+	"mcpServers": {
+		"bc-canvas": {
+			"command": "node",
+			"args": ["/Users/mitchell/Projects/bc-canvas-editor/mcp/dist/server.js"]
+		}
+	}
+}
