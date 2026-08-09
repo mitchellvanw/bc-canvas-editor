@@ -3,7 +3,7 @@ name: review-prompt-and-readme
 title: "Task: the review-canvas prompt and the server's README"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [mcp-tools-and-resource]
 ---
 
