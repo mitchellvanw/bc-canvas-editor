@@ -189,7 +189,7 @@ describe('bcc_list_canvases', () => {
 		expect(result.structuredContent.canvases).toEqual([]);
 		expect(result.structuredContent.problems[0]).toMatchObject({
 			path: 'broken.bcc.json',
-			problem: 'name: expected a string, got a number'
+			problem: 'name: expected a string, got a number.'
 		});
 	});
 

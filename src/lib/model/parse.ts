@@ -31,8 +31,15 @@ export type ParseResult =
 	| { ok: false; reason: 'newer-version'; version: number }
 	| { ok: false; reason: 'not-canvas'; detail?: string };
 
+/**
+ * The single place a `detail` gets its full stop. Every caller writes a clause
+ * — "expected an array, got nothing" — and the readers put that clause into
+ * sentences of their own: the MCP server joins it with the two lines that name
+ * the format and point at `bcc_explain`. Without a terminator the clause runs
+ * straight into whatever follows it.
+ */
 function notCanvas(detail: string): ParseResult {
-	return { ok: false, reason: 'not-canvas', detail };
+	return { ok: false, reason: 'not-canvas', detail: /[.!?]$/.test(detail) ? detail : `${detail}.` };
 }
 
 /** Recognized so `parseCanvasImport` can tell "not JSON" from "not a Canvas". */

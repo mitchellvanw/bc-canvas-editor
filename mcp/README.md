@@ -48,7 +48,7 @@ Desktop has no project directory to inherit, so name the folder. In `~/Library/A
 Four tools:
 
 - **`bcc_list_canvases`** — every canvas under the root, each with how many of the eleven sections it fills and which ones are still empty.
-- **`bcc_read_canvas`** — one canvas, as prose (`view: 'digest'`) or as its exact file bytes (`view: 'json'`). The digest is about half the tokens; the bytes are what you hand back to rewrite it.
+- **`bcc_read_canvas`** — one canvas, as prose (`view: 'digest'`) or as its exact file bytes (`view: 'json'`). The digest runs a third to a half shorter than the file, and the fuller the canvas the less it saves; the bytes are what you hand back to rewrite it.
 - **`bcc_write_canvas`** — a whole canvas to a `.bcc.json` file. Whole document every time, and the result names which sections came out empty, so nothing gets dropped by omission.
 - **`bcc_explain`** — what a section is for, in the ddd-crew's own questions, with the vocabulary it draws on and a row to calibrate against.
 

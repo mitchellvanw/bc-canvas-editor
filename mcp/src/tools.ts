@@ -108,7 +108,7 @@ function readCanvasTool(server: McpServer, root: CanvasRoot): void {
 					.enum(['digest', 'json'])
 					.default('digest')
 					.describe(
-						'digest is the sheet in words, at roughly half the tokens. json is the Canvas file itself, byte for byte — take this one when you intend to write it back.'
+						'digest is the sheet in words, a third to a half shorter than the file — least on a canvas with everything filled in. json is the Canvas file itself, byte for byte — take this one when you intend to write it back.'
 					)
 			}),
 			annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false }

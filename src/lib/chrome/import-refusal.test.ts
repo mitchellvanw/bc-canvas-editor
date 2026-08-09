@@ -61,7 +61,7 @@ const BAD_FILE = (() => {
 })();
 
 const DETAIL =
-	'inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification"';
+	'inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification".';
 
 let component: ReturnType<typeof mount> | null = null;
 

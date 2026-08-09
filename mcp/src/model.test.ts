@@ -75,7 +75,7 @@ describe('the model layer under Node', () => {
 		expect(out.version).toBe(1);
 		expect(out.domains).toEqual(['core', 'supporting', 'generic']);
 		expect(out.relationships).toBeGreaterThan(0);
-		expect(out.detail).toBe('name: expected a string, got a number');
+		expect(out.detail).toBe('name: expected a string, got a number.');
 		expect(out.bytes).toBe('{\n  "version": 1');
 		expect(out.embedded).toBe(null);
 	});

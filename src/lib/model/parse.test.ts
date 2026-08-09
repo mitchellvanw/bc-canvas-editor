@@ -85,7 +85,15 @@ describe('parseCanvasFile', () => {
 
 	it('refuses text that is not JSON at all, quoting the syntax failure', () => {
 		const detail = refusalDetail(parseCanvasFile('not json {'));
-		expect(detail).toMatch(/^the file is not valid JSON \(.+\)$/);
+		expect(detail).toMatch(/^the file is not valid JSON \(.+\)\.$/);
+	});
+
+	// Every table below holds the *clause* the walk produces; the parser puts
+	// the full stop on. Readers join a detail with sentences of their own, so a
+	// clause that ended bare would run into the next one.
+	it('ends every detail in a full stop, without doubling one already there', () => {
+		expect(refusalDetail(parseCanvasFile('{}'))).toMatch(/[^.]\.$/);
+		expect(refusalDetail(parseCanvasFile('not json {'))).toMatch(/[^.]\.$/);
 	});
 
 	it.each([
@@ -112,8 +120,8 @@ describe('parseCanvasFile', () => {
 			referenceJson((raw) => (raw.version = 0)),
 			'version: expected an integer of 1 or more, got 0'
 		]
-	])('refuses %s as not a Canvas file', (_label, text, detail) => {
-		expect(refusalDetail(parseCanvasFile(text))).toBe(detail);
+	])('refuses %s as not a Canvas file', (_label, text, clause) => {
+		expect(refusalDetail(parseCanvasFile(text))).toBe(`${clause}.`);
 	});
 
 	it.each([
@@ -187,10 +195,10 @@ describe('parseCanvasFile', () => {
 			(raw: Record<string, unknown>) => (raw.ubiquitousLanguage = [{ definition: 'X' }]),
 			'ubiquitousLanguage[0].term: expected a string, got nothing'
 		]
-	])('refuses %s as not a Canvas file, naming the field', (_label, mutate, detail) => {
+	])('refuses %s as not a Canvas file, naming the field', (_label, mutate, clause) => {
 		const result = parseCanvasFile(referenceJson(mutate));
 		expect(result).toMatchObject({ ok: false, reason: 'not-canvas' });
-		expect(refusalDetail(result)).toBe(detail);
+		expect(refusalDetail(result)).toBe(`${clause}.`);
 	});
 });
 
@@ -246,7 +254,7 @@ describe('parseCanvasImport — one path for .bcc.json and .bcc.html', () => {
 		// Both doors were tried, so the detail names both — "not valid JSON"
 		// alone would misdiagnose the HTML file this most often is.
 		expect(refusalDetail(result)).toBe(
-			'expected a Canvas file (JSON) or an HTML artifact carrying an embedded Canvas file; this text is neither'
+			'expected a Canvas file (JSON) or an HTML artifact carrying an embedded Canvas file; this text is neither.'
 		);
 	});
 
@@ -254,12 +262,12 @@ describe('parseCanvasImport — one path for .bcc.json and .bcc.html', () => {
 		const corrupt = artifactAround(embeddedCanvasBlock(exported.slice(0, 40)));
 		const result = parseCanvasImport(corrupt);
 		expect(result).toMatchObject({ ok: false, reason: 'not-canvas' });
-		expect(refusalDetail(result)).toMatch(/^the file is not valid JSON \(.+\)$/);
+		expect(refusalDetail(result)).toMatch(/^the file is not valid JSON \(.+\)\.$/);
 	});
 
 	it('reports the shape failure of a JSON text that is no artifact either', () => {
 		const detail = refusalDetail(parseCanvasImport(referenceJson((raw) => delete raw.assumptions)));
-		expect(detail).toBe('assumptions: expected an array, got nothing');
+		expect(detail).toBe('assumptions: expected an array, got nothing.');
 	});
 
 	it('imports a foreign Canvas file whose prose contains the embed marker as itself (SPEC §3.2)', () => {

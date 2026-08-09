@@ -92,7 +92,7 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
 - Integer root `version` (currently `1`); ordered raw-JSON migrations applied on load.
 - Files with a version **newer** than the app knows are **refused** with a clear message (§10) and never mutated — no best-effort parsing.
 - A missing/unparsable structure is refused as "not a Canvas file" (§10).
-- **One validator, two levels of disclosure.** A "not a Canvas file" refusal also carries an optional `detail`: one line naming the offending field and what was expected there — `inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification"` — with paths written the way a developer would type them to reach the value. The editor ignores it; the user sees the §10 sentence and nothing more. It exists so a non-interactive caller of the same parser can teach rather than merely refuse, from the same walk, so the two levels cannot describe different schemas.
+- **One validator, two levels of disclosure.** A "not a Canvas file" refusal also carries an optional `detail`: one line naming the offending field and what was expected there — `inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification".` — with paths written the way a developer would type them to reach the value, and a full stop on the end so a caller can join it with sentences of its own. The editor ignores it; the user sees the §10 sentence and nothing more. It exists so a non-interactive caller of the same parser can teach rather than merely refuse, from the same walk, so the two levels cannot describe different schemas.
 
 ### 3.4 File naming
 
