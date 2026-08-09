@@ -3,7 +3,7 @@ name: mcp-package-scaffold
 title: "Task: scaffold the mcp/ package — build, transport, root and containment"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [mcp-server-shape]
 ---
 
