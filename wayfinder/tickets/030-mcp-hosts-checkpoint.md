@@ -2,7 +2,7 @@
 name: mcp-hosts-checkpoint
 title: "Task: the destination gate — round-trip holds, both hosts drive it"
 labels: [wayfinder:task]
-status: open
+status: closed
 assignee: mitchell
 blocked-by: [review-prompt-and-readme]
 ---
@@ -114,10 +114,27 @@ Two things worth keeping from it, both bearing on decisions this map already mad
 
 **Finding 8 — the embedded resource is what makes the prompt robust, and it was tested by accident.** The run opened with *"the `bcc_read_canvas` call wasn't permitted, so 'empty' below means 'empty in the rendering'"* — headless mode denied the tool. The review ran anyway, in full, off the digest embedded in the prompt itself. Ticket 029 embedded it under the canvas's own `bcc://` URI for tidiness; the actual payoff is that `review-canvas` is the one entry point that works with no tool access at all. It also states its own limitation unprompted, which is the register the copy was written for.
 
-Remaining, by hand — one line, and it is the last one:
+## Resolution
 
-1. ~~Restart Desktop.~~ Done, twice — the second time on the fixed bundle.
-2. ~~Confirm the four tools appear.~~ Done, and driven.
-3. **Type `/` in Desktop and look for "Review a canvas".** If it is there, run it and confirm the `path` argument offers the three canvases as completions. If Cowork does not surface MCP prompts as slash commands at all, that is the answer and it is worth as much — record it and the map closes on it, since the protocol side is already green.
-4. ~~Run the review.~~ Done on the tools path, above; the prompt path is what step 3 settles.
-5. Note whether Desktop, like Claude Code, shows only the structured JSON for `bcc_list_canvases` and `bcc_write_canvas`. The first Desktop screenshot showed the raw `{"canvases":[…]}` object, which is consistent with it — one confirmation that the prose block never arrives makes finding 1 a property of the protocol's reception rather than one host's choice.
+**Green, with one line met by the protocol rather than by the host.** Mitchell's call, 2026-08-09: close on this rather than chase the prompt through Desktop's other surfaces.
+
+**The round-trip property holds, both directions, and the loop closes byte for byte.** A canvas the server wrote imported into the live app on WebKit and rendered; re-exported it came back identical up to the trailing newline SPEC §3.5 allows, and the 423 KB HTML artifact embeds the written bytes exactly. Both exports read back through the built server unchanged, the `.bcc.html` through `extractEmbeddedCanvas()`, and writing the artifact's bytes back lands on the original file byte for byte. This was always the load-bearing half, and it never wavered.
+
+**Claude Code drives everything.** Four tools against a real repo — drafting a canvas for `src/lib/editor/` from its code, eleven sections, no warnings — plus `review-canvas` as `/mcp__bc-canvas__review-canvas <path>`, behaving to contract.
+
+**Claude Desktop drives the tools; Cowork does not surface prompts at all.** The four tools load and work — a free-text review pulled two canvases, cross-checked a shared event between them, and called `bcc_explain` twice unasked. No slash command appears for `review-canvas`, in any Cowork session. That is a host's choice, not a server gap: `prompts/list`, `prompts/get`, the `path` completion and the `-32602` are green over real stdio against the very root Desktop was pointed at. The destination asked for the prompt to be exercised in both hosts; it is exercised in one host and in the protocol, and the gap is on the far side of the boundary this server ends at.
+
+**The teaching paths are all green** — `bcc_explain` verbatim against SPEC §10, off-vocabulary accepted with a note rather than refused, a bad `message.type` naming its field path, a bumped `version` refused with the file untouched.
+
+**Four defects found by driving it, all fixed here.**
+
+1. `parse.ts`'s detail carried no terminal punctuation, so refusals ran two sentences together. The full stop now goes on in `notCanvas()`, once, for every reader.
+2. The digest's saving was measured on one canvas and overstated; both copies of the claim now read *a third to a half*, with the fuller-canvas caveat, in characters rather than tokens.
+3. One unreadable directory aborted the entire listing (finding 5). Discovery now stops at that branch and names it.
+4. Containment was inverted for a root of `/` (finding 6), latent since the scaffold ticket. Fixed at the seam, and the filesystem root is now refused at launch besides.
+
+Suite at 87, `tsc` clean, README corrected on both the Desktop root story and the walk.
+
+**Four findings carried forward, and they are the workshop ticket's real input** — the ones that are decisions, not repairs: a host with an `outputSchema` throwing the prose away (finding 1, seen in both hosts); discovery having no ignore rule beyond five hard-coded names, so a repo full of fixtures lists mostly noise (finding 2); `--root` fixed at config time so one Desktop root serves every project (finding 4); and the prompt having a discovery problem rather than a quality problem, since free text reaches the same review without it while the embedded resource makes it the one entry point that survives having no tools at all (findings 7 and 8).
+
+Evidence and scripts in `.scratch/mcp-hosts-checkpoint/`.
