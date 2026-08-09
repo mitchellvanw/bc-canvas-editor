@@ -3,7 +3,7 @@ name: mcp-prose-and-discovery
 title: "Task: server repairs — every result speaks in prose, discovery skips dot-directories, the canvas topic teaches drafting"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [workshop-shape]
 ---
 
