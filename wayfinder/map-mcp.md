@@ -24,6 +24,7 @@ A local **stdio** MCP server living in this repo at `mcp/`, launched with `--roo
 <!-- one line per closed ticket -->
 
 - [Grilling: what shape is the MCP server?](wayfinder/tickets/025-mcp-server-shape.md) — local stdio server in `mcp/`, `--root` defaulting to CWD, both hosts; four tools day one (whole-document write, no edit tool), `bcc://canvas/{path}` resources both-doors, `review-canvas` shipping with them; vocabularies as full one-liners in the write schema generated from `vocab.ts`, no example resources, digest in words not glyphs; `parse.ts` gains a path-carrying refusal with app copy unchanged; git is the conflict guard; `mcp/README.md` owns the docs and SPEC takes only the parse amendment.
+- [Task: give parse.ts a path-carrying refusal, without changing what the app says](wayfinder/tickets/026-parse-refusal-detail.md) — `ParseResult`'s `not-canvas` branch carries an optional `detail` reading `<path>: expected …, got …`, paths written the way a developer would type them (`inboundCommunication[1].messages[0].type`); "got" is the type in words except where the value is the problem (the message-type enum, `version`); `null` on an optional field teaches the omission rule; non-shape refusals quote the JSON engine message, and `parseCanvasImport` names both doors when a text is not JSON at all; SPEC §3.3 gains one bullet; the app's two §10 sentences are pinned by a new `chrome/import-refusal.test.ts` that also proves no fragment of the detail leaks into the dialog.
 
 ## Not yet specified
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { blankCanvas, stampIds } from '$lib/model/canvas';
 import { embeddedCanvasBlock, extractEmbeddedCanvas } from '$lib/model/embed';
-import { parseCanvasFile, parseCanvasImport } from '$lib/model/parse';
+import { parseCanvasFile, parseCanvasImport, type ParseResult } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
 import { serializeCanvas } from '$lib/model/serialize';
 
@@ -9,6 +9,18 @@ function referenceJson(mutate: (raw: Record<string, unknown>) => void = () => {}
 	const raw = JSON.parse(REFERENCE_FILE) as Record<string, unknown>;
 	mutate(raw);
 	return JSON.stringify(raw);
+}
+
+/**
+ * The refusal's second level of disclosure. These strings are a model's only
+ * instruction for fixing a file it wrote, so they are pinned as tightly as any
+ * UI copy — see `chrome/import-refusal.test.ts` for the first level, the one
+ * sentence the app shows regardless of what this says.
+ */
+function refusalDetail(result: ParseResult): string {
+	if (result.ok || result.reason !== 'not-canvas') throw new Error('expected a not-canvas refusal');
+	if (result.detail === undefined) throw new Error('expected a refusal detail');
+	return result.detail;
 }
 
 describe('parseCanvasFile', () => {
@@ -36,7 +48,9 @@ describe('parseCanvasFile', () => {
 		});
 		const result = parseCanvasFile(text);
 		if (!result.ok) throw new Error('expected ok');
-		expect(result.file.strategicClassification).toEqual({ domain: 'weird custom axis value' });
+		expect(result.file.strategicClassification).toEqual({
+			domain: 'weird custom axis value'
+		});
 		expect(result.file.inboundCommunication[0].relationship).toBe('my own pattern');
 	});
 
@@ -53,69 +67,130 @@ describe('parseCanvasFile', () => {
 
 	it('refuses a newer format version, reporting the file version', () => {
 		const text = referenceJson((raw) => (raw.version = 3));
-		expect(parseCanvasFile(text)).toEqual({ ok: false, reason: 'newer-version', version: 3 });
+		expect(parseCanvasFile(text)).toEqual({
+			ok: false,
+			reason: 'newer-version',
+			version: 3
+		});
 	});
 
 	it('refuses version 2 — the app reads up to version 1', () => {
 		const text = referenceJson((raw) => (raw.version = 2));
-		expect(parseCanvasFile(text)).toEqual({ ok: false, reason: 'newer-version', version: 2 });
+		expect(parseCanvasFile(text)).toEqual({
+			ok: false,
+			reason: 'newer-version',
+			version: 2
+		});
+	});
+
+	it('refuses text that is not JSON at all, quoting the syntax failure', () => {
+		const detail = refusalDetail(parseCanvasFile('not json {'));
+		expect(detail).toMatch(/^the file is not valid JSON \(.+\)$/);
 	});
 
 	it.each([
-		['garbage text', 'not json {'],
-		['a JSON string', '"just a string"'],
-		['a JSON array', '[1, 2, 3]'],
-		['JSON null', 'null'],
-		['an empty object (no version)', '{}'],
-		['a fractional version', referenceJson((raw) => (raw.version = 1.5))],
-		['a string version', referenceJson((raw) => (raw.version = '1'))],
-		['version zero', referenceJson((raw) => (raw.version = 0))]
-	])('refuses %s as not a Canvas file', (_label, text) => {
-		expect(parseCanvasFile(text)).toEqual({ ok: false, reason: 'not-canvas' });
+		['a JSON string', '"just a string"', 'expected a JSON object at the top level, got a string'],
+		['a JSON array', '[1, 2, 3]', 'expected a JSON object at the top level, got an array'],
+		['JSON null', 'null', 'expected a JSON object at the top level, got null'],
+		[
+			'an empty object (no version)',
+			'{}',
+			'version: expected an integer of 1 or more, got nothing'
+		],
+		[
+			'a fractional version',
+			referenceJson((raw) => (raw.version = 1.5)),
+			'version: expected an integer of 1 or more, got 1.5'
+		],
+		[
+			'a string version',
+			referenceJson((raw) => (raw.version = '1')),
+			'version: expected an integer of 1 or more, got a string'
+		],
+		[
+			'version zero',
+			referenceJson((raw) => (raw.version = 0)),
+			'version: expected an integer of 1 or more, got 0'
+		]
+	])('refuses %s as not a Canvas file', (_label, text, detail) => {
+		expect(refusalDetail(parseCanvasFile(text))).toBe(detail);
 	});
 
 	it.each([
-		['a missing section key', (raw: Record<string, unknown>) => delete raw.assumptions],
-		['a non-string name', (raw: Record<string, unknown>) => (raw.name = 7)],
-		['a non-array section', (raw: Record<string, unknown>) => (raw.domainRoles = 'roles')],
+		[
+			'a missing section key',
+			(raw: Record<string, unknown>) => delete raw.assumptions,
+			'assumptions: expected an array, got nothing'
+		],
+		[
+			'a non-string name',
+			(raw: Record<string, unknown>) => (raw.name = 7),
+			'name: expected a string, got a number'
+		],
+		[
+			'a non-array section',
+			(raw: Record<string, unknown>) => (raw.domainRoles = 'roles'),
+			'domainRoles: expected an array, got a string'
+		],
+		[
+			'a non-object row',
+			(raw: Record<string, unknown>) => (raw.domainRoles = ['execution context']),
+			'domainRoles[0]: expected an object, got a string'
+		],
 		[
 			'a non-object classification',
-			(raw: Record<string, unknown>) => (raw.strategicClassification = ['core'])
+			(raw: Record<string, unknown>) => (raw.strategicClassification = ['core']),
+			'strategicClassification: expected an object, got an array'
 		],
 		[
 			'a non-string classification axis',
-			(raw: Record<string, unknown>) => (raw.strategicClassification = { domain: 42 })
+			(raw: Record<string, unknown>) => (raw.strategicClassification = { domain: 42 }),
+			'strategicClassification.domain: expected a string or no key at all, got a number'
 		],
-		['a role without a name', (raw: Record<string, unknown>) => (raw.domainRoles = [{}])],
+		[
+			'a role without a name',
+			(raw: Record<string, unknown>) => (raw.domainRoles = [{}]),
+			'domainRoles[0].name: expected a string, got nothing'
+		],
 		[
 			'a lane without a collaborator',
-			(raw: Record<string, unknown>) => (raw.inboundCommunication = [{ messages: [] }])
+			(raw: Record<string, unknown>) => (raw.inboundCommunication = [{ messages: [] }]),
+			'inboundCommunication[0].collaborator: expected a string, got nothing'
 		],
 		[
 			'a lane without messages',
-			(raw: Record<string, unknown>) => (raw.outboundCommunication = [{ collaborator: 'X' }])
+			(raw: Record<string, unknown>) => (raw.outboundCommunication = [{ collaborator: 'X' }]),
+			'outboundCommunication[0].messages: expected an array, got nothing'
 		],
 		[
 			'a message type outside the closed enum',
 			(raw: Record<string, unknown>) =>
-				(raw.inboundCommunication = [
-					{ collaborator: 'X', messages: [{ type: 'signal', name: 'Y' }] }
-				])
+				(raw.inboundCommunication as Record<string, unknown>[]).push({
+					collaborator: 'Support',
+					messages: [{ type: 'notification', name: 'Refund asked' }]
+				}),
+			'inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification"'
 		],
 		[
 			'a null optional field',
-			(raw: Record<string, unknown>) => (raw.businessDecisions = [{ name: 'X', description: null }])
+			(raw: Record<string, unknown>) =>
+				(raw.businessDecisions = [{ name: 'X', description: null }]),
+			'businessDecisions[0].description: expected a string or no key at all, got null'
 		],
 		[
 			'a non-string sticky',
-			(raw: Record<string, unknown>) => (raw.openQuestions = ['fine', 9])
+			(raw: Record<string, unknown>) => (raw.openQuestions = ['fine', 9]),
+			'openQuestions[1]: expected a string, got a number'
 		],
 		[
 			'a term row without a term',
-			(raw: Record<string, unknown>) => (raw.ubiquitousLanguage = [{ definition: 'X' }])
+			(raw: Record<string, unknown>) => (raw.ubiquitousLanguage = [{ definition: 'X' }]),
+			'ubiquitousLanguage[0].term: expected a string, got nothing'
 		]
-	])('refuses %s as not a Canvas file', (_label, mutate) => {
-		expect(parseCanvasFile(referenceJson(mutate))).toEqual({ ok: false, reason: 'not-canvas' });
+	])('refuses %s as not a Canvas file, naming the field', (_label, mutate, detail) => {
+		const result = parseCanvasFile(referenceJson(mutate));
+		expect(result).toMatchObject({ ok: false, reason: 'not-canvas' });
+		expect(refusalDetail(result)).toBe(detail);
 	});
 });
 
@@ -166,15 +241,25 @@ describe('parseCanvasImport — one path for .bcc.json and .bcc.html', () => {
 	});
 
 	it('refuses an HTML file with a missing embedded block as not a Canvas file', () => {
-		expect(parseCanvasImport('<!doctype html><html><body>plain page</body></html>')).toEqual({
-			ok: false,
-			reason: 'not-canvas'
-		});
+		const result = parseCanvasImport('<!doctype html><html><body>plain page</body></html>');
+		expect(result).toMatchObject({ ok: false, reason: 'not-canvas' });
+		// Both doors were tried, so the detail names both — "not valid JSON"
+		// alone would misdiagnose the HTML file this most often is.
+		expect(refusalDetail(result)).toBe(
+			'expected a Canvas file (JSON) or an HTML artifact carrying an embedded Canvas file; this text is neither'
+		);
 	});
 
-	it('refuses a corrupt embedded block as not a Canvas file', () => {
+	it('refuses a corrupt embedded block as not a Canvas file, reporting the block', () => {
 		const corrupt = artifactAround(embeddedCanvasBlock(exported.slice(0, 40)));
-		expect(parseCanvasImport(corrupt)).toEqual({ ok: false, reason: 'not-canvas' });
+		const result = parseCanvasImport(corrupt);
+		expect(result).toMatchObject({ ok: false, reason: 'not-canvas' });
+		expect(refusalDetail(result)).toMatch(/^the file is not valid JSON \(.+\)$/);
+	});
+
+	it('reports the shape failure of a JSON text that is no artifact either', () => {
+		const detail = refusalDetail(parseCanvasImport(referenceJson((raw) => delete raw.assumptions)));
+		expect(detail).toBe('assumptions: expected an array, got nothing');
 	});
 
 	it('imports a foreign Canvas file whose prose contains the embed marker as itself (SPEC §3.2)', () => {
