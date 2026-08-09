@@ -106,6 +106,14 @@ Two things worth keeping from it, both bearing on decisions this map already mad
 
 **Finding 7 — the prompt has a discovery problem, not a quality problem.** The obvious way to ask for a review is to ask for one, and asking for one does not invoke `review-canvas`. Everything the prompt guarantees — the embedded resource, the prohibition on answering the questions — the model reached anyway from the tool descriptions. So the prompt's remaining value is the parts free text does not reproduce: a fixed contract that does not depend on the model being strong that day, and a slash command a human can find without knowing what to type. Both are real, and neither is what it was sized on. Input for the workshop ticket, not a change here.
 
+### The prompt — reachable in Claude Code, absent in Cowork
+
+**Cowork does not surface MCP prompts.** No slash command appears for `review-canvas`, so in the Desktop host the prompt is unreachable however correct it is. Not a server gap: `prompts/list`, `prompts/get`, the `path` completion and the `-32602` on a bad path are all green over real stdio against this exact root, and Cowork loads the same server's tools without complaint.
+
+**Claude Code reaches it, as `/mcp__bc-canvas__review-canvas <path>`.** Driven headlessly against the staged root; transcript at `.scratch/mcp-hosts-checkpoint/evidence/review-canvas-claude-code.md`. It behaved to contract — named what the canvas leaves blank, showed where it disagrees with itself (a metric measuring what a decision defines out of existence; `Backorder` defined and never used again; three decisions with no inbound trigger that could fire them), added twelve questions to the two already on the sheet, and closed with *"I haven't filled anything in. When these have answers, hand them back and I'll write them."* The prohibition [review-prompt-and-readme](wayfinder/tickets/029-review-prompt-and-readme.md) put at the end of the prompt held.
+
+**Finding 8 — the embedded resource is what makes the prompt robust, and it was tested by accident.** The run opened with *"the `bcc_read_canvas` call wasn't permitted, so 'empty' below means 'empty in the rendering'"* — headless mode denied the tool. The review ran anyway, in full, off the digest embedded in the prompt itself. Ticket 029 embedded it under the canvas's own `bcc://` URI for tidiness; the actual payoff is that `review-canvas` is the one entry point that works with no tool access at all. It also states its own limitation unprompted, which is the register the copy was written for.
+
 Remaining, by hand — one line, and it is the last one:
 
 1. ~~Restart Desktop.~~ Done, twice — the second time on the fixed bundle.
