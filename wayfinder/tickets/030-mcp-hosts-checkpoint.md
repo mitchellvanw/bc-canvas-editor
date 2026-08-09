@@ -95,10 +95,21 @@ Containment being right does not make `/` a sensible root, so the second half is
 
 The `bc-canvas-cwd` entry has done its job — it would now refuse to start — and has been removed from the Desktop config. `bc-canvas`, on the staged root, is the one the remaining steps use.
 
-Remaining, by hand:
+### Second Desktop run — the listing is clean, and a review runs on the tools alone
 
-1. ~~Restart Desktop.~~ Done — and once more after the rebuild, so Desktop picks up the fixed bundle.
-2. ~~Confirm the four tools appear~~ — done, above. Confirm **Review a canvas** appears as a slash command.
-3. Type the slash command and confirm the `path` argument offers the three canvases as completions.
-4. Run the review and confirm it comes back with what is missing and the open questions put back to you — not answered.
-5. Note whether Desktop, like Claude Code, shows only the structured JSON for `bcc_list_canvases` and `bcc_write_canvas`. If it does the same thing, finding 1 is a property of the protocol's reception rather than one host's choice, and the follow-up ticket gets much sharper.
+The fixed bundle lists without error. And a free-text *"review the order fulfillment canvas"* produced a review that meets the prompt's contract without the prompt: it named what the canvas cannot enforce, and closed by asking whether to write any of it back rather than writing it. The trace was four tool calls — `bcc_read_canvas`, `bcc_explain`, `bcc_read_canvas`, `bcc_explain` — so `review-canvas` was never involved.
+
+Two things worth keeping from it, both bearing on decisions this map already made.
+
+- **The neighbouring-context claim pays off.** `bcc_list_canvases`'s description argues that reading a neighbouring canvas is how you learn what this context is *not* responsible for. Unprompted, the model read Notifications alongside Order Fulfillment, checked `Order Shipped` matched on both sides, and used Notifications' conformist role to argue that the outbound section is too thin — the customer-facing states it knows about and never emits. That is the day-one thesis — authoring from code, reading neighbours as context — behaving as [mcp-server-shape](wayfinder/tickets/025-mcp-server-shape.md) said it would.
+- **`bcc_explain` is load-bearing in the wild.** Called twice inside one review, unasked. The SPEC §10 questions travelling in the tools rather than being reconstructed by the model is the reason this is a server and not a skill, and this is the first evidence of it happening outside a script.
+
+**Finding 7 — the prompt has a discovery problem, not a quality problem.** The obvious way to ask for a review is to ask for one, and asking for one does not invoke `review-canvas`. Everything the prompt guarantees — the embedded resource, the prohibition on answering the questions — the model reached anyway from the tool descriptions. So the prompt's remaining value is the parts free text does not reproduce: a fixed contract that does not depend on the model being strong that day, and a slash command a human can find without knowing what to type. Both are real, and neither is what it was sized on. Input for the workshop ticket, not a change here.
+
+Remaining, by hand — one line, and it is the last one:
+
+1. ~~Restart Desktop.~~ Done, twice — the second time on the fixed bundle.
+2. ~~Confirm the four tools appear.~~ Done, and driven.
+3. **Type `/` in Desktop and look for "Review a canvas".** If it is there, run it and confirm the `path` argument offers the three canvases as completions. If Cowork does not surface MCP prompts as slash commands at all, that is the answer and it is worth as much — record it and the map closes on it, since the protocol side is already green.
+4. ~~Run the review.~~ Done on the tools path, above; the prompt path is what step 3 settles.
+5. Note whether Desktop, like Claude Code, shows only the structured JSON for `bcc_list_canvases` and `bcc_write_canvas`. The first Desktop screenshot showed the raw `{"canvases":[…]}` object, which is consistent with it — one confirmation that the prose block never arrives makes finding 1 a property of the protocol's reception rather than one host's choice.
