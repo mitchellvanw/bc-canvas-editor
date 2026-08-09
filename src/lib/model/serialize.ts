@@ -13,9 +13,7 @@ import type {
 	CanvasFile,
 	DomainRole,
 	Lane,
-	LaneRow,
 	Message,
-	MessageRow,
 	StrategicClassification,
 	UbiquitousTerm
 } from '$lib/model/canvas';
@@ -24,7 +22,7 @@ function present(value: string | undefined): value is string {
 	return value !== undefined && value !== '';
 }
 
-function fileMessage(message: MessageRow): Message {
+function fileMessage(message: Message): Message {
 	return {
 		type: message.type,
 		name: message.name,
@@ -32,7 +30,7 @@ function fileMessage(message: MessageRow): Message {
 	};
 }
 
-function fileLane(lane: LaneRow): Lane {
+function fileLane(lane: Lane): Lane {
 	return {
 		collaborator: lane.collaborator,
 		...(present(lane.relationship) && { relationship: lane.relationship }),
@@ -48,7 +46,14 @@ function fileClassification(sc: StrategicClassification): StrategicClassificatio
 	};
 }
 
-export function toCanvasFile(doc: CanvasDoc): CanvasFile {
+/**
+ * Rebuild in canonical shape: fixed key order, ids dropped, empty optionals
+ * omitted. Takes a `CanvasFile` because a `CanvasDoc` already is one
+ * structurally — its rows just carry an extra `id` — so both the editor's
+ * runtime document and a file straight off the parser normalize through the
+ * same walk, and there is only ever one key order in the codebase.
+ */
+export function toCanvasFile(doc: CanvasFile): CanvasFile {
 	return {
 		version: doc.version,
 		name: doc.name,
@@ -75,6 +80,15 @@ export function toCanvasFile(doc: CanvasDoc): CanvasFile {
 	};
 }
 
+/**
+ * The bytes, from a Canvas file. The MCP server holds one of these — it writes
+ * what `parseCanvasFile` handed back, never a runtime document — so it needs
+ * the same canonical output the editor exports, one step further in.
+ */
+export function serializeCanvasFile(file: CanvasFile): string {
+	return JSON.stringify(toCanvasFile(file), null, 2).replaceAll('<', '\\u003c');
+}
+
 export function serializeCanvas(doc: CanvasDoc): string {
-	return JSON.stringify(toCanvasFile(doc), null, 2).replaceAll('<', '\\u003c');
+	return serializeCanvasFile(doc);
 }

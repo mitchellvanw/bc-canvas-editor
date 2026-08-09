@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { blankCanvas, stampIds, type CanvasFile } from '$lib/model/canvas';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
-import { serializeCanvas } from '$lib/model/serialize';
+import { serializeCanvas, serializeCanvasFile } from '$lib/model/serialize';
 
 function referenceFile(): CanvasFile {
 	return JSON.parse(REFERENCE_FILE) as CanvasFile;
@@ -68,5 +68,18 @@ describe('serializeCanvas', () => {
 		expect(parsed.businessDecisions[0]).toEqual({ name: 'Rule' });
 		expect(parsed.inboundCommunication[0]).toEqual({ collaborator: 'Checkout', messages: [] });
 		expect(out).not.toContain('null');
+	});
+});
+
+describe('serializeCanvasFile', () => {
+	it('writes the same bytes as exporting the equivalent document', () => {
+		expect(serializeCanvasFile(referenceFile())).toBe(serializeCanvas(stampIds(referenceFile())));
+	});
+
+	it('is canonical whatever key order the file arrives in', () => {
+		const shuffled = Object.fromEntries(
+			Object.entries(referenceFile()).reverse()
+		) as unknown as CanvasFile;
+		expect(serializeCanvasFile(shuffled)).toBe(serializeCanvasFile(referenceFile()));
 	});
 });
