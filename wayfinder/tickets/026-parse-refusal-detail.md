@@ -3,7 +3,7 @@ name: parse-refusal-detail
 title: "Task: give parse.ts a path-carrying refusal, without changing what the app says"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [mcp-server-shape]
 ---
 
