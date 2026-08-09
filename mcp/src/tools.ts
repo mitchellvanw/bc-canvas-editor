@@ -62,6 +62,7 @@ function listCanvases(server: McpServer, root: CanvasRoot): void {
 					})
 				),
 				problems: z.array(z.object({ path: z.string(), uri: z.string(), problem: z.string() })),
+				unreadable: z.array(z.string()),
 				sections: z.array(z.string())
 			}),
 			annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false }
@@ -85,6 +86,13 @@ function listCanvases(server: McpServer, root: CanvasRoot): void {
 			if (found.problems.length > 0) {
 				lines.push('Files that look like canvases and could not be read:', '');
 				for (const problem of found.problems) lines.push(`${problem.path} — ${problem.problem}`);
+				lines.push('');
+			}
+
+			if (found.unreadable.length > 0) {
+				lines.push(
+					`${found.unreadable.length === 1 ? 'One directory' : `${found.unreadable.length} directories`} could not be opened, so a canvas under ${found.unreadable.length === 1 ? 'it' : 'them'} would not appear above: ${found.unreadable.join(', ')}.`
+				);
 			}
 
 			return {

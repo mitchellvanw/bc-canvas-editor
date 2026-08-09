@@ -81,15 +81,19 @@ Desktop is a GUI: the lines below are things to *see*, and no script can see the
 
 **Finding 4 — `--root` is fixed at config time, and Cowork's project does not move it.** The session was working in `~/Projects/focal` and got the three canvases from `~/bc-canvas-desktop-check`. That is unambiguous: `focal` contains no canvas at all, so what came back could only be the staged root. Mitchell's reaction — *"I wouldn't expect the examples to come up"* — is the finding. The README's Desktop sentence, "Desktop has no project directory to inherit, so name the folder", was written against Desktop-as-chat and is now false for Cowork: Cowork *has* a project, and the server does not follow it. One host, one root, whatever project you are standing in.
 
-Which leaves the question the next restart answers, and it decides what the README should say:
+**Answered — Cowork starts a stdio server at `/`.** The `bc-canvas-cwd` entry, launched with no `--root`, errored scanning `/Library/Application Support/Apple/AssetCache`. So the working directory a host hands the server is the filesystem root, and the README's advice was right for the wrong reason: `--root` is not a convenience in Desktop, it is the only thing standing between the first listing and a walk of the whole disk. The reasoning is now corrected in `mcp/README.md`, together with the fixed-for-the-life-of-the-config property and the remedy — name the directory the canvases live under, or one entry per project under different server names.
 
-- **With no `--root`, what working directory does Cowork hand a stdio server?** If it is the Cowork project directory, the Claude Code advice extends to Desktop and the fix is a doc change. If it is `/` or the home directory, Cowork is single-root by construction and that is a product limitation to write down, not a doc bug.
-- The probe is one call and needs no walk: **ask the `bc-canvas-cwd` server to read `/tmp/nope.bcc.json`**. `OutsideRoot` names the root verbatim — *"Paths are relative to `<root>`"* — so the refusal prints the answer. A second entry, `bc-canvas-cwd` (same server, no `--root`), is already in the config beside `bc-canvas` so one restart covers everything.
-- **Do not ask that server to list canvases until the root is known.** If Cowork's cwd turns out to be `/` or `~`, `bcc_list_canvases` walks the whole filesystem behind a five-name skip list. That is finding 2 with teeth: the skip list is sized for a project checkout and nothing bounds the walk when the root is not one.
+Worth recording that the model routed around it unaided: it noticed the wrong root, said so, and switched servers. Good behaviour from the host; not a reason for the tool to need it.
+
+**Finding 5, fixed — one unreadable directory aborted the entire listing.** `findCanvases` called `readdirSync` unguarded, so a single `EPERM` anywhere under the root threw away every canvas already found — in the tool whose own description tells the model to start there. Not a `/`-only defect: any root with a protected directory, a stale mount, or a directory deleted mid-walk had the same hole. `findCanvases` now returns `{ paths, unreadable }`, an unopenable directory stops that branch and nothing else, and the ones it stopped at are named rather than swallowed — a listing that quietly covers less than it claims is worse than a short one. Carried through `Catalog`, the `bcc_list_canvases` output schema, and one closing sentence of prose. Two tests pin it (a locked directory mid-walk, and the root itself locked); the suite is 83.
+
+Verified against the built bundle on the failing shape: `--root '/Library/Application Support/Apple'` now lists cleanly and closes with *"2 directories could not be opened, so a canvas under them would not appear above: AssetCache/Data, ParentalControls/Users."* Script at `.scratch/mcp-hosts-checkpoint/unreadable-root.mjs`.
+
+The `bc-canvas-cwd` entry has done its job and should come out of the Desktop config; `bc-canvas`, on the staged root, is the one the remaining steps use.
 
 Remaining, by hand:
 
-1. Restart Desktop.
+1. ~~Restart Desktop.~~ Done — and once more after the rebuild, so Desktop picks up the fixed bundle.
 2. ~~Confirm the four tools appear~~ — done, above. Confirm **Review a canvas** appears as a slash command.
 3. Type the slash command and confirm the `path` argument offers the three canvases as completions.
 4. Run the review and confirm it comes back with what is missing and the open questions put back to you — not answered.

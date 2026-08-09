@@ -68,6 +68,8 @@ export interface Catalog {
 	canvases: CanvasSummary[];
 	/** Files that look like canvases and aren't — reported, never dropped. */
 	problems: CanvasProblem[];
+	/** Directories the walk could not open, so the listing says where it stopped. */
+	unreadable: string[];
 	/** The eleven section labels, so a caller can read `empty` without guessing. */
 	sections: string[];
 }
@@ -76,8 +78,9 @@ export interface Catalog {
 export function catalog(root: CanvasRoot): Catalog {
 	const canvases: CanvasSummary[] = [];
 	const problems: CanvasProblem[] = [];
+	const found = findCanvases(root);
 
-	for (const path of findCanvases(root)) {
+	for (const path of found.paths) {
 		const result = readCanvas(root, path);
 		const uri = canvasUri(path);
 		if (result.ok) {
@@ -100,5 +103,10 @@ export function catalog(root: CanvasRoot): Catalog {
 		}
 	}
 
-	return { canvases, problems, sections: SECTIONS.map((section) => section.label) };
+	return {
+		canvases,
+		problems,
+		unreadable: found.unreadable,
+		sections: SECTIONS.map((section) => section.label)
+	};
 }

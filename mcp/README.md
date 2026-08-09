@@ -24,7 +24,7 @@ No `--root` needed. The server defaults to its working directory, which is the p
 
 ## Claude Desktop
 
-Desktop has no project directory to inherit, so name the folder. In `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Desktop starts the server at the filesystem root, so `--root` is not optional here — leave it out and the first listing tries to walk your whole disk. In `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -43,6 +43,8 @@ Desktop has no project directory to inherit, so name the folder. In `~/Library/A
 
 `--root` is the only directory the server reads or writes. A path that resolves outside it is refused, symlinks followed out of it included.
 
+It is also fixed for the life of the config, and that is worth knowing before you pick it. A Cowork session opened on a project does not move the root: whatever folder you name here is the folder every Desktop conversation sees, whichever project you happen to be standing in. Name the directory your canvases live under, not a single project — or run one entry per project under different server names.
+
 ## What it offers
 
 Four tools:
@@ -59,6 +61,8 @@ Canvases are resources too, at `bcc://canvas/<path>`. Attach one from the host's
 ## What counts as a canvas
 
 `*.bcc.json` and `*.bcc.html`, found by walking the root and skipping `node_modules`, `.git`, `dist`, `build` and `.svelte-kit`. An HTML artifact is read through the Canvas file embedded in it. The server never writes one — that would mean rendering the sheet, which needs a browser.
+
+A directory the walk cannot open stops that branch and nothing else, and the listing names it at the end — a wide root usually has one or two, and losing every canvas already found to a directory the OS keeps to itself would be a poor trade.
 
 `bcc_write_canvas` refuses any other extension. `.bcc.json` is the key the listing globs on and the extension the editor's **Import…** accepts, so a canvas written as `shipping.json` is invisible to both. The directory and the filename are otherwise yours.
 
