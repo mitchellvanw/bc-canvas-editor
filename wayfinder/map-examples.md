@@ -23,6 +23,7 @@ The live app at `bc-canvas.pages.dev` offers 3–5 curated example canvases — 
 
 - [Research: published example canvases & what CC BY asks of derived ones](wayfinder/tickets/019-example-canvas-sources.md) — only one complete V5 example exists publicly (ddd-crew's "Scoring", sparse fill is canonical); deriving costs per-example TASL attribution atop a BY-vs-BY-SA license ambiguity, so invent our own domains under the existing attribution line.
 - [Grilling: which 3–5 example canvases, and what must the set demonstrate?](wayfinder/tickets/020-example-roster.md) — four invented canvases: Order Fulfillment (core, flagship, all sections filled), Notifications (generic, sharing OF's `Order Shipped` lane from the receiving side), Appointment Scheduling (supporting, matured), Royalty Distribution (mid-workshop, classification unset, quietly flagged in chooser copy); classification+density drove the picks, relationship/message coverage are authoring checklists; **Example** added to `CONTEXT.md`.
+- [Task: author the example canvases](wayfinder/tickets/022-author-examples.md) — all four committed as serializer-canonical `examples/*.bcc.json`, byte-round-tripped through the real import path and approved unchanged; mid-workshop flag stays chooser copy, 6-of-9 relationship coverage with all message types.
 
 ## Not yet specified
 
