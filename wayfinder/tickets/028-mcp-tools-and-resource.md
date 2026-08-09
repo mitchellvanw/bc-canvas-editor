@@ -3,7 +3,7 @@ name: mcp-tools-and-resource
 title: "Task: the four tools, the canvas resource, and the tests that pin them"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [parse-refusal-detail, mcp-package-scaffold]
 ---
 
