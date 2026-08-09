@@ -1,0 +1,65 @@
+---
+name: mcp-server-shape
+title: "Grilling: what shape is the MCP server, and how does it behave?"
+labels: [wayfinder:grilling]
+status: closed
+assignee: mitchell
+blocked-by: []
+---
+
+## Question
+
+Settle the shape of an MCP server for BC Canvas, grounded in [`docs/research/mcp-server.md`](docs/research/mcp-server.md): who it is for, where it runs and on what state, whether it is justified at all against a Claude Code skill, which MCP primitives carry which job, the tool surface and its grain, how vocabularies and validation errors reach the model, what it must refuse to do, and how any of it is tracked given the main map closed signed-off.
+
+The research note's §10 lists nine open questions; the grilling is not bound to them.
+
+## Resolution
+
+Settled in a grilling session (2026-08-09), six rounds. Twenty-three decisions; the note's §5.2, §7.2 and §7.3 are **superseded** where they differ.
+
+### What it is, and why it exists at all
+
+1. **Audience: Mitchell alone, local-first.** Not published. `package.json` stays `private`. Publishing is a later decision made on evidence of three months' real use — designing for a community that doesn't exist yet is what drags in elicitation flows, a version-support matrix and the MCP-Apps preview.
+2. **Canvases are committed repo files.** `docs/contexts/*.bcc.json` next to the code they describe. This is the *workflow* the server is built for, not a constraint it enforces — and it exposes a gap the product has today: nothing puts a `.bcc.json` into a repo except moving it out of `~/Downloads` by hand.
+3. **Both Claude Code and Claude Desktop.** This is what justifies a server over the cheaper alternative. A Skill plus a `bcc validate` CLI could deliver all four of the server's genuine contributions — validation through the real parse path, canonical serialization, the vocabularies at the moment of the pick, the version gate — for a fraction of the work. The server wins on **reach**: hosts with no filesystem and no skills. If Claude Code were the only target, the skill would be the right answer.
+4. **Tracked as a new map.** `wayfinder/map-mcp.md`, tickets continuing from 025 in the shared sequence — the precedent set by `map-examples.md` and `map-hosting.md`. The main map stays signed off.
+
+### Where it runs
+
+5. **`mcp/` in this repo**, with its own `package.json` and `tsconfig` mapping `$lib/* → ../src/lib/*`, bundled by esbuild/tsdown to one `dist/server.js` with a `bin`. Model sources stay where they are; the alias resolves at build time. Rejected: npm workspaces (makes the root a workspace root and can disturb SvelteKit resolution for no gain while nothing is published), and lifting `src/lib/model/` to a neutral top-level directory (architecturally cleanest, and the upgrade path *if* publishing ever happens, but a rename touching most of the app, SPEC's file map and every test). Cost accepted: a second build system in a repo that has one, and a `mcp/` directory Vite must ignore.
+6. **Root from a `--root` CLI argument, defaulting to CWD.** Roots is deprecated (SEP-2577), so the spec's own answer is configuration. One mechanism both hosts share: Claude Code gets the repo free via CWD, Desktop names a folder in its config JSON, and the server neither knows nor cares which is a checkout. Single root; multiple roots reopen as a later ticket if it pinches. Rejected: root as a per-call tool argument — it hands an agent an unbounded filesystem and makes containment the model's job when the spec makes it the server's.
+
+### Scope
+
+7. **Day one is (i) authoring from code and (ii) reading as context.** (iii) the facilitated workshop is the second phase. Design the surface knowing (iii) is coming — which is why `bcc_explain` is day one, since the workshop prompt is largely a script leaning on it.
+8. **Four tools, not five.** `bcc_list_canvases`, `bcc_read_canvas`, `bcc_write_canvas`, `bcc_explain`. **`bcc_edit_canvas` is deferred** to the workshop ticket. The note argued the coarse/fine middle path well, but the workshop was the edit tool's only real customer: day-one drafting is inherently whole-document and reading is read-only. Whole-document write is measured cheap (~850 tokens for a maximally filled canvas), reuses `parseCanvasFile` exactly as the app does, and needs no row-addressing scheme — which defers the natural-key collision problem entirely. The one real risk, a model silently dropping a section when re-emitting, is guarded by `bcc_write_canvas` naming what came out empty in its result.
+9. **One prompt day one: `review-canvas`.** `canvas-workshop` and `draft-canvas-from-code` ship with the workshop.
+
+### Primitives and shapes
+
+10. **Canvases get both doors**: a templated `bcc://canvas/{path}` resource with `list` and path `complete` (the only place `completion/complete` applies at all, alongside prompt arguments), *and* tool reachability, with tool results carrying `resource_link`s to the same URIs. Resources are application-driven — a self-directed agent cannot depend on the host attaching one. No subscriptions, no `listChanged`. Custom `bcc://` scheme, not `file://`, because what is served is a derived view, not the bytes.
+11. **`bcc_read_canvas` keeps its `view: 'digest' | 'json'` parameter and drops `outputSchema`.** The note's §7.2 gave it both, which fight: a declared `outputSchema` is MUST-level that *every* result carries conforming `structuredContent`, so the exact file would ride along on every read, making `view: 'json'` dead weight and paying twice whenever a host shows both — and structured output cannot be made conditional without violating that MUST. `view` is the honest design: digest to understand or imitate, exact JSON to rewrite wholesale, which whole-document write makes a first-class flow. `bcc_write_canvas` keeps `outputSchema`; its result is small and structured.
+12. **The digest is words, not glyphs.** `command Place Order` / `event Payment Confirmed — Triggers fulfillment.` Two reasons. Mechanically, `GLYPHS` is exported from `src/lib/sheet/CanvasSheet.svelte:7` — a Svelte component Node cannot import — so glyphs would need redeclaring, creating the second definition this design avoids everywhere else. Substantively, the app already decided what its non-visual channel says: SPEC.md:260 specifies accessible names as "Command, Place Order", and the §10 footer legend is the words `command · query · event`, with the glyph carrying meaning only alongside colour, for eyes. The digest is the model's screen-reader view of the sheet.
+13. **Full vocabulary one-liners live in `bcc_write_canvas`'s input schema**, generated from `src/lib/editor/vocab.ts` so there is one source, with `bcc_explain` re-serving the same text from the same module. ~1.5 KB across `tools/list` — roughly 400 tokens, paid once per session against a prompt cache, and crucially **unskippable**. The alternative (bare values in the schema, one-liners only behind a `bcc_explain` round trip) is optional exactly when it matters most: a model confident enough to guess won't call it, and a wrong-but-legal `conformist` is the failure this server exists to prevent. Note the asymmetry the schemas must show: **closed enums are enums, escape-hatched vocabularies are described strings** — `z.enum` only for `message.type`, which SPEC §3.2 genuinely closes; `z.string()` with `.describe()` everywhere else, because a hard enum would reject `"strangler-fig"` before the handler runs and contradict SPEC §4.
+14. **No example resources.** The four bundled Examples do not ship as `bcc://example/{slug}`. Models lift proper nouns from examples, and "Order Fulfillment" turning up as a collaborator in unrelated canvases is a real cost for calibration that can be delivered more cheaply. This self-corrects: once the user has canvases under the root, `bcc_list_canvases` surfaces better calibration than any fiction.
+15. **`bcc_explain` absorbs the calibration.** Each topic returns the section's question — the **SPEC §10 placeholder questions verbatim**, so the server and the sheet teach with one voice using strings already signed off — plus one or two illustrative rows inline (`Shipment — A physical parcel dispatched against an order.`). Scoped to one section at a time, so there is no fictional canvas in context to imitate wholesale.
+16. **`review-canvas` embeds the digest** as an embedded resource rather than instructing the model to call `bcc_read_canvas`; `path` is required and wrapped in `completable()`. Embedding is the point of a prompt — the user picked from a completion list, so "review *this*" should not cost a round trip. Tradeoff accepted knowingly: `prompts/get` reports a bad argument as JSON-RPC `-32602`, a blunter failure than a tool's teaching `isError` — acceptable when the path came from the server's own completion list.
+
+### Behaviour under stress
+
+17. **Validation errors teach, which means `parse.ts` gains a path-carrying refusal.** Today every shape failure collapses to `{ ok: false, reason: 'not-canvas' }` (`src/lib/model/parse.ts:22`) — right for the app's single sentence (SPEC §10), useless as a tool error. `Refusal` carries a field path and an expectation; `ParseResult`'s `not-canvas` branch gains an optional detail the UI call site ignores, so app copy is provably unchanged. Rejected: a separate additive validation pass inside the MCP server, which would put a second description of the schema in the codebase — the drift `src/lib/chrome/examples.ts:26` was written to prevent and the failure ticket 001 recorded in Contexture.
+18. **Off-vocabulary values are accepted with a note, never refused.** SPEC §4's escape hatch, matched exactly. Every custom value produces a warning string phrased as observation, not reproach. A server stricter than its editor would produce canvases the editor can write but the server can't read.
+19. **The version gate maps straight through.** A newer `version` is refused with the file unread and unwritten, exactly as `parse.ts:131` does. Older versions migrate forward through the existing `MIGRATIONS` table; writes always emit `CANVAS_VERSION`.
+20. **No conflict check — git is the guard.** No mtime check, no revision hash, no `expectedRevision`. Canvases are committed (2), so the conflict detector and the undo already exist and are better than anything the server could invent. There is no protocol session, so any check would need a token the model passes back. Residual exposure, and it earns a README line: a browser tab holding an older autosave can still export over the agent's work later — the same last-write-wins SPEC §6.1 chose for multi-tab, now reaching across a boundary the multi-tab notice cannot see.
+
+### Writing, and the edges
+
+21. **`bcc_write_canvas` enforces the `.bcc.json` extension and nothing else.** Refuse another extension with a teaching error; leave directory and slug to the human's repo layout. The extension is not cosmetic — it is the key `bcc_list_canvases` globs on and the app's import expects, so a canvas written to `shipping.json` would be invisible to the listing that makes reading-as-context work. Rejected: enforcing the full `<slug>.bcc.json` shape with a derived slug — the server would be dictating repo layout, and a model deriving slugs is a small machine for generating surprises.
+22. **Discovery recurses with a fixed skip list** — `node_modules`, `.git`, `dist`, `build`, `.svelte-kit` — matching both `*.bcc.json` and `*.bcc.html`, since `extractEmbeddedCanvas()` lets the server read an HTML artifact through the same path. Rejected: `.gitignore` semantics (negations, nested files, precedence) are a surprising amount of machinery for finding a handful of files; and top-level-only, which fails the `docs/contexts/` layout (2) assumes.
+23. **Documentation splits by artifact.** `mcp/README.md` owns the server — install, config snippet, `--root`, the last-write-wins warning from (20). `SPEC.md` takes only the `parse.ts` amendment from (17), because it is an app-module change. `map-mcp.md` holds the decisions. SPEC stays scoped to the deployed editor and its artifacts rather than becoming a two-product document.
+
+### Recorded but not decided here
+
+Forced by existing decisions rather than chosen: atomic writes (temp file, then rename in the same directory); canonical bytes through the serializer plus the trailing newline `examples/` carries; root containment verified after resolution (the spec's directory-traversal MUST); never writing to `stdout` on stdio; diagnostics to `stderr` and not `notifications/message`, which is deprecated. The model layer likely gains `serializeCanvasFile(file: CanvasFile): string` — one function — since `serializeCanvas` takes the runtime `CanvasDoc` and a `CanvasFile` is not structurally assignable to it.
+
+**Ticket order:** [026](wayfinder/tickets/026-parse-refusal-detail.md) and [027](wayfinder/tickets/027-mcp-package-scaffold.md) are independently unblocked; [028](wayfinder/tickets/028-mcp-tools-and-resource.md) needs both; [029](wayfinder/tickets/029-review-prompt-and-readme.md) follows; [030](wayfinder/tickets/030-mcp-hosts-checkpoint.md) is the destination gate.

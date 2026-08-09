@@ -1,0 +1,41 @@
+---
+name: bc-canvas-mcp-map
+title: "Wayfinder map: an MCP server for BC Canvas"
+labels: [wayfinder:map]
+---
+
+# Wayfinder map: an MCP server for BC Canvas
+
+## Destination
+
+A local **stdio** MCP server living in this repo at `mcp/`, launched with `--root` and reusing `src/lib/model/*` unchanged, that lets an agent draft a Bounded Context Canvas from a codebase and read committed ones as context. Four tools — `bcc_list_canvases`, `bcc_read_canvas`, `bcc_write_canvas`, `bcc_explain` — canvases as templated `bcc://canvas/{path}` resources, and one `review-canvas` prompt. The curated vocabularies and the SPEC §10 section questions ride in the tool schemas and in `bcc_explain`, so the ddd-crew method travels with the tools rather than being reconstructed by whatever model is driving. The map is done when the **round-trip property** holds — bytes the server writes open unchanged in the app, bytes the app exports read unchanged in the server — and all four tools plus the prompt are exercised once in Claude Code and once in Claude Desktop.
+
+## Notes
+
+- **This map carries execution** (like the hosting and examples maps): task tickets build and verify once the decision ticket clears.
+- **Settled context (from grilling, 2026-08-09 — see [mcp-server-shape](wayfinder/tickets/025-mcp-server-shape.md) for the full resolution):** local-first, for Mitchell alone; publishing is a later decision made on evidence, so `package.json` stays `private`. Canvases are treated as committed repo files — that is the *workflow*, not something the server enforces; it takes a `--root` (defaulting to CWD) and works the same whether that root is a checkout or a plain folder. Both Claude Code and Claude Desktop are targets, which is what justifies a server over a skill-plus-CLI: reach into hosts with no filesystem. Day one is authoring-from-code and reading-as-context; the facilitated workshop is deferred. Whole-document write only — `bcc_edit_canvas` and its natural-key addressing wait for the workshop, which was its only real customer. Git is the conflict guard and the undo; the server does no mtime or revision checking. Off-vocabulary values are **accepted with a note**, matching SPEC §4's escape hatch exactly — a server stricter than its own editor is the Contexture trap [ticket 001](wayfinder/tickets/001-contexture-schema-lessons.md) recorded.
+- **Protocol target:** revision **2026-07-28** (final, published 2026-07-28), TypeScript SDK v2 (`@modelcontextprotocol/server` 2.0.0, published 2026-07-27). Note the trap: v2 does **not** speak 2026-07-28 by default — `server.connect(new StdioServerTransport())` stays on the 2025-era protocol. Serving the current revision over stdio requires `serveStdio(() => buildServer())`, with legacy clients accepted (not `legacy: 'reject'`), because ecosystem migration is early: last-week npm downloads run ~52M for the v1 SDK against ~2M for v2.
+- **Research:** [`docs/research/mcp-server.md`](docs/research/mcp-server.md) — the primary-source pass on the 2026-07-28 spec, the SDK surface, prior art, and the token measurement that decided tool grain. Read it before any implementation ticket; note that its §5.2, §7.2 and §7.3 are superseded by [mcp-server-shape](wayfinder/tickets/025-mcp-server-shape.md) where they differ.
+- **Skills:** `/grilling` for decision tickets (maintain `CONTEXT.md` as terms sharpen); `writing-copy` for every model-facing and user-facing string — tool descriptions, `bcc_explain` prose and the `review-canvas` body are copy, and the model is a reader; `/tdd` where the byte-identity properties are the point.
+- **Tracker (local markdown):** tickets live in `wayfinder/tickets/*.md`. Frontmatter: `status: open|closed`, `assignee` (non-empty = claimed), `blocked-by: [ticket names]`. Frontier = open, unassigned, all blockers closed. Resolutions are appended to the ticket under `## Resolution`, then `status: closed`. Commit tracker changes to `main`.
+
+## Decisions so far
+
+<!-- one line per closed ticket -->
+
+- [Grilling: what shape is the MCP server?](wayfinder/tickets/025-mcp-server-shape.md) — local stdio server in `mcp/`, `--root` defaulting to CWD, both hosts; four tools day one (whole-document write, no edit tool), `bcc://canvas/{path}` resources both-doors, `review-canvas` shipping with them; vocabularies as full one-liners in the write schema generated from `vocab.ts`, no example resources, digest in words not glyphs; `parse.ts` gains a path-carrying refusal with app copy unchanged; git is the conflict guard; `mcp/README.md` owns the docs and SPEC takes only the parse amendment.
+
+## Not yet specified
+
+- **The facilitated workshop.** `bcc_edit_canvas` (the Commit-shaped atomic operation union), the `canvas-workshop` and `draft-canvas-from-code` prompts, and the natural-key collision policy that only matters once rows are addressable. Deliberately deferred: the workshop was `bcc_edit_canvas`'s only real customer, and authoring sixteen operation shapes before driving the tools once is how you get the wrong sixteen. Graduates to a decision ticket after [mcp-hosts-checkpoint](wayfinder/tickets/030-mcp-hosts-checkpoint.md) is green, informed by what day one actually feels like.
+
+## Out of scope
+
+- **Artifact production — no PNG, no HTML.** SPEC §9 makes the shared read-only `CanvasSheet` component the canonical visual truth; the HTML artifact fetches the compiled stylesheet same-origin at export time and the PNG is a SnapDOM `foreignObject` rasterization. Both need a browser running the app. Reproducing them in Node means shipping headless Chromium or forking the renderer, and the second breaks SPEC §8.4's "editor and artifact cannot diverge". An agent that needs a shareable artifact hands the human a `.bcc.json` path.
+- **The MCP Apps `ui://` preview.** It is the only honest way to *show* the quiet sheet without an export, and a first-party Svelte starter exists — but it would stand a second renderer path beside the canonical one, for partial client support. Revisit only if the workshop ticket produces evidence that people want to see the sheet rather than read the digest.
+- **Undo/redo over MCP.** Undo is a session-scoped stack inside the editor (SPEC §6.1), cleared on import and never persisted; the server has no session and no such stack. The agent's undo is git. A `bcc_undo` would invent a second, weaker history nothing else respects.
+- **Concurrency, locking, presence, mtime guards.** The app already chose last-write-wins plus a notice for multi-tab; a server that added locking would be stricter than the product it serves.
+- **A canvas library, an index, or a cross-canvas context map.** `bcc_list_canvases` globbing a configured root is the ceiling. Relationships between canvases are a different product.
+- **Remote/HTTP transport, hosting, auth, publishing to npm.** Reintroduces exactly what the main map fenced off, and drags OAuth 2.1 and RFC 9728 in as MUSTs. Local-first stands until real use argues otherwise; publishing reopens as its own map.
+- **Foreign-format import** (Contexture, Miro, Excalidraw) — SPEC §1 out of scope, and the temptation is far stronger with an LLM in the loop that "could probably map it".
+- **Writing `.bcc.html`.** The server *reads* one through `extractEmbeddedCanvas()`; writing one means rendering.
