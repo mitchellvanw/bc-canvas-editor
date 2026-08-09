@@ -3,7 +3,7 @@ name: ship-example-chooser
 title: "Task: build the chooser, bundle the examples, amend the spec"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [example-chooser, author-examples]
 ---
 
