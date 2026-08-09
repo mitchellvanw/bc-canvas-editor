@@ -77,10 +77,20 @@ Desktop is a GUI: the lines below are things to *see*, and no script can see the
 - `~/Library/Application Support/Claude/claude_desktop_config.json` — the README snippet added verbatim under `mcpServers`, which was `{}`, so nothing was displaced. Backup of the original alongside the session scratchpad; reverting means setting `mcpServers` back to `{}`.
 - The exact Desktop invocation (`node mcp/dist/server.js --root ~/bc-canvas-desktop-check`) was driven over real stdio against that root first: four tools in order, `review-canvas` advertising a required `path`, the listing finding all three canvases including the nested one, completion on an empty `path` offering all three by relative path, and `prompts/get` returning the embedded resource plus the instruction text. So a failure in Desktop is a Desktop failure, not a server one.
 
+**First Desktop run — 2026-08-09, in Cowork on the project `~/Projects/focal`.** The tools load and work: Desktop reported "loaded tools, used bc-canvas integration", `bcc_list_canvases` returned, and the model rendered the section counts and the empties faithfully — "Complete (11/11)", "9/11 — missing **Assumptions** and **Verification metrics**", "no structural problems were reported". So step 2 is green for the tools, and the listing's shape survives the trip.
+
+**Finding 4 — `--root` is fixed at config time, and Cowork's project does not move it.** The session was working in `~/Projects/focal` and got the three canvases from `~/bc-canvas-desktop-check`. That is unambiguous: `focal` contains no canvas at all, so what came back could only be the staged root. Mitchell's reaction — *"I wouldn't expect the examples to come up"* — is the finding. The README's Desktop sentence, "Desktop has no project directory to inherit, so name the folder", was written against Desktop-as-chat and is now false for Cowork: Cowork *has* a project, and the server does not follow it. One host, one root, whatever project you are standing in.
+
+Which leaves the question the next restart answers, and it decides what the README should say:
+
+- **With no `--root`, what working directory does Cowork hand a stdio server?** If it is the Cowork project directory, the Claude Code advice extends to Desktop and the fix is a doc change. If it is `/` or the home directory, Cowork is single-root by construction and that is a product limitation to write down, not a doc bug.
+- The probe is one call and needs no walk: **ask the `bc-canvas-cwd` server to read `/tmp/nope.bcc.json`**. `OutsideRoot` names the root verbatim — *"Paths are relative to `<root>`"* — so the refusal prints the answer. A second entry, `bc-canvas-cwd` (same server, no `--root`), is already in the config beside `bc-canvas` so one restart covers everything.
+- **Do not ask that server to list canvases until the root is known.** If Cowork's cwd turns out to be `/` or `~`, `bcc_list_canvases` walks the whole filesystem behind a five-name skip list. That is finding 2 with teeth: the skip list is sized for a project checkout and nothing bounds the walk when the root is not one.
+
 Remaining, by hand:
 
 1. Restart Desktop.
-2. Confirm the four tools appear, and that **Review a canvas** appears as a slash command.
+2. ~~Confirm the four tools appear~~ — done, above. Confirm **Review a canvas** appears as a slash command.
 3. Type the slash command and confirm the `path` argument offers the three canvases as completions.
 4. Run the review and confirm it comes back with what is missing and the open questions put back to you — not answered.
 5. Note whether Desktop, like Claude Code, shows only the structured JSON for `bcc_list_canvases` and `bcc_write_canvas`. If it does the same thing, finding 1 is a property of the protocol's reception rather than one host's choice, and the follow-up ticket gets much sharper.
