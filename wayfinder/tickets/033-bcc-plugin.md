@@ -3,7 +3,7 @@ name: bcc-plugin
 title: "Task: the plugin — server bundled, two skills, one agent"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [mcp-prose-and-discovery]
 ---
 
