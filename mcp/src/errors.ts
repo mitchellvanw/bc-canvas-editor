@@ -21,6 +21,28 @@ export function refuse(...lines: string[]): CallToolResult {
 	return { content: [{ type: 'text', text }], isError: true };
 }
 
+/**
+ * Why a read came back empty, in one sentence.
+ *
+ * The resource and the prompt both have to say this without a tool result to
+ * put it in — a `resources/read` miss and a `prompts/get` miss are JSON-RPC
+ * errors, not conversation — so the sentence lives here rather than being
+ * written out once per call site.
+ */
+export function readProblem(result: Extract<CanvasRead, { ok: false }>): string {
+	switch (result.reason) {
+		case 'outside-root':
+			// `OutsideRoot` already names the path and the root it left.
+			return result.detail;
+		case 'unreadable':
+			return `${result.path}: could not be read (${result.detail}).`;
+		case 'newer-version':
+			return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); this server reads up to version 1.`;
+		case 'not-canvas':
+			return `${result.path}: ${result.detail ?? 'not a Canvas file.'}`;
+	}
+}
+
 /** What to say about a read that did not come back with a canvas. */
 export function readRefusal(result: Extract<CanvasRead, { ok: false }>): CallToolResult {
 	switch (result.reason) {

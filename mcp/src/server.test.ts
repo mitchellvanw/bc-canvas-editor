@@ -108,8 +108,22 @@ describe('the built server over stdio', () => {
 		expect(initialized.result.protocolVersion).toBe('2025-06-18');
 		expect(initialized.result.serverInfo).toMatchObject({ name: 'bc-canvas' });
 		expect(initialized.result.capabilities.tools).toBeDefined();
+		expect(initialized.result.capabilities.prompts).toBeDefined();
 		expect(listed.result.tools.map((tool: { name: string }) => tool.name)).toEqual(TOOL_ORDER);
 		expect(listed.result.resultType).toBeUndefined();
+	});
+
+	it('offers review-canvas, which is what a Desktop user picks from a menu', async () => {
+		const run = await drive(
+			[{ jsonrpc: '2.0', id: 1, method: 'prompts/list', params: { _meta: ENVELOPE } }],
+			root
+		);
+
+		const [reply] = replies(run);
+		expect(reply.error).toBeUndefined();
+		expect(reply.result.prompts.map((prompt: { name: string }) => prompt.name)).toEqual([
+			'review-canvas'
+		]);
 	});
 
 	it('says nothing on stdout that is not an MCP message, and reports itself on stderr', async () => {

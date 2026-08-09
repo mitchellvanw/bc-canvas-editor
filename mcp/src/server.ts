@@ -12,6 +12,7 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/server';
+import { registerReviewPrompt } from './prompt';
 import { registerCanvasResource } from './resource';
 import type { CanvasRoot } from './root';
 import { registerTools } from './tools';
@@ -22,11 +23,12 @@ export function buildServer(root: CanvasRoot): McpServer {
 	// Capabilities are declared rather than inferred from what is registered,
 	// so what the server claims to be does not drift with its contents.
 	const server = new McpServer(SERVER_INFO, {
-		capabilities: { tools: {}, resources: {}, completions: {} }
+		capabilities: { tools: {}, resources: {}, prompts: {}, completions: {} }
 	});
 
 	registerTools(server, root);
 	registerCanvasResource(server, root);
+	registerReviewPrompt(server, root);
 
 	return server;
 }

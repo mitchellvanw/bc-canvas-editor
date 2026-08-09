@@ -13,6 +13,10 @@ Four curated example canvases ship in the app's **Examples** menu. The same file
 
 `examples/` is the canonical source the app bundles from; a test pins every file byte-exactly through the real import path.
 
+## MCP server
+
+`mcp/` is a local stdio MCP server over the canvas files in a project — listing them, reading them as prose or as bytes, and writing them back in the form this editor imports. See [`mcp/README.md`](mcp/README.md) to install it into Claude Code or Claude Desktop.
+
 ## Developing
 
 ```sh

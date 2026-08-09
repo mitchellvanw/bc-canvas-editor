@@ -21,6 +21,7 @@
 import { ResourceTemplate, type McpServer } from '@modelcontextprotocol/server';
 import { canvasUri, catalog, CANVAS_URI_TEMPLATE, pathFromUri } from './catalog';
 import { canvasDigest } from './digest';
+import { readProblem } from './errors';
 import { readCanvas } from './read';
 import type { CanvasRoot } from './root';
 
@@ -58,13 +59,7 @@ export function registerCanvasResource(server: McpServer, root: CanvasRoot): voi
 			if (path === null) throw new Error(`${uri.href}: not a canvas URI`);
 
 			const result = readCanvas(root, path);
-			if (!result.ok) {
-				throw new Error(
-					result.reason === 'newer-version'
-						? `${result.path}: written by a newer version of BC Canvas (format version ${result.version})`
-						: `${result.path}: ${result.reason === 'not-canvas' ? (result.detail ?? 'not a Canvas file') : result.detail}`
-				);
-			}
+			if (!result.ok) throw new Error(readProblem(result));
 
 			const href = canvasUri(result.path);
 			return {
