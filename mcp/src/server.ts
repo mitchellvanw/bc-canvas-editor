@@ -6,18 +6,27 @@
  * instance to it. Everything a tool needs is closed over here: the root is
  * resolved once, at startup, and every handler resolves its paths through it.
  *
- * The tools themselves land in ticket 028; this registers none, and a
- * `tools/list` over an empty server is exactly what proves the plumbing.
+ * Nothing here holds state between calls. The filesystem is the state and git
+ * is the history; a server that cached a canvas would only be a second opinion
+ * about what is on disk.
  */
 
 import { McpServer } from '@modelcontextprotocol/server';
+import { registerCanvasResource } from './resource';
 import type { CanvasRoot } from './root';
+import { registerTools } from './tools';
 
 export const SERVER_INFO = { name: 'bc-canvas', version: '0.0.1' } as const;
 
 export function buildServer(root: CanvasRoot): McpServer {
-	// Capabilities are declared rather than inferred from what is registered:
-	// a host that connects to a server with no tools yet should still get a
-	// well-formed empty list back instead of a method-not-found.
-	return new McpServer(SERVER_INFO, { capabilities: { tools: {} } });
+	// Capabilities are declared rather than inferred from what is registered,
+	// so what the server claims to be does not drift with its contents.
+	const server = new McpServer(SERVER_INFO, {
+		capabilities: { tools: {}, resources: {}, completions: {} }
+	});
+
+	registerTools(server, root);
+	registerCanvasResource(server, root);
+
+	return server;
 }

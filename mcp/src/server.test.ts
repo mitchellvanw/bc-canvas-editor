@@ -20,6 +20,9 @@ const SERVER = join(PACKAGE, 'dist', 'server.js');
 
 const MODERN = '2026-07-28';
 
+/** The order every session's context opens with; `tools.test.ts` owns why. */
+const TOOL_ORDER = ['bcc_list_canvases', 'bcc_read_canvas', 'bcc_write_canvas', 'bcc_explain'];
+
 /** The per-request envelope a 2026-07-28 client puts on every request. */
 const ENVELOPE = {
 	'io.modelcontextprotocol/protocolVersion': MODERN,
@@ -63,7 +66,7 @@ beforeAll(() => {
 }, 60_000);
 
 describe('the built server over stdio', () => {
-	it('answers a 2026-07-28 client with an empty tool list', async () => {
+	it('answers a 2026-07-28 client with the four tools', async () => {
 		const run = await drive(
 			[{ jsonrpc: '2.0', id: 1, method: 'tools/list', params: { _meta: ENVELOPE } }],
 			root
@@ -72,7 +75,7 @@ describe('the built server over stdio', () => {
 		const [reply] = replies(run);
 		expect(reply).toMatchObject({ jsonrpc: '2.0', id: 1 });
 		expect(reply.error).toBeUndefined();
-		expect(reply.result.tools).toEqual([]);
+		expect(reply.result.tools.map((tool: { name: string }) => tool.name)).toEqual(TOOL_ORDER);
 		// The 2026-07-28 result shape, which is the whole reason the entry is
 		// `serveStdio` and not a hand-wired transport: that one stays on the
 		// 2025-era wire, where `resultType` does not exist.
@@ -105,7 +108,7 @@ describe('the built server over stdio', () => {
 		expect(initialized.result.protocolVersion).toBe('2025-06-18');
 		expect(initialized.result.serverInfo).toMatchObject({ name: 'bc-canvas' });
 		expect(initialized.result.capabilities.tools).toBeDefined();
-		expect(listed.result.tools).toEqual([]);
+		expect(listed.result.tools.map((tool: { name: string }) => tool.name)).toEqual(TOOL_ORDER);
 		expect(listed.result.resultType).toBeUndefined();
 	});
 
