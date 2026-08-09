@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "name": "Royalty Distribution",
+  "description": "Splits streaming revenue among rights holders.",
+  "strategicClassification": {
+    "businessModel": "compliance"
+  },
+  "domainRoles": [
+    {
+      "name": "specification model"
+    }
+  ],
+  "inboundCommunication": [
+    {
+      "collaborator": "Consumption Reporting",
+      "messages": [
+        {
+          "type": "event",
+          "name": "Play Totals Finalized",
+          "description": "Monthly, per track, per territory."
+        }
+      ]
+    },
+    {
+      "collaborator": "Rights Management",
+      "messages": [
+        {
+          "type": "event",
+          "name": "Split Sheet Updated"
+        }
+      ]
+    }
+  ],
+  "ubiquitousLanguage": [
+    {
+      "term": "Split Sheet",
+      "definition": "The agreed percentage split of a track's royalties among its rights holders."
+    },
+    {
+      "term": "Recoupment",
+      "definition": "Label advances earned back before royalties reach the artist."
+    }
+  ],
+  "businessDecisions": [
+    {
+      "name": "Calculate monthly, pay quarterly",
+      "description": "Statements are drawn monthly; money moves quarterly."
+    }
+  ],
+  "outboundCommunication": [
+    {
+      "collaborator": "Payments",
+      "messages": [
+        {
+          "type": "command",
+          "name": "Disburse Royalties"
+        }
+      ]
+    }
+  ],
+  "assumptions": [],
+  "verificationMetrics": [],
+  "openQuestions": [
+    "Core or supporting? Accurate splits build artist trust — or is this plumbing every competitor has?",
+    "Who resolves conflicting split sheets — this context or Rights Management?",
+    "Is recoupment calculated here or taken from the label's numbers?",
+    "Where do royalties for disputed tracks wait?"
+  ]
+}

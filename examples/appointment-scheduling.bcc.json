@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "name": "Appointment Scheduling",
+  "description": "Books patients into clinic slots and keeps no-shows down.",
+  "strategicClassification": {
+    "domain": "supporting",
+    "businessModel": "cost-reduction",
+    "evolution": "custom-built"
+  },
+  "domainRoles": [
+    {
+      "name": "execution context"
+    }
+  ],
+  "inboundCommunication": [
+    {
+      "collaborator": "Patient Portal",
+      "relationship": "open-host-service",
+      "messages": [
+        {
+          "type": "command",
+          "name": "Book Appointment"
+        },
+        {
+          "type": "command",
+          "name": "Cancel Appointment"
+        },
+        {
+          "type": "query",
+          "name": "Get Available Slots"
+        }
+      ]
+    },
+    {
+      "collaborator": "Front Desk",
+      "messages": [
+        {
+          "type": "command",
+          "name": "Reschedule Appointment"
+        },
+        {
+          "type": "query",
+          "name": "Get Day Schedule"
+        }
+      ]
+    }
+  ],
+  "ubiquitousLanguage": [
+    {
+      "term": "Slot",
+      "definition": "A bookable fifteen-minute unit of a practitioner's day."
+    },
+    {
+      "term": "No-show",
+      "definition": "A booked appointment the patient missed without cancelling in time."
+    },
+    {
+      "term": "Overbooking",
+      "definition": "Booking more patients than slots to absorb expected no-shows."
+    },
+    {
+      "term": "Waitlist",
+      "definition": "Patients ready to take a freed slot at short notice."
+    }
+  ],
+  "businessDecisions": [
+    {
+      "name": "Overbook against expected no-shows",
+      "description": "High no-show clinics run up to 10% over capacity; others don't overbook."
+    },
+    {
+      "name": "Freed slots go to the waitlist first",
+      "description": "Only unclaimed slots reopen to the portal."
+    },
+    {
+      "name": "Cancelling inside 24 hours counts as a no-show"
+    }
+  ],
+  "outboundCommunication": [
+    {
+      "collaborator": "Reminders",
+      "messages": [
+        {
+          "type": "event",
+          "name": "Appointment Booked",
+          "description": "Drives the confirmation and day-before reminder."
+        },
+        {
+          "type": "event",
+          "name": "Appointment Cancelled"
+        }
+      ]
+    },
+    {
+      "collaborator": "Patient Records",
+      "relationship": "anticorruption-layer",
+      "messages": [
+        {
+          "type": "event",
+          "name": "Appointment Booked",
+          "description": "Recorded against the patient's chart as a planned visit."
+        }
+      ]
+    }
+  ],
+  "assumptions": [
+    "Practitioner rosters are final a week ahead.",
+    "Patients on the waitlist can be reached the same day."
+  ],
+  "verificationMetrics": [
+    "Monthly no-show rate stays under 8% per clinic.",
+    "Slot utilization stays above 85%.",
+    "Half of freed slots are refilled from the waitlist."
+  ],
+  "openQuestions": [
+    "Are recurring appointments one booking or many?"
+  ]
+}

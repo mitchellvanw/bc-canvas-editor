@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "name": "Notifications",
+  "description": "Delivers order updates to customers on their preferred channel.",
+  "strategicClassification": {
+    "domain": "generic",
+    "businessModel": "engagement",
+    "evolution": "product"
+  },
+  "domainRoles": [
+    {
+      "name": "service context"
+    },
+    {
+      "name": "gateway context"
+    }
+  ],
+  "inboundCommunication": [
+    {
+      "collaborator": "Order Fulfillment",
+      "relationship": "conformist",
+      "messages": [
+        {
+          "type": "event",
+          "name": "Order Shipped",
+          "description": "Becomes the dispatch update to the customer."
+        }
+      ]
+    }
+  ],
+  "ubiquitousLanguage": [
+    {
+      "term": "Channel",
+      "definition": "The medium a customer chose — email, SMS or push."
+    },
+    {
+      "term": "Quiet Hours",
+      "definition": "The nightly window when only delivery-critical updates go out."
+    }
+  ],
+  "businessDecisions": [
+    {
+      "name": "Buy, don't build",
+      "description": "Delivery runs on a rented messaging platform; this context only routes."
+    },
+    {
+      "name": "Conform to senders",
+      "description": "Upstream events are adopted as-is; translating them isn't worth it here."
+    }
+  ],
+  "outboundCommunication": [
+    {
+      "collaborator": "Messaging Platform",
+      "relationship": "conformist",
+      "messages": [
+        {
+          "type": "command",
+          "name": "Send Message"
+        }
+      ]
+    }
+  ],
+  "assumptions": [
+    "Customers keep contact details current in Accounts."
+  ],
+  "verificationMetrics": [
+    "99% of updates leave within a minute of the triggering event."
+  ],
+  "openQuestions": [
+    "Do marketing messages belong here, or is this transactional only?"
+  ]
+}

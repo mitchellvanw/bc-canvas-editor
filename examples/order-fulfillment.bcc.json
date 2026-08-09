@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "name": "Order Fulfillment",
+  "description": "Coordinates picking, packing and shipping once an order is paid.",
+  "strategicClassification": {
+    "domain": "core",
+    "businessModel": "revenue",
+    "evolution": "custom-built"
+  },
+  "domainRoles": [
+    {
+      "name": "execution context"
+    },
+    {
+      "name": "octopus coordinator"
+    }
+  ],
+  "inboundCommunication": [
+    {
+      "collaborator": "Checkout",
+      "relationship": "customer-supplier",
+      "messages": [
+        {
+          "type": "command",
+          "name": "Place Order"
+        },
+        {
+          "type": "event",
+          "name": "Payment Confirmed",
+          "description": "Triggers fulfillment."
+        }
+      ]
+    },
+    {
+      "collaborator": "Customer Service",
+      "messages": [
+        {
+          "type": "command",
+          "name": "Cancel Fulfillment",
+          "description": "Accepted until picking starts."
+        },
+        {
+          "type": "query",
+          "name": "Get Shipment Status"
+        }
+      ]
+    },
+    {
+      "collaborator": "Warehouse",
+      "relationship": "big-ball-of-mud",
+      "messages": [
+        {
+          "type": "event",
+          "name": "Order Picked"
+        },
+        {
+          "type": "event",
+          "name": "Order Packed"
+        }
+      ]
+    }
+  ],
+  "ubiquitousLanguage": [
+    {
+      "term": "Shipment",
+      "definition": "A physical parcel dispatched against an order."
+    },
+    {
+      "term": "Pick List",
+      "definition": "The items to gather from the warehouse for one order."
+    },
+    {
+      "term": "Backorder",
+      "definition": "A paid order held until stock returns."
+    },
+    {
+      "term": "Dispatch Cutoff",
+      "definition": "The daily deadline for a paid order to leave the same day."
+    }
+  ],
+  "businessDecisions": [
+    {
+      "name": "No partial shipments",
+      "description": "An order ships complete or not at all."
+    },
+    {
+      "name": "Cancellation stops at picking",
+      "description": "Once picking starts, a cancellation becomes a return."
+    },
+    {
+      "name": "Same-day before the cutoff",
+      "description": "Orders paid before the dispatch cutoff leave the same day."
+    }
+  ],
+  "outboundCommunication": [
+    {
+      "collaborator": "Warehouse",
+      "relationship": "big-ball-of-mud",
+      "messages": [
+        {
+          "type": "command",
+          "name": "Pick Order"
+        }
+      ]
+    },
+    {
+      "collaborator": "Carriers",
+      "relationship": "published-language",
+      "messages": [
+        {
+          "type": "command",
+          "name": "Book Shipment"
+        },
+        {
+          "type": "query",
+          "name": "Get Tracking Status"
+        }
+      ]
+    },
+    {
+      "collaborator": "Notifications",
+      "messages": [
+        {
+          "type": "event",
+          "name": "Order Shipped"
+        }
+      ]
+    }
+  ],
+  "assumptions": [
+    "Warehouse stock counts are accurate within the hour.",
+    "A single warehouse serves all orders."
+  ],
+  "verificationMetrics": [
+    "95% of paid orders dispatch within 4 hours.",
+    "Under 1% of orders are cancelled after picking starts."
+  ],
+  "openQuestions": [
+    "Who owns returns — this context or a new one?",
+    "Do pre-orders belong here or in Checkout?"
+  ]
+}
