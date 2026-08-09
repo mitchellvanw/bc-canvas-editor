@@ -67,12 +67,20 @@ Driven headlessly with `--strict-mcp-config --mcp-config`, so nothing was writte
 
 **Copy nit — fixed.** `parse.ts`'s detail carried no terminal punctuation, so `refuse()`'s space-join produced `…got "notification" A Canvas file is the eleven-section document…`. The full stop now goes on in one place, `notCanvas()`, rather than at each of the fourteen call sites, and it does not double one already there — the clause is what the walk produces, the sentence is what the readers join. Every reader gains by it: the MCP refusal, `readProblem`'s resource and prompt errors, and the `problem` line in a listing. The app is untouched, as ticket 026 required — it keys off `reason` alone, and `chrome/import-refusal.test.ts` still proves no fragment of the detail reaches the dialog.
 
-### Outstanding — Claude Desktop
+### Outstanding — Claude Desktop, staged and waiting on a restart
 
-Not run: Desktop is a GUI that needs a config edit and a restart, and the lines below are things to see rather than assert. Everything the protocol can prove about them is green above — the `--root`-on-a-plain-folder shape, the prompt's arguments, its completion values, and the `-32602` on a bad path.
+Desktop is a GUI: the lines below are things to *see*, and no script can see them. Everything the protocol can prove about them is green above.
 
-1. Put the README snippet into `~/Library/Application Support/Claude/claude_desktop_config.json` **as written**, with `--root` on a folder that is not a repo, and restart Desktop.
+**Staged 2026-08-09.** The config edit is done and the root exists, so what remains is the looking.
+
+- `~/bc-canvas-desktop-check/` — a plain folder, no git anywhere above it, holding `order-fulfillment.bcc.json`, `notifications.bcc.json` and `contexts/royalty-distribution.bcc.json`. Throwaway; delete it when the ticket closes.
+- `~/Library/Application Support/Claude/claude_desktop_config.json` — the README snippet added verbatim under `mcpServers`, which was `{}`, so nothing was displaced. Backup of the original alongside the session scratchpad; reverting means setting `mcpServers` back to `{}`.
+- The exact Desktop invocation (`node mcp/dist/server.js --root ~/bc-canvas-desktop-check`) was driven over real stdio against that root first: four tools in order, `review-canvas` advertising a required `path`, the listing finding all three canvases including the nested one, completion on an empty `path` offering all three by relative path, and `prompts/get` returning the embedded resource plus the instruction text. So a failure in Desktop is a Desktop failure, not a server one.
+
+Remaining, by hand:
+
+1. Restart Desktop.
 2. Confirm the four tools appear, and that **Review a canvas** appears as a slash command.
-3. Type the slash command and confirm the `path` argument offers the discovered canvases as completions.
+3. Type the slash command and confirm the `path` argument offers the three canvases as completions.
 4. Run the review and confirm it comes back with what is missing and the open questions put back to you — not answered.
 5. Note whether Desktop, like Claude Code, shows only the structured JSON for `bcc_list_canvases` and `bcc_write_canvas`. If it does the same thing, finding 1 is a property of the protocol's reception rather than one host's choice, and the follow-up ticket gets much sharper.
