@@ -3,7 +3,7 @@ name: mcp-hosts-checkpoint
 title: "Task: the destination gate — round-trip holds, both hosts drive it"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [review-prompt-and-readme]
 ---
 
