@@ -1,0 +1,94 @@
+{
+  "tooltip": "Reference (⌘/)",
+  "isLastChromeControl": true,
+  "openedOnClick": true,
+  "title": "Reference",
+  "isModal": true,
+  "clusters": [
+    {
+      "title": "Editing",
+      "rows": [
+        [
+          "Enter",
+          "Commit a single-line field"
+        ],
+        [
+          "Esc",
+          "Revert the field being edited"
+        ],
+        [
+          "Tab / click away",
+          "Commit and move on"
+        ]
+      ]
+    },
+    {
+      "title": "Structure",
+      "rows": [
+        [
+          "Delete",
+          "Remove the focused chip or lane"
+        ],
+        [
+          "Alt+← / Alt+→",
+          "Move a chip within its lane"
+        ],
+        [
+          "Alt+↑ / Alt+↓",
+          "Move a lane up or down"
+        ]
+      ]
+    },
+    {
+      "title": "Pickers",
+      "rows": [
+        [
+          "Enter / Space",
+          "Open the picker on a value"
+        ],
+        [
+          "↑ ↓",
+          "Move through options — or type to jump"
+        ],
+        [
+          "Space",
+          "Toggle a trait"
+        ],
+        [
+          "Enter",
+          "Pick and close"
+        ],
+        [
+          "Esc",
+          "Close without changing"
+        ]
+      ]
+    },
+    {
+      "title": "App",
+      "rows": [
+        [
+          "⌘Z / ⇧⌘Z",
+          "Undo / Redo"
+        ],
+        [
+          "⌘/",
+          "Open this reference"
+        ]
+      ]
+    }
+  ],
+  "linkLine": "Learn the method: the ddd-crew's Bounded Context Canvas",
+  "linkHref": "https://github.com/ddd-crew/bounded-context-canvas",
+  "focusTrapped": true,
+  "closedOnEsc": true,
+  "focusAfterEsc": "Reference",
+  "openedOnShortcutWhileEditing": true,
+  "dialogCount": 1,
+  "focusAfterEscFromField": "Name",
+  "enterCommits": true,
+  "escReverts": true,
+  "tabCommits": true,
+  "cmdZUndoes": true,
+  "shiftCmdZRedoes": true
+}

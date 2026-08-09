@@ -1,0 +1,97 @@
+{
+  "tabOrderBareSheet": [
+    "Import…",
+    "Export",
+    "New canvas",
+    "Name",
+    "Domain",
+    "Business model",
+    "Evolution",
+    "Description",
+    "+ trait — how does this context behave?",
+    "+ collaborator — who sends this context commands, queries or",
+    "+ term — which words mean something precise here?",
+    "+ decision — which rules does this context enforce?",
+    "+ collaborator — who consumes what this context emits?",
+    "+ assumption — what are you taking to be true?",
+    "+ metric — what would verify this design?",
+    "+ question — what's still unresolved?",
+    "Bounded Context Canvas by the ddd-crew",
+    "CC BY 4.0",
+    null
+  ],
+  "announceTraitAdded": "Trait added",
+  "focusAfterGhostAdd": "Collaborator",
+  "focusAfterTypePick": "Message name",
+  "builtKeyboardOnly": {
+    "name": "Kbd Canvas",
+    "traits": 1,
+    "lanes": [
+      "Checkout",
+      "Billing"
+    ],
+    "messages": [
+      "command Place Order",
+      "event Payment Confirmed"
+    ]
+  },
+  "chipMoved": [
+    "Payment Confirmed",
+    "Place Order"
+  ],
+  "announceMovedDown": "Moved down",
+  "focusAfterChipMove": {
+    "label": "Message name",
+    "text": "Place Order"
+  },
+  "lanesAfterAltDown": [
+    "Billing",
+    "Checkout"
+  ],
+  "announceLaneMove": "Moved down",
+  "announceCommandRemoved": "Command removed",
+  "announceCollaboratorRemoved": "Collaborator removed",
+  "emptiedTo": {
+    "lanes": [
+      "Checkout"
+    ],
+    "messages": 1
+  },
+  "regionAfterFieldBlur": "Collaborator removed",
+  "announceUndone": "Undone: Description",
+  "xAtRest": "0",
+  "xWhileChipFocused": "1",
+  "ghostWhilePanelFocused": "1",
+  "chipTabStops": [
+    "Message name",
+    "Message description",
+    "Remove event Payment Confirmed",
+    "Add message"
+  ],
+  "keyboardFieldRing": {
+    "focused": true,
+    "hasClass": true,
+    "outline": "2px solid"
+  },
+  "pointerFieldRing": {
+    "hasClass": false,
+    "outline": "1px solid"
+  },
+  "xFocusVisibleRing": "2px solid",
+  "ghostTransitionReduced": "none",
+  "semantics": {
+    "textboxCount": 5,
+    "everyTextboxNamed": true,
+    "multilineOnProse": "true",
+    "placeholdersRide": true,
+    "lanesAreList": "UL",
+    "messagesAreList": "UL",
+    "rolesAreList": "UL",
+    "chipTypeLed": "◆event,Payment Confirmed ×",
+    "liveSurfaces": [
+      "DIV[status|]#sr-only",
+      "DIV[|assertive]#svelte-announcer"
+    ]
+  },
+  "announceMultiTab": "This canvas is open in another tab. Whichever tab edits last overwrites the other — close one of them."
+}

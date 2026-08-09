@@ -1,0 +1,37 @@
+{
+  "ghostsAtRest": {
+    "+ trait — how does this context behave?": "0.75",
+    "+ collaborator — who sends this context commands, queries or events?": "0.75",
+    "+ collaborator — who consumes what this context emits?": "0.75",
+    "+ term — which words mean something precise here?": "0.75",
+    "+ decision — which rules does this context enforce?": "0.75",
+    "+ assumption — what are you taking to be true?": "0.75",
+    "+ metric — what would verify this design?": "0.75",
+    "+ question — what's still unresolved?": "0.75"
+  },
+  "namePlaceholder": {
+    "text": "\"Name this context\"",
+    "fontStyle": "italic",
+    "opacity": "0.45"
+  },
+  "descriptionPlaceholder": {
+    "text": "\"What does this context exist to do? A few sentences in business language.\"",
+    "fontStyle": "italic"
+  },
+  "classificationValues": [
+    "—",
+    "—",
+    "—"
+  ],
+  "namePlaceholderWhileTyping": "none",
+  "terseLabel": "+ collaborator",
+  "terseGhostAtRest": "0",
+  "questionRestored": "+ collaborator — who sends this context commands, queries or events?",
+  "restoredGhostAtRest": "0.75",
+  "guard": {
+    "fileLeaks": [],
+    "artifactTextLeaks": [],
+    "artifactPlaceholderEls": 0,
+    "fileBytes": 296
+  }
+}

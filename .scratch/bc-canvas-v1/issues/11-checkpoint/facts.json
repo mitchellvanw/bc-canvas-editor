@@ -1,0 +1,13 @@
+{
+  "reopenedName": "Order Fulfillment",
+  "visibilityFlush": {
+    "description": "Owns order intake through handover to fulfillment.",
+    "stillFocused": "Description"
+  },
+  "bannerBeforeSecondTab": 0,
+  "noticeFirstTab": "This canvas is open in another tab. Whichever tab edits last overwrites the other — close one of them.",
+  "noticeSecondTab": "This canvas is open in another tab. Whichever tab edits last overwrites the other — close one of them.",
+  "noticeVerbatim": true,
+  "slotAfterBothEdit": "Order Fulfillment — tab B",
+  "bothEditable": true
+}
