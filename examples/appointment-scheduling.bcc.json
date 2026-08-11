@@ -15,9 +15,11 @@
   "inboundCommunication": [
     {
       "collaborator": {
-        "name": "Patient Portal"
+        "name": "Patient Portal",
+        "kind": "frontend"
       },
       "relationship": {
+        "theirs": "conformist",
         "ours": "open-host-service"
       },
       "messages": [
@@ -37,7 +39,8 @@
     },
     {
       "collaborator": {
-        "name": "Front Desk"
+        "name": "Front Desk",
+        "kind": "user"
       },
       "messages": [
         {
@@ -85,7 +88,8 @@
   "outboundCommunication": [
     {
       "collaborator": {
-        "name": "Reminders"
+        "name": "Reminders",
+        "kind": "bounded-context"
       },
       "messages": [
         {
@@ -101,7 +105,8 @@
     },
     {
       "collaborator": {
-        "name": "Patient Records"
+        "name": "Patient Records",
+        "kind": "external-system"
       },
       "relationship": {
         "ours": "anticorruption-layer"

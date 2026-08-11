@@ -18,7 +18,8 @@
   "inboundCommunication": [
     {
       "collaborator": {
-        "name": "Order Fulfillment"
+        "name": "Order Fulfillment",
+        "kind": "bounded-context"
       },
       "relationship": {
         "ours": "conformist"
@@ -55,9 +56,11 @@
   "outboundCommunication": [
     {
       "collaborator": {
-        "name": "Messaging Platform"
+        "name": "Messaging Platform",
+        "kind": "external-system"
       },
       "relationship": {
+        "theirs": "open-host-service",
         "ours": "conformist"
       },
       "messages": [

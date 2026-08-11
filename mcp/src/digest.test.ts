@@ -41,25 +41,15 @@ describe('canvasDigest', () => {
 		// the collaborator with each end behind its sr prefix — the arrow
 		// keeping a one-sided pair visibly one-sided — and the message leading
 		// with its type spelled out, the accessible name rather than the glyph.
-		expect(digest).toContain('### Checkout\n\n→ this context: customer-supplier');
+		expect(digest).toContain('### Checkout — bounded-context\n\n→ this context: customer-supplier');
 		expect(digest).toContain('event Payment Confirmed — Triggers fulfillment.');
 		expect(digest).toContain('command Place Order');
 	});
 
 	it('speaks a kind and a two-ended relationship the way the sheet does', () => {
-		// The committed examples carry neither yet — they are migration output
-		// until examples-v2-content hand-authors them — so the new fields are
-		// pinned against a built lane rather than a fixture.
-		const file = toCanvasFile(blankCanvas());
-		file.inboundCommunication.push({
-			collaborator: { name: 'Payments', kind: 'bounded-context' },
-			relationship: { theirs: 'open-host-service', ours: 'conformist' },
-			messages: []
-		});
+		const digest = canvasDigest(example('notifications'));
 
-		const digest = canvasDigest(file);
-
-		expect(digest).toContain('### Payments — bounded-context');
+		expect(digest).toContain('### Messaging Platform — external-system');
 		expect(digest).toContain('Collaborator: open-host-service → this context: conformist');
 	});
 

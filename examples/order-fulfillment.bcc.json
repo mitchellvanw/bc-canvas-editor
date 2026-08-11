@@ -10,15 +10,13 @@
   "domainRoles": [
     {
       "name": "execution context"
-    },
-    {
-      "name": "octopus coordinator"
     }
   ],
   "inboundCommunication": [
     {
       "collaborator": {
-        "name": "Checkout"
+        "name": "Checkout",
+        "kind": "bounded-context"
       },
       "relationship": {
         "ours": "customer-supplier"
@@ -37,7 +35,8 @@
     },
     {
       "collaborator": {
-        "name": "Customer Service"
+        "name": "Customer Service",
+        "kind": "user"
       },
       "messages": [
         {
@@ -53,10 +52,12 @@
     },
     {
       "collaborator": {
-        "name": "Warehouse"
+        "name": "Warehouse",
+        "kind": "external-system"
       },
       "relationship": {
-        "ours": "big-ball-of-mud"
+        "theirs": "big-ball-of-mud",
+        "ours": "anticorruption-layer"
       },
       "messages": [
         {
@@ -105,10 +106,12 @@
   "outboundCommunication": [
     {
       "collaborator": {
-        "name": "Warehouse"
+        "name": "Warehouse",
+        "kind": "external-system"
       },
       "relationship": {
-        "ours": "big-ball-of-mud"
+        "theirs": "big-ball-of-mud",
+        "ours": "anticorruption-layer"
       },
       "messages": [
         {
@@ -119,9 +122,11 @@
     },
     {
       "collaborator": {
-        "name": "Carriers"
+        "name": "Carriers",
+        "kind": "external-system"
       },
       "relationship": {
+        "theirs": "published-language",
         "ours": "published-language"
       },
       "messages": [
@@ -137,7 +142,8 @@
     },
     {
       "collaborator": {
-        "name": "Notifications"
+        "name": "Notifications",
+        "kind": "bounded-context"
       },
       "messages": [
         {

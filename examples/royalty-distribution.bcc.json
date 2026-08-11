@@ -13,7 +13,8 @@
   "inboundCommunication": [
     {
       "collaborator": {
-        "name": "Consumption Reporting"
+        "name": "Consumption Reporting",
+        "kind": "bounded-context"
       },
       "messages": [
         {
@@ -25,7 +26,8 @@
     },
     {
       "collaborator": {
-        "name": "Rights Management"
+        "name": "Rights Management",
+        "kind": "bounded-context"
       },
       "messages": [
         {
@@ -54,7 +56,8 @@
   "outboundCommunication": [
     {
       "collaborator": {
-        "name": "Payments"
+        "name": "Payments",
+        "kind": "bounded-context"
       },
       "messages": [
         {
