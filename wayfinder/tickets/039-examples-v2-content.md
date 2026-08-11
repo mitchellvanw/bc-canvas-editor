@@ -3,7 +3,7 @@ name: examples-v2-content
 title: "Task: the four examples author the new fields, rather than inheriting migration output"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [sheet-canonical-layout]
 ---
 
