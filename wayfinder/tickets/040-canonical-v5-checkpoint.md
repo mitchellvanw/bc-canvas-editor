@@ -3,7 +3,7 @@ name: canonical-v5-checkpoint
 title: "Task: the gate — a v1 canvas through both surfaces, and the sheet held beside a printed V5"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [examples-v2-content, mcp-canonical-labels]
 ---
 
