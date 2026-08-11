@@ -33,12 +33,29 @@ function vocabularyLines(options: readonly PickOption[]): string[] {
 
 const CUSTOM_OK = 'Any other value is accepted and kept as written.';
 
+/**
+ * Both lane directions share one vocabulary block: the four collaborator
+ * kinds and the nine relationship patterns. The escape-hatch line names
+ * relationships alone, because the kind is the one set the parser refuses
+ * unknown values for (SPEC §4.2) — a blanket "any other value" here would
+ * teach the opposite.
+ */
+const LANE_VOCABULARY = [
+	'kind — what the collaborator is. Closed: any other kind is refused, so omit it rather than inventing one:',
+	...vocabularyLines(PICK_OPTIONS.collaboratorKind),
+	'',
+	'relationship — the context-mapping pattern, the same vocabulary at either end:',
+	...vocabularyLines(PICK_OPTIONS.relationship),
+	'',
+	'Any other relationship is accepted and kept as written.'
+];
+
 interface Entry {
 	/** What this section looks like in the file. */
 	shape: string;
-	/** The curated vocabulary, where the section draws on one. */
+	/** The curated vocabulary, where the section draws on one — escape-hatch line included. */
 	vocabulary?: string[];
-	/** One or two rows, as they would read in the file. */
+	/** One or two rows, as they would read in a digest. */
 	rows: string[];
 }
 
@@ -63,22 +80,30 @@ const ENTRIES: Record<SectionKey, Entry> = {
 			...vocabularyLines(PICK_OPTIONS.businessModel),
 			'',
 			'evolution — how settled the thing being built is:',
-			...vocabularyLines(PICK_OPTIONS.evolution)
+			...vocabularyLines(PICK_OPTIONS.evolution),
+			'',
+			CUSTOM_OK
 		],
 		rows: ['Domain: supporting · Business model: cost-reduction · Evolution: product']
 	},
 	domainRoles: {
 		shape:
 			'An array of { "name": … }, usually one to three. Traits describe how the context behaves, not what it stores.',
-		vocabulary: ['From the ddd-crew model-traits worksheet, plus one local addition:', ...vocabularyLines(TRAITS)],
+		vocabulary: [
+			'From the ddd-crew model-traits worksheet, plus one local addition:',
+			...vocabularyLines(TRAITS),
+			'',
+			CUSTOM_OK
+		],
 		rows: ['gateway context', 'analysis context']
 	},
 	inboundCommunication: {
 		shape:
-			'An array of lanes, one per collaborator: { "collaborator": { "name": …, "kind"?: "bounded-context" | "external-system" | "frontend" | "user" }, "relationship"?: { "theirs"?: …, "ours"?: … }, "messages": [ { "type": "command" | "query" | "event", "name": …, "description"?: … } ] }. The relationship names the context-mapping pattern at each end of the boundary — the collaborator\'s side and this context\'s. Inbound messages are the ones this context receives.',
-		vocabulary: ['relationship — the context-mapping pattern:', ...vocabularyLines(PICK_OPTIONS.relationship)],
+			'An array of lanes, one per collaborator: { "collaborator": { "name": …, "kind"?: "bounded-context" | "external-system" | "frontend" | "user" }, "relationship"?: { "theirs"?: …, "ours"?: … }, "messages": [ { "type": "command" | "query" | "event", "name": …, "description"?: … } ] }. The relationship names the context-mapping pattern at each end of the boundary — theirs is the collaborator\'s side, ours is this context\'s. The two ends are a pairing across one boundary, not a duplicate field: send an end only when that side\'s stance is actually known, and the same pattern at both ends only when it genuinely holds on both — an asymmetric boundary carries two different words. Inbound messages are the ones this context receives.',
+		vocabulary: LANE_VOCABULARY,
 		rows: [
-			'Dispatch (customer-supplier)',
+			'Dispatch — bounded-context',
+			'→ this context: customer-supplier',
 			'  command Register Parcel — Opens tracking for a parcel the carrier has taken.'
 		]
 	},
@@ -96,9 +121,13 @@ const ENTRIES: Record<SectionKey, Entry> = {
 	},
 	outboundCommunication: {
 		shape:
-			'The same lane shape as inbound — collaborator, optional relationship ends, messages. Outbound messages are the ones this context emits — most of them events, and each one a commitment to whoever listens.',
-		vocabulary: ['relationship — the context-mapping pattern:', ...vocabularyLines(PICK_OPTIONS.relationship)],
-		rows: ['Customer Notifications (open-host-service)', '  event Parcel Delivered']
+			'The same lane shape as inbound — collaborator with its optional kind, the relationship pair, messages. Outbound messages are the ones this context emits — most of them events, and each one a commitment to whoever listens.',
+		vocabulary: LANE_VOCABULARY,
+		rows: [
+			'Customer Notifications — frontend',
+			'Collaborator: conformist → this context: open-host-service',
+			'  event Parcel Delivered'
+		]
 	},
 	assumptions: {
 		shape: 'An array of strings, each one thing the design takes to be true.',
@@ -157,7 +186,7 @@ export function explain(topic: Topic): string {
 	// in — the §10 strings are fragments that follow a label ("+ trait — how
 	// does this context behave?"), and they read as fragments on their own.
 	const lines = [`# ${section.label}${asked === undefined ? '' : ` — ${asked}`}`, '', entry.shape];
-	if (entry.vocabulary !== undefined) lines.push('', ...entry.vocabulary, '', CUSTOM_OK);
+	if (entry.vocabulary !== undefined) lines.push('', ...entry.vocabulary);
 	lines.push('', 'For example:', ...entry.rows);
 
 	return lines.join('\n');

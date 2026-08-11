@@ -5,9 +5,11 @@
  * and repeated keys, and it should not be handed the sheet's glyphs either.
  * `▶ ◆ ?` mean something to an eye scanning colour; the app already decided
  * what its non-visual channel says instead — accessible names lead with the
- * type ("Command, Place Order", SPEC §8.5) and the footer legend spells the
- * three out in words. This is that channel, written down: the digest is the
- * model's screen-reader view of the sheet.
+ * type ("Command, Place Order", SPEC §8.5), the kind icon speaks as a prefix
+ * ("Bounded context: "), the relationship pair's ink-weight convention speaks
+ * as "Collaborator: " and "this context: " (SPEC §5), and the footer legend
+ * spells the rest out in words. This is that channel, written down: the digest
+ * is the model's screen-reader view of the sheet.
  *
  * Headings mirror the HTML artifact's hierarchy (SPEC §8.6): the canvas name
  * is the h1, sections are h2s, collaborators h3s. Sections the canvas says
@@ -38,13 +40,29 @@ function message(row: Message): string {
 	return `${row.type} ${row.name}${detail}`;
 }
 
+/**
+ * The relationship pair the way the sheet speaks it: each end behind its
+ * sr prefix, theirs first. A one-sided pair keeps the arrow so the unnamed
+ * end stays visible as an end — the pairing is the fact being reported.
+ */
+function relationshipLine(lane: Lane): string | undefined {
+	const present = (end: string | undefined): end is string => end !== undefined && end !== '';
+	const theirs = lane.relationship?.theirs;
+	const ours = lane.relationship?.ours;
+	if (present(theirs) && present(ours)) return `Collaborator: ${theirs} → this context: ${ours}`;
+	if (present(theirs)) return `Collaborator: ${theirs} →`;
+	if (present(ours)) return `→ this context: ${ours}`;
+	return undefined;
+}
+
 function lanes(rows: Lane[]): string[] {
 	return rows.flatMap((lane, index) => {
-		const ours = lane.relationship?.ours;
-		const relationship = ours === undefined || ours === '' ? '' : ` (${ours})`;
-		const head = `### ${lane.collaborator.name}${relationship}`;
+		const kind = lane.collaborator.kind;
+		const head = `### ${lane.collaborator.name}${kind === undefined ? '' : ` — ${kind}`}`;
+		const relationship = relationshipLine(lane);
+		const block = relationship === undefined ? [head] : [head, '', relationship];
 		const messages = lane.messages.length === 0 ? [] : ['', ...lane.messages.map(message)];
-		return index === 0 ? [head, ...messages] : ['', head, ...messages];
+		return index === 0 ? [...block, ...messages] : ['', ...block, ...messages];
 	});
 }
 
@@ -56,9 +74,10 @@ function pair(head: string, detail: string | undefined): string {
 function body(section: Section, file: CanvasFile): string[] {
 	switch (section.key) {
 		case 'name':
-		case 'strategicClassification':
-			// Both live in the title block, above the sections; see `canvasDigest`.
+			// The name is the h1, above the sections; see `canvasDigest`.
 			return [];
+		case 'strategicClassification':
+			return classification(file);
 		case 'purpose':
 			return [file.purpose];
 		case 'domainRoles':
@@ -87,17 +106,14 @@ function body(section: Section, file: CanvasFile): string[] {
 export function canvasDigest(file: CanvasFile): string {
 	const lines: string[] = [`# ${file.name.trim() === '' ? 'Untitled' : file.name}`];
 
-	const axes = classification(file);
-	if (axes.length > 0) lines.push('', ...axes);
-
 	const missing: string[] = [];
 	for (const section of SECTIONS) {
 		if (!section.filled(file)) {
 			missing.push(section.label);
 			continue;
 		}
-		// The title block is already printed; it has no heading of its own.
-		if (section.key === 'name' || section.key === 'strategicClassification') continue;
+		// The name is already printed as the h1; it has no heading of its own.
+		if (section.key === 'name') continue;
 		lines.push('', `## ${section.label}`, '', ...body(section, file));
 	}
 

@@ -31,13 +31,36 @@ describe('canvasDigest', () => {
 		const digest = canvasDigest(example('order-fulfillment'));
 
 		expect(digest).toContain('# Order Fulfillment');
-		expect(digest).toContain('Domain: core · Business model: revenue · Evolution: custom-built');
+		// Classification is the tenth panel, so it reads as a section like the
+		// rest — a heading, not a title-block line.
+		expect(digest).toContain(
+			'## Strategic classification\n\nDomain: core · Business model: revenue · Evolution: custom-built'
+		);
 		expect(digest).toContain('## Inbound communication');
-		// The lane's relationship rides with the collaborator, and the message
-		// leads with its type spelled out — the accessible name, not the glyph.
-		expect(digest).toContain('### Checkout (customer-supplier)');
+		// The lane speaks the way the sheet does: the relationship pair under
+		// the collaborator with each end behind its sr prefix — the arrow
+		// keeping a one-sided pair visibly one-sided — and the message leading
+		// with its type spelled out, the accessible name rather than the glyph.
+		expect(digest).toContain('### Checkout\n\n→ this context: customer-supplier');
 		expect(digest).toContain('event Payment Confirmed — Triggers fulfillment.');
 		expect(digest).toContain('command Place Order');
+	});
+
+	it('speaks a kind and a two-ended relationship the way the sheet does', () => {
+		// The committed examples carry neither yet — they are migration output
+		// until examples-v2-content hand-authors them — so the new fields are
+		// pinned against a built lane rather than a fixture.
+		const file = toCanvasFile(blankCanvas());
+		file.inboundCommunication.push({
+			collaborator: { name: 'Payments', kind: 'bounded-context' },
+			relationship: { theirs: 'open-host-service', ours: 'conformist' },
+			messages: []
+		});
+
+		const digest = canvasDigest(file);
+
+		expect(digest).toContain('### Payments — bounded-context');
+		expect(digest).toContain('Collaborator: open-host-service → this context: conformist');
 	});
 
 	it("carries none of the sheet's glyphs", () => {
@@ -69,6 +92,6 @@ describe('canvasDigest', () => {
 		const digest = canvasDigest(toCanvasFile(blankCanvas()));
 
 		expect(digest.startsWith('# Untitled\n')).toBe(true);
-		expect(digest).toContain('Nothing yet under: Name, Description');
+		expect(digest).toContain('Nothing yet under: Name, Purpose');
 	});
 });

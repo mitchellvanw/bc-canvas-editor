@@ -29812,7 +29812,7 @@ var SECTIONS = [
   },
   {
     key: "purpose",
-    label: "Description",
+    label: "Purpose",
     placeholder: "What does this context exist to do? A few sentences in business language.",
     filled: (file2) => nonEmpty(file2.purpose)
   },
@@ -29955,13 +29955,23 @@ function message(row) {
   const detail = row.description === void 0 || row.description === "" ? "" : ` \u2014 ${row.description}`;
   return `${row.type} ${row.name}${detail}`;
 }
+function relationshipLine(lane2) {
+  const present2 = (end) => end !== void 0 && end !== "";
+  const theirs = lane2.relationship?.theirs;
+  const ours = lane2.relationship?.ours;
+  if (present2(theirs) && present2(ours)) return `Collaborator: ${theirs} \u2192 this context: ${ours}`;
+  if (present2(theirs)) return `Collaborator: ${theirs} \u2192`;
+  if (present2(ours)) return `\u2192 this context: ${ours}`;
+  return void 0;
+}
 function lanes(rows) {
   return rows.flatMap((lane2, index) => {
-    const ours = lane2.relationship?.ours;
-    const relationship = ours === void 0 || ours === "" ? "" : ` (${ours})`;
-    const head = `### ${lane2.collaborator.name}${relationship}`;
+    const kind = lane2.collaborator.kind;
+    const head = `### ${lane2.collaborator.name}${kind === void 0 ? "" : ` \u2014 ${kind}`}`;
+    const relationship = relationshipLine(lane2);
+    const block = relationship === void 0 ? [head] : [head, "", relationship];
     const messages = lane2.messages.length === 0 ? [] : ["", ...lane2.messages.map(message)];
-    return index === 0 ? [head, ...messages] : ["", head, ...messages];
+    return index === 0 ? [...block, ...messages] : ["", ...block, ...messages];
   });
 }
 function pair(head, detail) {
@@ -29970,8 +29980,9 @@ function pair(head, detail) {
 function body(section, file2) {
   switch (section.key) {
     case "name":
-    case "strategicClassification":
       return [];
+    case "strategicClassification":
+      return classification(file2);
     case "purpose":
       return [file2.purpose];
     case "domainRoles":
@@ -29994,15 +30005,13 @@ function body(section, file2) {
 }
 function canvasDigest(file2) {
   const lines = [`# ${file2.name.trim() === "" ? "Untitled" : file2.name}`];
-  const axes = classification(file2);
-  if (axes.length > 0) lines.push("", ...axes);
   const missing = [];
   for (const section of SECTIONS) {
     if (!section.filled(file2)) {
       missing.push(section.label);
       continue;
     }
-    if (section.key === "name" || section.key === "strategicClassification") continue;
+    if (section.key === "name") continue;
     lines.push("", `## ${section.label}`, "", ...body(section, file2));
   }
   if (missing.length > 0) lines.push("", `Nothing yet under: ${missing.join(", ")}.`);
@@ -30330,6 +30339,15 @@ function vocabularyLines(options) {
   );
 }
 var CUSTOM_OK = "Any other value is accepted and kept as written.";
+var LANE_VOCABULARY = [
+  "kind \u2014 what the collaborator is. Closed: any other kind is refused, so omit it rather than inventing one:",
+  ...vocabularyLines(PICK_OPTIONS.collaboratorKind),
+  "",
+  "relationship \u2014 the context-mapping pattern, the same vocabulary at either end:",
+  ...vocabularyLines(PICK_OPTIONS.relationship),
+  "",
+  "Any other relationship is accepted and kept as written."
+];
 var ENTRIES = {
   name: {
     shape: "A string: the bounded context this canvas is about, as the business names it.",
@@ -30349,20 +30367,28 @@ var ENTRIES = {
       ...vocabularyLines(PICK_OPTIONS.businessModel),
       "",
       "evolution \u2014 how settled the thing being built is:",
-      ...vocabularyLines(PICK_OPTIONS.evolution)
+      ...vocabularyLines(PICK_OPTIONS.evolution),
+      "",
+      CUSTOM_OK
     ],
     rows: ["Domain: supporting \xB7 Business model: cost-reduction \xB7 Evolution: product"]
   },
   domainRoles: {
     shape: 'An array of { "name": \u2026 }, usually one to three. Traits describe how the context behaves, not what it stores.',
-    vocabulary: ["From the ddd-crew model-traits worksheet, plus one local addition:", ...vocabularyLines(TRAITS)],
+    vocabulary: [
+      "From the ddd-crew model-traits worksheet, plus one local addition:",
+      ...vocabularyLines(TRAITS),
+      "",
+      CUSTOM_OK
+    ],
     rows: ["gateway context", "analysis context"]
   },
   inboundCommunication: {
-    shape: `An array of lanes, one per collaborator: { "collaborator": { "name": \u2026, "kind"?: "bounded-context" | "external-system" | "frontend" | "user" }, "relationship"?: { "theirs"?: \u2026, "ours"?: \u2026 }, "messages": [ { "type": "command" | "query" | "event", "name": \u2026, "description"?: \u2026 } ] }. The relationship names the context-mapping pattern at each end of the boundary \u2014 the collaborator's side and this context's. Inbound messages are the ones this context receives.`,
-    vocabulary: ["relationship \u2014 the context-mapping pattern:", ...vocabularyLines(PICK_OPTIONS.relationship)],
+    shape: `An array of lanes, one per collaborator: { "collaborator": { "name": \u2026, "kind"?: "bounded-context" | "external-system" | "frontend" | "user" }, "relationship"?: { "theirs"?: \u2026, "ours"?: \u2026 }, "messages": [ { "type": "command" | "query" | "event", "name": \u2026, "description"?: \u2026 } ] }. The relationship names the context-mapping pattern at each end of the boundary \u2014 theirs is the collaborator's side, ours is this context's. The two ends are a pairing across one boundary, not a duplicate field: send an end only when that side's stance is actually known, and the same pattern at both ends only when it genuinely holds on both \u2014 an asymmetric boundary carries two different words. Inbound messages are the ones this context receives.`,
+    vocabulary: LANE_VOCABULARY,
     rows: [
-      "Dispatch (customer-supplier)",
+      "Dispatch \u2014 bounded-context",
+      "\u2192 this context: customer-supplier",
       "  command Register Parcel \u2014 Opens tracking for a parcel the carrier has taken."
     ]
   },
@@ -30377,9 +30403,13 @@ var ENTRIES = {
     ]
   },
   outboundCommunication: {
-    shape: "The same lane shape as inbound \u2014 collaborator, optional relationship ends, messages. Outbound messages are the ones this context emits \u2014 most of them events, and each one a commitment to whoever listens.",
-    vocabulary: ["relationship \u2014 the context-mapping pattern:", ...vocabularyLines(PICK_OPTIONS.relationship)],
-    rows: ["Customer Notifications (open-host-service)", "  event Parcel Delivered"]
+    shape: "The same lane shape as inbound \u2014 collaborator with its optional kind, the relationship pair, messages. Outbound messages are the ones this context emits \u2014 most of them events, and each one a commitment to whoever listens.",
+    vocabulary: LANE_VOCABULARY,
+    rows: [
+      "Customer Notifications \u2014 frontend",
+      "Collaborator: conformist \u2192 this context: open-host-service",
+      "  event Parcel Delivered"
+    ]
   },
   assumptions: {
     shape: "An array of strings, each one thing the design takes to be true.",
@@ -30429,7 +30459,7 @@ function explain(topic) {
   const entry = ENTRIES[topic];
   const asked = question(section);
   const lines = [`# ${section.label}${asked === void 0 ? "" : ` \u2014 ${asked}`}`, "", entry.shape];
-  if (entry.vocabulary !== void 0) lines.push("", ...entry.vocabulary, "", CUSTOM_OK);
+  if (entry.vocabulary !== void 0) lines.push("", ...entry.vocabulary);
   lines.push("", "For example:", ...entry.rows);
   return lines.join("\n");
 }

@@ -368,6 +368,20 @@ describe('bcc_explain', () => {
 		expect(roles).toContain('kept as written');
 	});
 
+	it('teaches the lane its kind and both relationship ends', async () => {
+		const inbound = text(await call('bcc_explain', { topic: 'inboundCommunication' }));
+
+		// The wording the symmetric-example failure hangs on: two ends are a
+		// pairing, not a field to fill twice.
+		expect(inbound).toContain('a pairing across one boundary, not a duplicate field');
+		expect(inbound).toContain('bounded-context — Another modelled context');
+		// The escape hatch names relationships alone; the kind is the set the
+		// parser refuses unknown values for, and a blanket "any other value"
+		// would teach the opposite.
+		expect(inbound).toContain('Any other relationship is accepted and kept as written.');
+		expect(inbound).not.toContain('Any other value is accepted');
+	});
+
 	it('describes the method as eleven questions, and credits it', async () => {
 		const canvas = text(await call('bcc_explain', { topic: 'canvas' }));
 

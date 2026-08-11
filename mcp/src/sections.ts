@@ -41,7 +41,7 @@ export const SECTIONS: readonly Section[] = [
 	},
 	{
 		key: 'purpose',
-		label: 'Description',
+		label: 'Purpose',
 		placeholder: 'What does this context exist to do? A few sentences in business language.',
 		filled: (file) => nonEmpty(file.purpose)
 	},
