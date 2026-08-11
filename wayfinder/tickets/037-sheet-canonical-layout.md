@@ -3,7 +3,7 @@ name: sheet-canonical-layout
 title: "Task: the sheet's canonical shape — classification as a panel, the centre box, the two-sided lane"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [canvas-file-v2]
 ---
 
