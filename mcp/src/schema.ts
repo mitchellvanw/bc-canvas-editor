@@ -146,7 +146,7 @@ export const WRITE_INPUT = z.object({
 		.int()
 		.optional()
 		.describe(
-			'The Canvas file format version. Omit it — the server stamps the current one either way. It is accepted only so a document read with view: "json" can be handed straight back.'
+			'The Canvas file format version. Omit it — the server stamps the current one either way. It is accepted only so a document read with view: "json" can be handed straight back. Only a document already at the current version can be; an older one is refused, naming each field that has to change.'
 		),
 	canvas: CANVAS_SHAPE.describe(
 		'The whole canvas. Every section is required; a section with nothing in it is an empty array or an empty string, and the result names which ones came out that way.'

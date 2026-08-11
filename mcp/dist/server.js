@@ -30532,7 +30532,7 @@ var WRITE_INPUT = external_exports.object({
     "Where to write it, relative to the canvas root. Must end in .bcc.json. Directories are the repo's business, not the server's \u2014 put it next to the code it describes."
   ),
   version: external_exports.number().int().optional().describe(
-    'The Canvas file format version. Omit it \u2014 the server stamps the current one either way. It is accepted only so a document read with view: "json" can be handed straight back.'
+    'The Canvas file format version. Omit it \u2014 the server stamps the current one either way. It is accepted only so a document read with view: "json" can be handed straight back. Only a document already at the current version can be; an older one is refused, naming each field that has to change.'
   ),
   canvas: CANVAS_SHAPE.describe(
     "The whole canvas. Every section is required; a section with nothing in it is an empty array or an empty string, and the result names which ones came out that way."
