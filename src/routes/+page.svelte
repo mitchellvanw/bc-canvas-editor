@@ -30,9 +30,10 @@
 
 <Chrome />
 
-<!-- The desktop floor (SPEC §5): the grid never deforms below it; the page
-     scrolls horizontally instead. Chrome carries the same floor so the two
-     travel together. Reflow at narrow widths is the artifact's job (§9.1). -->
-<main class="mx-auto max-w-[1440px] min-w-[1080px] px-10 pt-6 pb-12">
+<!-- The responsive container (SPEC §5): the sheet reflows by this element's
+     width, never the viewport — and only the editor declares a container, so
+     the offscreen artifact mount and the exported HTML have no container
+     ancestor and keep the fixed desktop grid (§9.2). -->
+<main class="@container mx-auto max-w-[1440px] px-4 pt-6 pb-12 sm:px-6 lg:px-10">
 	<EditableSheet />
 </main>

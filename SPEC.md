@@ -24,7 +24,7 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 - Use Case Swimlanes layout variant — V5 canonical only.
 - PDF export — browsers print the HTML artifact fine (it carries a print pass).
 - Importing foreign formats (Contexture, Excalidraw, Miro) — own Canvas file schema only.
-- Mobile/tablet editing — desktop-first; only the read-only HTML artifact is responsive.
+- Mobile/tablet editing — desktop-first: the editor reflows at narrow windows (§5) so nothing collides or crops, but touch editing is untargeted; the read-only HTML artifact remains the mobile answer.
 
 ## 2. Stack & deployment
 
@@ -189,10 +189,10 @@ Each relationship picker additionally offers **— no relationship —** (clears
 Winner of three prototype rounds; primary source `prototype/canvas-visual-language/6-quiet-sheet/` on branch `prototype/canvas-visual-language`.
 
 - **Ground:** warm cream paper `#EAE7DE` with a faint 32px drafting grid; sections as near-white sheets `#FDFDFB`, 1px `#D8D4C8` border, 5px radius, whisper of shadow. V5 canonical layout on a 12-column grid, ten panels matching the printed canvas: purpose ×5 / classification ×4 / roles ×3 on top; inbound left; ubiquitous language + business decisions centre; outbound right; assumptions/metrics/open questions bottom.
-- **Desktop floor:** the editor keeps the desktop grid at every window size — chrome and sheet share a 1080px floor and the page scrolls horizontally below it, so panels never compress into collision. Mobile/tablet editing stays a non-goal (§1); reflow at narrow widths is the artifact's job (§9.1).
+- **Responsive tiers:** the editor reflows by the sheet container's width — never the viewport — through three tiers below the canonical grid: a trim tier (≤1060px) that tightens `--gap` and panel padding so the twelve columns survive narrow windows; a two-column tier (≤880px) — purpose full-width, classification beside roles, inbound beside outbound (the lanes keep their in/out reading), the centre pair side by side in its full-width box, questions full-width; and a one-column stack (≤620px) in the artifact's reading order (§9.1). Only the editor's `<main>` declares the container, so the offscreen mount and exported HTML have no container ancestor and the tier rules are inert there — artifacts keep the fixed desktop grid (§9.2). Chrome shares the editor's responsive gutters (`px-4/6/10`). Mobile/tablet *editing* stays a non-goal (§1).
 - **Title block:** near-black ink block (`#1A1E20`, 6px radius) carrying the spaced-caps eyebrow "Bounded Context Canvas · V5" and the context name in Archivo 700 — nothing else. (Strategic classification lived here through canvas-file v1; it is now the tenth panel, below.)
 - **Strategic classification panel:** the three axes as `Domain` / `Business model` / `Evolution` sub-columns, keeping the title block's idiom — spaced-caps label, mono value, no fill and no box. Unset axes render "—".
-- **Centre box:** the canonical template draws Ubiquitous Language and Business Decisions inside one outer rectangle, so a hairline box wraps the centre pair — layout, not nesting; they stay two sections with their own headings.
+- **Centre plate:** the canonical template draws Ubiquitous Language and Business Decisions inside one outer rectangle; the sheet renders that region as a tinted plate — a translucent ink wash (`rgb(26 30 32 / 0.045)`, 6px radius) on the paper with the drafting grid showing through — rather than a drawn border. Layout, not nesting; they stay two sections with their own headings.
 - **Type trio:** Archivo for structure/labels, Source Serif 4 for user prose, IBM Plex Mono for identifiers (messages, terms, classification values, relationships).
 - **Palette** (EventStorming fill + same-hue ink border):
 

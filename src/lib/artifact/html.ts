@@ -57,7 +57,9 @@ main { max-width: ${ARTIFACT_WIDTH}px; margin: 0 auto; padding: ${ARTIFACT_MARGI
 	article.quiet-sheet .grid section,
 	article.quiet-sheet .centre { break-inside: avoid; }
 	article.quiet-sheet .grid > * + * { margin-top: 18px; }
-	article.quiet-sheet .centre { display: block; }
+	/* The centre plate is a background wash (SPEC §5); ask print engines to
+	   keep it, since browsers drop backgrounds by default. */
+	article.quiet-sheet .centre { display: block; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 	article.quiet-sheet .centre > section + section { margin-top: 18px; }
 	article.quiet-sheet .tb,
 	article.quiet-sheet .foot { break-inside: avoid; }

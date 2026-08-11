@@ -49,7 +49,7 @@
 	const noticeRest = MULTI_TAB_NOTICE.slice(noticeLead.length + 1);
 
 	const chromeButton =
-		'rounded-[4px] border border-line bg-sheet px-3 py-1.5 text-sm font-medium hover:bg-paper disabled:opacity-40 disabled:hover:bg-sheet';
+		'rounded-[4px] border border-line bg-sheet px-3 py-1.5 text-sm font-medium whitespace-nowrap hover:bg-paper disabled:opacity-40 disabled:hover:bg-sheet';
 	const menuItem =
 		'block w-full px-4 py-1.5 text-left text-sm hover:bg-paper focus:bg-paper focus:outline-none';
 
@@ -214,7 +214,9 @@
 	onkeydown={handleReferenceShortcut}
 />
 
-<header class="mx-auto flex max-w-[1440px] min-w-[1080px] items-center justify-end gap-2 px-10 pt-6">
+<header
+	class="mx-auto flex max-w-[1440px] flex-wrap items-center justify-end gap-2 px-4 pt-6 sm:px-6 lg:px-10"
+>
 	<button
 		type="button"
 		class="{chromeButton} mr-1"

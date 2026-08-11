@@ -894,14 +894,17 @@
 		font-size: 0.78rem;
 	}
 
-	/* ---- the shared centre box (SPEC §5) ---- */
+	/* ---- the shared centre plate (SPEC §5) ---- */
+	/* The canonical template's outer rectangle, drawn as ground instead of
+	   line: a translucent ink wash at grid-line intensity, so the drafting
+	   grid shows through and the region reads as marked paper. */
 	.centre {
 		display: flex;
 		flex-direction: column;
 		gap: var(--gap);
 		min-width: 0;
 		padding: var(--gap);
-		border: 1.5px solid var(--color-ink-faint);
+		background: rgb(26 30 32 / 0.045);
 		border-radius: 6px;
 	}
 	.centre .panel {
@@ -1052,5 +1055,69 @@
 	}
 	.note a {
 		color: inherit;
+	}
+
+	/* ---- responsive tiers (SPEC §5) ---- */
+	/* Sized by the editor's container, never the viewport: the offscreen
+	   artifact mount and the exported HTML declare no container, so every
+	   rule here is inert in an export and artifacts keep the fixed desktop
+	   grid (§9.2). The artifact's own 760px stack lives in §9.1. Last in
+	   the sheet so each tier outranks the base rules it adjusts. */
+
+	/* Trim tier: the canonical grid, tightened — smaller gutters and panel
+	   padding buy the twelve columns another ~180px before anything
+	   collides, where the old 1080px floor gave up. */
+	@container (max-width: 1060px) {
+		.quiet-sheet {
+			--gap: 14px;
+		}
+		.panel {
+			padding: 1.1rem;
+		}
+		.tb {
+			padding: 1.2rem 1.35rem;
+		}
+	}
+
+	/* Two-column tier: inbound stays left of outbound, so the lanes keep
+	   their in/out reading; the centre pair turns side by side inside its
+	   full-width box. */
+	@container (max-width: 880px) {
+		.grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-areas:
+				'purpose purpose'
+				'classification roles'
+				'inbound outbound'
+				'centre centre'
+				'assumptions metrics'
+				'questions questions';
+		}
+		.centre {
+			flex-direction: row;
+		}
+		.centre .panel {
+			flex: 1 1 0;
+			min-width: 0;
+		}
+	}
+
+	/* Stack tier: one column in the artifact's reading order (§9.1). */
+	@container (max-width: 620px) {
+		.grid {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas:
+				'purpose' 'classification' 'roles' 'inbound' 'centre'
+				'outbound' 'assumptions' 'metrics' 'questions';
+		}
+		.centre {
+			flex-direction: column;
+		}
+		.tb {
+			padding: 1rem 1.15rem;
+		}
+		.tb__name {
+			font-size: 1.9rem;
+		}
 	}
 </style>

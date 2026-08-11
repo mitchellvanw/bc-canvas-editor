@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centre box · recessed well</title>
+<style>
+	:root {
+		--color-paper: #eae7de;
+		--color-sheet: #fdfdfb;
+		--color-line: #d8d4c8;
+		--color-ink: #1a1e20;
+		--color-ink-soft: #50564f;
+		--color-ink-faint: #8e948c;
+		--color-policy-ink: #6f519b;
+		--color-term: #efe08b;
+		--color-term-ink: #8a7a12;
+		--color-collab-ink: #b83d75;
+		--gap: 18px;
+		--font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+		--font-serif: 'Source Serif 4', ui-serif, Georgia, serif;
+		--font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+	}
+	* { box-sizing: border-box; }
+	body {
+		margin: 0;
+		padding: 48px 40px;
+		background-color: var(--color-paper);
+		background-image:
+			linear-gradient(to right, rgb(26 30 32 / 0.035) 1px, transparent 1px),
+			linear-gradient(to bottom, rgb(26 30 32 / 0.035) 1px, transparent 1px);
+		background-size: 32px 32px;
+		color: var(--color-ink);
+		font-family: var(--font-serif);
+		line-height: 1.5;
+	}
+	.wrap { max-width: 1240px; margin: 0 auto; }
+	.grid {
+		display: grid;
+		gap: var(--gap);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+	.edge {
+		height: 56px;
+		background: var(--color-sheet);
+		border: 1px solid var(--color-line);
+		box-shadow: 0 1px 2px rgb(26 30 32 / 0.04);
+	}
+	.edge--top { border-radius: 0 0 5px 5px; border-top: none; margin-bottom: var(--gap); }
+	.edge--bottom { border-radius: 5px 5px 0 0; border-bottom: none; margin-top: var(--gap); }
+	.panel {
+		min-width: 0;
+		padding: 1.35rem;
+		background: var(--color-sheet);
+		border: 1px solid var(--color-line);
+		border-radius: 5px;
+		box-shadow: 0 1px 2px rgb(26 30 32 / 0.04);
+	}
+	.label {
+		display: inline-block;
+		margin: 0;
+		padding-bottom: 0.5rem;
+		border-bottom: 2px solid var(--hue, var(--color-ink-faint));
+		font-family: var(--font-sans);
+		font-size: 0.64rem;
+		font-weight: 700;
+		letter-spacing: 0.17em;
+		text-transform: uppercase;
+	}
+	.body { margin-top: 1rem; }
+	.lanehead { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--color-collab-ink); }
+	.pair { margin: 0.35rem 0 0.6rem; font-family: var(--font-mono); font-size: 0.74rem; color: var(--color-ink-soft); }
+	.chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+	.chip {
+		padding: 0.3rem 0.55rem;
+		border: 1px solid rgb(26 30 32 / 0.35);
+		border-radius: 3px;
+		font-family: var(--font-mono);
+		font-size: 0.76rem;
+	}
+	.chip--cmd { background: #a8c8ec; }
+	.chip--evt { background: #f0a951; }
+	.term {
+		display: inline;
+		font-family: var(--font-mono);
+		font-size: 0.85rem;
+		font-weight: 600;
+		background: linear-gradient(transparent 55%, var(--color-term) 55%);
+		padding: 0 0.2rem;
+	}
+	.def { margin: 0.2rem 0 0; }
+	.decision { display: flex; gap: 0.6rem; align-items: baseline; }
+	.decision__mark { flex: none; width: 9px; height: 9px; border-radius: 2px; border: 1.5px solid var(--color-policy-ink); background: #c2abdd55; align-self: center; }
+	.decision b { font-family: var(--font-sans); font-size: 0.95rem; }
+	.decision p { margin: 0.1rem 0 0; color: var(--color-ink-soft); }
+	.caption {
+		margin: 2.2rem auto 0;
+		max-width: 1240px;
+		font-family: var(--font-sans);
+		font-size: 0.8rem;
+		color: var(--color-ink-soft);
+	}
+
+	.centre {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+		min-width: 0;
+	}
+	.centre .panel { flex: 1 1 auto; }
+
+	.centre {
+		background: rgb(26 30 32 / 0.02);
+		border-radius: 6px;
+		padding: var(--gap);
+		box-shadow:
+			inset 0 2px 5px rgb(26 30 32 / 0.14),
+			inset 0 -1px 2px rgb(26 30 32 / 0.05),
+			inset 0 0 1px rgb(26 30 32 / 0.08);
+	}
+</style>
+</head>
+<body>
+	<div class="wrap">
+		<div class="edge edge--top"></div>
+		<div class="grid">
+
+	<section class="panel" style="--hue: var(--color-collab-ink)">
+		<h2 class="label">Inbound communication</h2>
+		<div class="body">
+			<div class="lanehead">Checkout</div>
+			<div class="pair">&rarr; customer-supplier</div>
+			<div class="chips">
+				<span class="chip chip--cmd">&#9656; Place Order</span>
+				<span class="chip chip--evt">&#9670; Payment Confirmed</span>
+			</div>
+		</div>
+	</section>
+
+		<div class="centre">
+
+			<section class="panel">
+				<h2 class="label" style="--hue: var(--color-term-ink)">Ubiquitous language</h2>
+				<div class="body">
+					<span class="term">Shipment</span>
+					<p class="def">A physical parcel dispatched against an order.</p>
+				</div>
+			</section>
+
+			<section class="panel">
+				<h2 class="label" style="--hue: var(--color-policy-ink)">Business decisions</h2>
+				<div class="body decision">
+					<span class="decision__mark"></span>
+					<span><b>No partial shipments</b><p>An order ships complete or not at all.</p></span>
+				</div>
+			</section>
+		</div>
+
+	<section class="panel" style="--hue: var(--color-collab-ink)">
+		<h2 class="label">Outbound communication</h2>
+		<div class="body">
+			<div class="lanehead">Notifications</div>
+			<div class="pair">conformist &rarr; open-host-service</div>
+			<div class="chips">
+				<span class="chip chip--evt">&#9670; Order Shipped</span>
+			</div>
+		</div>
+	</section>
+		</div>
+		<div class="edge edge--bottom"></div>
+	</div>
+	<p class="caption">2 · Recessed well — the paper dips: a faint inset shadow and a 2% wash. Depth instead of a line.</p>
+</body>
+</html>
