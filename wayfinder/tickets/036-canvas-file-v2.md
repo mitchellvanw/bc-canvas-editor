@@ -3,7 +3,7 @@ name: canvas-file-v2
 title: "Task: Canvas file v2 — the first migration this schema has ever run"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [canonical-v5-amendments]
 ---
 
