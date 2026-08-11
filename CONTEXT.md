@@ -12,9 +12,11 @@ Glossary for the bounded context canvas editor. The app's own domain — not the
 
 **Message** — an item of communication in the Inbound or Outbound Communication sections, typed as **Command**, **Query**, or **Event**. Rendered in Event Storming colors: Command = blue, Query = green, Event = orange.
 
-**Collaborator** — the other party in an inbound/outbound communication lane: another bounded context, a frontend, or a direct user. Identified by name alone; may carry a relationship type (context-mapping pattern), which only applies when the collaborator is another bounded context.
+**Collaborator** — the other party in an inbound/outbound communication lane. Has a name, and may carry a **kind**: bounded context, external system, frontend, or direct user interaction. The kind is optional — a Collaborator whose kind is unstated is not thereby a bounded context, it is simply unclassified.
 
-**Lane** — one Collaborator together with the Messages exchanged with it, within the Inbound or Outbound Communication section. The unit of structure in those sections: a Canvas's communication is a list of Lanes, each holding its own Messages.
+**Lane** — one Collaborator together with the Messages exchanged with it, within the Inbound or Outbound Communication section. The unit of structure in those sections: a Canvas's communication is a list of Lanes, each holding its own Messages. A Lane may also carry a Relationship type at each end.
+
+**Relationship type** — a context-mapping pattern naming how one side of a Lane's boundary stands toward the other. A Lane has two ends, and each may name its own: the Collaborator's and this context's. Where the pattern is symmetric both ends carry the same one; where it is asymmetric they differ, which is the case a single value cannot express. Not to be confused with a Domain Role: a Relationship type describes a boundary, a Domain Role describes this context's own character.
 
 **Artifact** — a read-only export of a Canvas for sharing: a self-contained single-file HTML render, or a PNG. An Artifact is read-only as a document — it is never edited in place. The HTML Artifact carries the Canvas file embedded within it and can be imported back; the PNG is presentation only.
 

@@ -2,8 +2,8 @@
 name: canonical-v5-amendments
 title: "Grilling: which canonical v5 departures do we adopt, now that they are written down?"
 labels: [wayfinder:grilling]
-status: open
-assignee:
+status: closed
+assignee: mitchell
 blocked-by: []
 ---
 
@@ -26,3 +26,78 @@ This ticket decides which are adopted. It is a grilling and not a task because t
 **What is already decided and should not be reopened.** The research clears four suspicions: `cost-reduction` is not an invention (it is on the drawn canvas and in upstream's HTML form; only the README prose omits it), the nine relationship patterns match `ddd-crew/context-mapping` exactly, message types and the Event Storming palette match upstream's own legend, and free-text validation of the classification axes matches canonical, which never closes those sets either. Section ordering differs — README order is a *filling* order, ours is the canvas's *spatial* order — and both are defensible. The canonical sub-labels and the `Collaborator`/`Messages` column heads were tried in the mockup and removed: they cost a line in every panel, the placeholder questions already teach the same thing while a section is empty, and the column heads named columns the lane layout does not have.
 
 Use `/grilling` and `/domain-modeling` — `CONTEXT.md` needs the terms this settles. The route out is three tickets already written and blocked behind this one: [canvas-file-v2](wayfinder/tickets/036-canvas-file-v2.md), then [sheet-canonical-layout](wayfinder/tickets/037-sheet-canonical-layout.md) and [mcp-canonical-labels](wayfinder/tickets/038-mcp-canonical-labels.md). If the schema changes are refused, v2 closes as "not doing it" and the two presentation-only halves of the sheet ticket are pulled forward on their own.
+
+## Resolution
+
+**All six adopted.** Signed off 2026-08-11. Three of them change the Canvas file, so v2 happens and none of the conditional branches written into the three tickets behind this one are taken.
+
+This is an **amendment**, not a defect report: [canvas-file-schema](wayfinder/tickets/003-canvas-file-schema.md) decided against a collaborator `kind` and against a structured relationship, and both decisions were correctly reasoned on what was known then. What changed is evidence, not judgment — [docs/research/canonical-canvas-v5.md](docs/research/canonical-canvas-v5.md) put the canonical sources on paper for the first time, and the exported artifact became the product rather than a side effect. The amendment is recorded on `map.md`'s ticket lines and appended to 003 and 008 themselves.
+
+### The six
+
+**1 · `description` → `purpose`.** Upstream's own v4→v5 rename ([`f438279`](https://github.com/ddd-crew/bounded-context-canvas/commit/f438279)), with the section definition word-for-word identical either side. The sheet stamps a V5 badge; keeping the v4 word under it is precisely the overclaim this map exists to end. It also closes a split the repo already carried — `CONTEXT.md:9` and `wayfinder/tickets/010-keyboard-a11y.md:32` both said "purpose" while the schema said `description`.
+
+**2 · Strategic classification becomes the tenth panel.** The three axes leave the near-black title block for a real section with `Domain` / `Business model` / `Evolution` sub-columns; the block keeps its eyebrow and the context name. This is the one deviation a reader can catch without opening a source — nine panels beside a printed ten — and the README treats classification as a first-class design decision, linking Core Domain Charts for it. It also settles a disagreement already inside the repo: `mcp/src/sections.ts:51` has been carrying a `Strategic classification` label for a section the sheet never headed. No file change; the data was never missing.
+
+**3 · Collaborators carry a `kind`.** `bounded-context | external-system | frontend | user`, optional and absent by default, drawn as canonical's four icons and keyed in the footer legend. 003's reasoning is not falsified by this — it is completed by it: 003 declined the field *because* "adding an optional field later is the cheapest schema change", which budgeted for exactly this migration rather than ruling it out. What changed is that a reader of an exported PNG cannot tell a frontend from an external system from a bounded context, and the export is now the product.
+
+**4 · The relationship reads from both sides.** `relationship?: { theirs?: string, ours?: string }`, both optional, both free-text, vocabulary unchanged. This is the only place a canonical canvas carries information this file format could not round-trip: upstream's worked example pins a role at each end of every lane, and a single string cannot say *this context is open-host service, that collaborator is conformist*. The notation is coherent rather than decorative — where the pattern is symmetric the example prints the same word at both ends (`PNR … PNR`), where asymmetric it prints two (`CF … OHS`).
+
+**5 · The domain-role vocabulary is realigned against its own citation.** Restore `gateway interchange`, `dogfood context`, `bubble context`; correct `octopus coordinator` → `octopus enforcer`, because the worksheet means *compliance*, not orchestration, and today's one-liner states the opposite of its source; restore brain context's "(likely anti-pattern)" and drop the description that read as praise; keep `service context`, presented as a local addition. Eighteen traits, in the worksheet's own order with the local addition last — a hand-tuned order that matches nothing is what let the divergence go unnoticed. The octopus reversal is the only item in the six that is simply **wrong** rather than divergent: a model reading `bcc_explain` is currently taught the opposite of the source.
+
+**6 · One box around the centre column.** The hairline rectangle the template draws around Ubiquitous Language and Business Decisions returns. They stay two sections — the box is layout, not nesting.
+
+### The Canvas file at v2
+
+```
+CanvasFile  version 2; `purpose` takes `description`'s position in the fixed key order
+Lane        { collaborator: { name, kind? }, relationship?: { theirs?, ours? }, messages }
+```
+
+**The collaborator is promoted to an object rather than the lane growing a `collaboratorKind` sibling.** A compound key existing only to dodge nesting is what 003's "full canvas vocabulary" naming rule argues against; the kind belongs to the *collaborator* and the relationship to the *boundary*, so flattening puts two owners on one level; and every other row in this schema is already an object with an optional second field — `Message`, `UbiquitousTerm`, `BusinessDecision`, `DomainRole`. `collaborator: string` was the odd one out, and this is the one version bump where fixing it is free.
+
+**`kind` is a closed enum; `theirs` and `ours` stay free text.** The rule that separates the two cases in this parser is *does the value drive a rendering*: message `type` is closed because it picks a colour, `kind` because it picks an icon, and an unrecognised kind has no glyph to draw. Canonical names four types and no escape hatch, unlike the `- other?` it prints on the Domain axis. Relationships keep the laxness `parse.ts:167` already has, which matches canonical — it never closes that set either.
+
+**`theirs` is written before `ours`.** Key order is load-bearing for byte-exactness anyway, so it may as well teach: someone reading raw JSON meets the two ends in the order the sheet draws them, collaborator's side first.
+
+### The migration rule
+
+**A v1 `relationship` string migrates onto `ours`, uniformly, with no interpretation.** The justification is deliberately *not* "that is what people meant" — the evidence says no single side was ever meant. The nine teaching one-liners at `vocab.ts:40` are written from mixed perspectives: `conformist` says "**This context** adopts the upstream model wholesale", `big-ball-of-mud` says "**The other side** is entangled legacy", `partnership` and `shared-kernel` describe both sides at once. Against the eight lanes in the bundled examples, `ours` is right for three, wrong for two and ambiguous for three; `theirs` inverts that and is weaker; both-ends fabricates a claim on symmetric-looking values; and a per-value mapping would bake nine editorial judgments into migration code and make the migration interpret user prose.
+
+What carries the decision is that both ends are optional and free-text, so a wrong guess **renders visibly on the lane and is one pick to correct, with nothing lost**. A migration that guesses uniformly and cheaply beats one that guesses cleverly and invisibly.
+
+**The migration never rewrites free text.** `octopus coordinator` in a user's canvas survives exactly as typed and merely stops matching a picker option. Domain roles are free text and rewriting someone's prose to match a vocabulary correction is overreach.
+
+**A v1 import leaves the canvas clean, not dirty.** The file on disk is not stale — it still opens, and nothing the user typed is unsaved. Marking it dirty would tell them they are about to lose work when they are not, which is the one lie dirtiness must never tell.
+
+### The renderings
+
+**The lane ships as the mockup draws it** — ink weight carrying which side is ours, ordered collaborator-first, the arrow reading as order across the boundary rather than message flow — **with one addition: the footer legend carries the convention.** Ink weight is not self-describing, and the legend is already where this sheet explains its own notation. Upstream gets away with unkeyed `CF`/`OHS` in front of people holding the template; a tool that exports artifacts to people who never saw it does not.
+
+**Three pick-slots in the lane header** — kind, their relationship, our relationship — rather than a new paired control. The pick-slot already carries the keyboard model, the custom… escape hatch, the clear entry and the accessible-name convention that tickets 07 and 12 signed off; a bespoke control means re-litigating all of it. This does tighten the chip-drag surface flagged in 06, which is worth watching in [sheet-canonical-layout](wayfinder/tickets/037-sheet-canonical-layout.md), not worth a different control.
+
+**The anti-pattern flag shows on the sheet; the local-addition marker does not.** A reader of an exported PNG should see that a role is flagged, so the chip takes a caution ring. "Not on the community worksheet" is provenance rather than a property of the modelled context — it belongs in the picker description and in `bcc_explain`, and would be noise on the sheet.
+
+**The digest promotes classification too.** Sheet/digest disagreement is the argument that won item 2; leaving `mcp/src/digest.ts:22` as a title-block line would move the inconsistency rather than close it.
+
+### Naming, and a collision avoided
+
+"Their role" / "Our role" was the instinct and is wrong: **"role" is already taken by Domain Roles**, and a picker labelled *role* two inches from a section labelled *Domain roles* teaches the wrong thing. Canonical keeps them apart for the same reason — *Relationship Type* vs *Domain Roles*. So the file keys are `theirs`/`ours`, the accessible names are **"Their relationship"** and **"Our relationship"**, and the word *role* never appears in relationship copy. `CONTEXT.md` gains **Relationship type** as a term saying so outright, and **Collaborator** and **Lane** are rewritten around the kind and the two ends.
+
+`mcp/src/explain.ts:73` stops saying "The fifteen" and names the source instead of a count — the set is the ddd-crew model-traits worksheet plus one local addition. The worksheet fixes no number, so neither do we.
+
+### The four examples are hand-authored at v2
+
+Not migration output. They are the teaching set, and shipping them mechanically means the new fields ship invisible — no example would exercise a `kind` or a two-sided relationship unless authored to. That includes `examples/order-fulfillment.bcc.json:15`, which carries `octopus coordinator` chosen under the description that now stands corrected, so it currently means the opposite of what its author intended: fixed by intent, not by rename.
+
+### Where the record lives
+
+**No ADR.** All three of the usual tests are met, but `docs/` holds only `research/` and this repo's decision record has always been the wayfinder ticket plus the `SPEC.md` amendment. Introducing `docs/adr/` now creates a second home for decisions and guarantees they drift apart — the exact failure this map exists to fix. This resolution is the ADR in this project's idiom.
+
+### Ruled out of scope
+
+**Mirroring the lanes** — outbound right-aligned so direction reads outward from the centre, which would earn back the `Collaborator`/`Messages` column heads. The destination is "the claim on the tin is true"; mirroring is a layout improvement past that line and its own effort if it is ever wanted. Moved from the map's Not-yet-specified to Out of scope, so no ticket graduates from it.
+
+### Mechanism that needed no decision
+
+`parse.ts:49` already declares `MIGRATIONS[v]` — "ordered raw-JSON migrations… empty while the format is at version 1" — with `newer-version` refusal at `:31` and `:227`, so v2 is `MIGRATIONS[1]` and there was nothing architectural to settle. And there is no second parser to keep in step: `mcp/src/read.ts:18` and `mcp/src/tools.ts:22` import `$lib/model/parse` directly, so the Destination's both-surfaces gate is met by construction rather than by discipline.

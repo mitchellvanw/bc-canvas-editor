@@ -70,3 +70,13 @@ Settled in a grilling session (2026-08-07). The Canvas file is a flat camelCase 
 - **Naming:** full canvas vocabulary — `inboundCommunication`/`outboundCommunication`, `description` (not `purpose`). Ubiquitous language rows are `{ term, definition? }` — domain vocabulary over structural uniformity.
 - **Canonical spellings:** kebab-case for classification axes (`core | supporting | generic`; `revenue | engagement | compliance | cost-reduction`; `genesis | custom-built | product | commodity`) and relationship patterns (`partnership | shared-kernel | customer-supplier | conformist | anticorruption-layer | open-host-service | published-language | separate-ways | big-ball-of-mud`). Domain role names are natural lowercase prose (`"execution context"`), not slugs. The exact 15-trait list is pinned during [assemble-spec](wayfinder/tickets/008-assemble-spec.md).
 - **Presence & serialization:** all eleven section keys always present (empty arrays/strings, never missing); optional fields (`description`, `definition`, `relationship`, unset classification axes) omitted entirely, never `null`; saves use 2-space indent and fixed key order so unchanged canvases are byte-identical.
+
+## Amended 2026-08-11 by canonical-v5-amendments
+
+Three of the decisions above were reversed on new evidence by [canonical-v5-amendments](wayfinder/tickets/035-canonical-v5-amendments.md), on the [canonical-v5 map](wayfinder/map-canonical-v5.md). **Read them there before acting on them here.** The reasoning above was sound on what was known at the time; what changed is the canonical sources being read and written down ([docs/research/canonical-canvas-v5.md](docs/research/canonical-canvas-v5.md)), and the exported artifact becoming the product.
+
+- **Lane / collaborator.** The collaborator is no longer a plain name string: it becomes `{ name, kind? }` with `kind` a closed enum `bounded-context | external-system | frontend | user`. This ticket's own reasoning — "adding an optional field later is the cheapest schema change" — is what it was budgeting for.
+- **Lane / relationship.** No longer a single optional string: `relationship?: { theirs?, ours? }`, both optional and both still escape-hatched free text. Canonical marks a role at each end of a lane, and one string cannot express an asymmetric pairing.
+- **Naming.** `description` → `purpose`, which is upstream's own v4→v5 rename. The rest of the naming decision stands.
+
+Everything else above is unchanged — including the escape-hatch rule, the closed message `type`, the versioning and refusal policy, the absence of row ids and of a metadata envelope, and the serialization rules. Canvas file version goes to **2**; the migration is `MIGRATIONS[1]`, the first this schema has ever run.

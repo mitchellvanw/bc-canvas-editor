@@ -25,14 +25,11 @@ BC Canvas stops overclaiming. The spec says it renders "the ddd-crew Bounded Con
 
 <!-- one line per closed ticket -->
 
-_(none yet — [canonical-v5-amendments](wayfinder/tickets/035-canonical-v5-amendments.md) is the frontier, alongside [workshop-drive](wayfinder/tickets/034-workshop-drive.md) on the MCP map.)_
+- [Grilling: which canonical v5 departures do we adopt?](wayfinder/tickets/035-canonical-v5-amendments.md) — **all six adopted.** File goes to v2: `description` → `purpose`, collaborator promoted to `{ name, kind? }` with a closed four-value kind, `relationship` becomes `{ theirs?, ours? }` (`theirs` written first). A v1 `relationship` migrates uniformly onto `ours` — not because that is what anyone meant, but because a wrong guess renders visibly and costs one pick, and the migration never rewrites free text. Classification becomes the tenth panel on sheet and digest alike; the centre column regains its box; the lane ships the mockup's ink-weight two-sided rendering with the convention keyed in the footer legend, edited through three ordinary pick-slots. Eighteen traits in worksheet order with `service context` marked local, `octopus coordinator` corrected to `octopus enforcer`, `brain context` flagged; the server names its source instead of a count. Accessible names say "relationship", never "role" — that word belongs to Domain Roles. The four examples are hand-authored at v2. No ADR: the resolution is this repo's idiom, and a second decision home would drift.
 
 ## Not yet specified
 
-- **Whether the two schema reversals are worth their migration.** The grilling decides; if refused, [canvas-file-v2](wayfinder/tickets/036-canvas-file-v2.md) closes as "not doing it" and the two presentation-only halves of [sheet-canonical-layout](wayfinder/tickets/037-sheet-canonical-layout.md) — classification as a panel, the shared centre box — split out and land on their own.
-- **Which side a v1 `relationship` string migrates onto.** It is one value with no side; canonical reading says it is this context's own role, but that is a claim about what people meant when they typed it and it is argued in the resolution, not assumed in the code.
-- **Whether mirroring the lanes earns the column heads back.** Outbound right-aligned, so direction reads outward from the centre the way the template does. Left open in the sheet ticket; a layout change beyond this alignment.
-- **Whether the closed tickets get amendment pointers appended**, or whether the map line alone carries it.
+_(empty — the frontier reaches the destination. [canvas-file-v2](wayfinder/tickets/036-canvas-file-v2.md) is unblocked; behind it [sheet-canonical-layout](wayfinder/tickets/037-sheet-canonical-layout.md) and [mcp-canonical-labels](wayfinder/tickets/038-mcp-canonical-labels.md) in parallel, then [examples-v2-content](wayfinder/tickets/039-examples-v2-content.md), then [canonical-v5-checkpoint](wayfinder/tickets/040-canonical-v5-checkpoint.md) as the gate.)_
 
 ## Out of scope
 
@@ -41,3 +38,4 @@ _(none yet — [canonical-v5-amendments](wayfinder/tickets/035-canonical-v5-amen
 - **Importing foreign formats.** The research read upstream's Excalidraw and HTML-form artifacts as *evidence of the canonical field set*; it does not make them import targets. Own Canvas file schema only.
 - **Chasing upstream's own inconsistencies.** The README omits `cost-reduction`, the Excalidraw writes `generic` where the rendered canvas says `genesis`, the HTML form still calls domain roles "Model traits", and the Miroverse template is stuck at v4. We follow the drawn V5 canvas and say so; we do not reconcile upstream with itself.
 - **A canvas-version selector.** V5 is the layout, singular. Nothing here introduces v4 rendering or a per-canvas layout choice.
+- **Mirroring the lanes.** Outbound right-aligned so direction reads outward from the centre, which would earn back the `Collaborator`/`Messages` column heads the mockup dropped. Ruled out by [canonical-v5-amendments](wayfinder/tickets/035-canonical-v5-amendments.md): the destination is that the claim on the tin is true, and mirroring is a layout improvement past that line — its own effort if it is ever wanted, not a step on this route.
