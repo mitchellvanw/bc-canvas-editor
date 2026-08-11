@@ -3,7 +3,7 @@ name: mcp-canonical-labels
 title: "Task: the MCP surface follows v2 — section labels, the digest, and 'the fifteen'"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [canvas-file-v2]
 ---
 
