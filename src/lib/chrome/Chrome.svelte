@@ -214,7 +214,7 @@
 	onkeydown={handleReferenceShortcut}
 />
 
-<header class="mx-auto flex max-w-[1440px] items-center justify-end gap-2 px-10 pt-6">
+<header class="mx-auto flex max-w-[1440px] min-w-[1080px] items-center justify-end gap-2 px-10 pt-6">
 	<button
 		type="button"
 		class="{chromeButton} mr-1"

@@ -30,6 +30,9 @@
 
 <Chrome />
 
-<main class="mx-auto max-w-[1440px] px-10 pt-6 pb-12">
+<!-- The desktop floor (SPEC §5): the grid never deforms below it; the page
+     scrolls horizontally instead. Chrome carries the same floor so the two
+     travel together. Reflow at narrow widths is the artifact's job (§9.1). -->
+<main class="mx-auto max-w-[1440px] min-w-[1080px] px-10 pt-6 pb-12">
 	<EditableSheet />
 </main>
