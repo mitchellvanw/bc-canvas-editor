@@ -56,7 +56,7 @@ Object.defineProperty(window, 'matchMedia', {
 function referenceDoc() {
 	const result = parseCanvasFile(REFERENCE_FILE);
 	if (!result.ok) throw new Error('reference fixture must parse');
-	result.file.inboundCommunication.push({ collaborator: 'Billing', messages: [] });
+	result.file.inboundCommunication.push({ collaborator: { name: 'Billing' }, messages: [] });
 	return stampIds(result.file);
 }
 
@@ -106,7 +106,7 @@ function inboundMessages(): string[] {
 }
 
 function inboundLanes(): string[] {
-	return canvas.doc.inboundCommunication.map((lane) => lane.collaborator);
+	return canvas.doc.inboundCommunication.map((lane) => lane.collaborator.name);
 }
 
 const sink = vi.fn();

@@ -27,9 +27,9 @@ describe('serializeCanvas', () => {
 		expect(serializeCanvas(blankCanvas())).toBe(
 			JSON.stringify(
 				{
-					version: 1,
+					version: 2,
 					name: '',
-					description: '',
+					purpose: '',
 					strategicClassification: {},
 					domainRoles: [],
 					inboundCommunication: [],
@@ -48,26 +48,64 @@ describe('serializeCanvas', () => {
 
 	it('escapes < as \\u003c so the exact export bytes embed in an HTML script block (SPEC §9.1)', () => {
 		const doc = blankCanvas();
-		doc.description = 'Renders </script> tags & other markup, e.g. a < b.';
+		doc.purpose = 'Renders </script> tags & other markup, e.g. a < b.';
 
 		const out = serializeCanvas(doc);
 		expect(out).not.toContain('<');
 		expect(out).toContain('\\u003c/script>');
-		expect(JSON.parse(out).description).toBe('Renders </script> tags & other markup, e.g. a < b.');
+		expect(JSON.parse(out).purpose).toBe('Renders </script> tags & other markup, e.g. a < b.');
 	});
 
 	it('omits optional fields that are unset or emptied, never writes null', () => {
 		const doc = blankCanvas();
 		doc.strategicClassification = { domain: 'core', businessModel: undefined };
 		doc.businessDecisions = [{ id: 'x', name: 'Rule', description: '' }];
-		doc.inboundCommunication = [{ id: 'y', collaborator: 'Checkout', messages: [] }];
+		doc.inboundCommunication = [{ id: 'y', collaborator: { name: 'Checkout' }, messages: [] }];
 
 		const out = serializeCanvas(doc);
 		const parsed = JSON.parse(out);
 		expect(parsed.strategicClassification).toEqual({ domain: 'core' });
 		expect(parsed.businessDecisions[0]).toEqual({ name: 'Rule' });
-		expect(parsed.inboundCommunication[0]).toEqual({ collaborator: 'Checkout', messages: [] });
+		expect(parsed.inboundCommunication[0]).toEqual({
+			collaborator: { name: 'Checkout' },
+			messages: []
+		});
 		expect(out).not.toContain('null');
+	});
+
+	it('writes theirs before ours whatever order the document holds them in', () => {
+		const doc = blankCanvas();
+		doc.inboundCommunication = [
+			{
+				id: 'y',
+				collaborator: { name: 'Checkout' },
+				// Runtime insertion order: ours first — the file order is fixed.
+				relationship: { ours: 'conformist', theirs: 'open-host-service' },
+				messages: []
+			}
+		];
+		const out = serializeCanvas(doc);
+		expect(Object.keys(JSON.parse(out).inboundCommunication[0].relationship)).toEqual([
+			'theirs',
+			'ours'
+		]);
+	});
+
+	it('omits a relationship with neither end, and an unset kind, entirely', () => {
+		const doc = blankCanvas();
+		doc.inboundCommunication = [
+			{
+				id: 'y',
+				collaborator: { name: 'Checkout', kind: undefined },
+				relationship: { theirs: '', ours: undefined },
+				messages: []
+			}
+		];
+		const parsed = JSON.parse(serializeCanvas(doc));
+		expect(parsed.inboundCommunication[0]).toEqual({
+			collaborator: { name: 'Checkout' },
+			messages: []
+		});
 	});
 });
 

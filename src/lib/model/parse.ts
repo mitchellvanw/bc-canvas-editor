@@ -18,10 +18,13 @@ import {
 	CANVAS_VERSION,
 	type BusinessDecision,
 	type CanvasFile,
+	type Collaborator,
+	type CollaboratorKind,
 	type DomainRole,
 	type Lane,
 	type Message,
 	type MessageType,
+	type Relationship,
 	type StrategicClassification,
 	type UbiquitousTerm
 } from '$lib/model/canvas';
@@ -46,12 +49,69 @@ function notCanvas(detail: string): ParseResult {
 const NOT_JSON = 'the file is not valid JSON';
 
 /**
- * Ordered raw-JSON migrations: MIGRATIONS[v] rewrites a version-v structure to
- * version v+1. Empty while the format is at version 1.
+ * A v1 lane carried `collaborator` and `relationship` as plain strings; v2
+ * makes both objects. The v1 `relationship` string lands on `ours`, uniformly
+ * and with no interpretation — deliberately not because that is what anyone
+ * meant. The nine teaching one-liners in the relationship vocabulary are
+ * written from mixed perspectives (`conformist` speaks for this context,
+ * `big-ball-of-mud` for the other side, `partnership` for both at once), so no
+ * single side ever was meant. What carries the rule is that both ends are
+ * optional and free-text: a wrong guess renders visibly on the lane and is one
+ * pick to correct, with nothing lost. A migration that guesses uniformly and
+ * cheaply beats one that guesses cleverly and invisibly.
+ *
+ * Anything that is not the v1 shape passes through untouched, for the v2
+ * validation walk to refuse by name.
  */
-const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {};
+function migrateLaneV1(item: unknown): unknown {
+	if (!isRecord(item)) return item;
+	const { collaborator, relationship, ...rest } = item;
+	return {
+		...rest,
+		...(collaborator !== undefined && {
+			collaborator: typeof collaborator === 'string' ? { name: collaborator } : collaborator
+		}),
+		...(relationship !== undefined && {
+			relationship: typeof relationship === 'string' ? { ours: relationship } : relationship
+		})
+	};
+}
+
+function migrateLanesV1(raw: Record<string, unknown>, key: string): Record<string, unknown> {
+	const lanes = raw[key];
+	return Array.isArray(lanes) ? { [key]: lanes.map(migrateLaneV1) } : {};
+}
+
+/**
+ * Ordered raw-JSON migrations: MIGRATIONS[v] rewrites a version-v structure to
+ * version v+1.
+ */
+const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+	// v1 → v2 (ticket canvas-file-v2): `description` becomes `purpose` —
+	// upstream's own v4→v5 rename, adopted with the version bump — and the two
+	// lane fields take their v2 shapes (see migrateLaneV1). Free text is never
+	// rewritten: a domain role that stopped matching the picker vocabulary
+	// survives exactly as typed.
+	1: (raw) => {
+		const { description, ...rest } = raw;
+		return {
+			...rest,
+			version: 2,
+			...(description !== undefined && { purpose: description }),
+			...migrateLanesV1(raw, 'inboundCommunication'),
+			...migrateLanesV1(raw, 'outboundCommunication')
+		};
+	}
+};
 
 const MESSAGE_TYPES: readonly MessageType[] = ['command', 'query', 'event'];
+
+const COLLABORATOR_KINDS: readonly CollaboratorKind[] = [
+	'bounded-context',
+	'external-system',
+	'frontend',
+	'user'
+];
 
 /**
  * A refusal at a named field. `path` is written the way a developer would type
@@ -164,10 +224,52 @@ function asMessage(row: Record<string, unknown>, path: string): Message {
 	};
 }
 
+function isCollaboratorKind(value: string): value is CollaboratorKind {
+	return (COLLABORATOR_KINDS as readonly string[]).includes(value);
+}
+
+/**
+ * `kind` is closed like message `type` — the value picks an icon — but unlike
+ * `type` it is optional, so the refusal offers "no key at all" as a way out.
+ */
+function asCollaborator(value: unknown, path: string): Collaborator {
+	if (!isRecord(value)) throw new Refusal(path, `expected an object, got ${typeName(value)}`);
+	const kindPath = field(path, 'kind');
+	const kind = value.kind;
+	if (kind !== undefined && typeof kind !== 'string') {
+		throw new Refusal(kindPath, `expected a string or no key at all, got ${typeName(kind)}`);
+	}
+	if (typeof kind === 'string' && !isCollaboratorKind(kind)) {
+		const allowed = COLLABORATOR_KINDS.map((k) => JSON.stringify(k)).join(', ');
+		throw new Refusal(
+			kindPath,
+			`expected one of ${allowed} or no key at all, got ${JSON.stringify(kind)}`
+		);
+	}
+	return {
+		name: asString(value.name, field(path, 'name')),
+		...(kind !== undefined && { kind })
+	};
+}
+
+/** Both ends optional, both lax about vocabulary — like the classification axes. */
+function asRelationship(value: unknown, path: string): { relationship?: Relationship } {
+	if (value === undefined) return {};
+	if (!isRecord(value)) {
+		throw new Refusal(path, `expected an object or no key at all, got ${typeName(value)}`);
+	}
+	return {
+		relationship: {
+			...optionalString(value, 'theirs', path),
+			...optionalString(value, 'ours', path)
+		}
+	};
+}
+
 function asLane(row: Record<string, unknown>, path: string): Lane {
 	return {
-		collaborator: asString(row.collaborator, field(path, 'collaborator')),
-		...optionalString(row, 'relationship', path),
+		collaborator: asCollaborator(row.collaborator, field(path, 'collaborator')),
+		...asRelationship(row.relationship, field(path, 'relationship')),
 		messages: asRows(row.messages, field(path, 'messages'), asMessage)
 	};
 }
@@ -176,7 +278,7 @@ function asCanvasFile(raw: Record<string, unknown>): CanvasFile {
 	return {
 		version: CANVAS_VERSION,
 		name: asString(raw.name, 'name'),
-		description: asString(raw.description, 'description'),
+		purpose: asString(raw.purpose, 'purpose'),
 		strategicClassification: asClassification(
 			raw.strategicClassification,
 			'strategicClassification'

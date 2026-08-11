@@ -50,7 +50,8 @@ export interface CanvasSummary {
 	path: string;
 	uri: string;
 	name: string;
-	description: string;
+	/** The canvas's own purpose line — the summary's one sentence of content. */
+	purpose: string;
 	/** How many of the eleven sections say something. */
 	filled: number;
 	/** The labels of the ones that don't. */
@@ -88,7 +89,7 @@ export function catalog(root: CanvasRoot): Catalog {
 				path,
 				uri,
 				name: result.file.name,
-				description: result.file.description,
+				purpose: result.file.purpose,
 				filled: filledCount(result.file),
 				empty: emptySections(result.file)
 			});

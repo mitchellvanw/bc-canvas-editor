@@ -54,7 +54,7 @@ describe('one commit, one undo step', () => {
 
 	it('round-trips a commit byte-identically through undo and redo', () => {
 		const before = serializeCanvas(canvas.doc);
-		canvas.commit((doc) => (doc.description = 'Ships whatever was paid for.'));
+		canvas.commit((doc) => (doc.purpose = 'Ships whatever was paid for.'));
 		const after = serializeCanvas(canvas.doc);
 
 		canvas.undo();
@@ -65,7 +65,7 @@ describe('one commit, one undo step', () => {
 
 	it('keeps ephemeral row ids stable across undo, so keyed rendering never remounts', () => {
 		const laneId = canvas.doc.inboundCommunication[0].id;
-		canvas.commit((doc) => (doc.inboundCommunication[0].collaborator = 'Storefront'));
+		canvas.commit((doc) => (doc.inboundCommunication[0].collaborator.name = 'Storefront'));
 		canvas.undo();
 		expect(canvas.doc.inboundCommunication[0].id).toBe(laneId);
 	});
@@ -100,7 +100,7 @@ describe('one commit, one undo step', () => {
 
 describe('undo/redo feeds the persistence pipeline', () => {
 	it('autosaves the swapped-in document and marks it unexported', () => {
-		canvas.commit((doc) => (doc.description = 'Edited.'));
+		canvas.commit((doc) => (doc.purpose = 'Edited.'));
 		canvas.exportCanvasFile();
 		expect(canvas.unexported).toBe(false);
 
@@ -156,9 +156,9 @@ describe('changedRegion', () => {
 	const cases: [string, (doc: CanvasDoc) => void, string][] = [
 		['name', (doc) => (doc.name = 'Renamed'), 'title'],
 		['classification', (doc) => (doc.strategicClassification.domain = 'supporting'), 'title'],
-		['description', (doc) => (doc.description = 'Changed.'), 'description'],
+		['description', (doc) => (doc.purpose = 'Changed.'), 'description'],
 		['domain roles', (doc) => doc.domainRoles.push({ id: newId(), name: 'gateway context' }), 'roles'],
-		['inbound lanes', (doc) => (doc.inboundCommunication[0].collaborator = 'Web'), 'inbound'],
+		['inbound lanes', (doc) => (doc.inboundCommunication[0].collaborator.name = 'Web'), 'inbound'],
 		['ubiquitous language', (doc) => (doc.ubiquitousLanguage[0].term = 'Parcel'), 'language'],
 		['business decisions', (doc) => doc.businessDecisions.pop(), 'decisions'],
 		['outbound lanes', (doc) => doc.outboundCommunication[0].messages.pop(), 'outbound'],

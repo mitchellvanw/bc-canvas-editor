@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "Notifications",
-  "description": "Delivers order updates to customers on their preferred channel.",
+  "purpose": "Delivers order updates to customers on their preferred channel.",
   "strategicClassification": {
     "domain": "generic",
     "businessModel": "engagement",
@@ -17,8 +17,12 @@
   ],
   "inboundCommunication": [
     {
-      "collaborator": "Order Fulfillment",
-      "relationship": "conformist",
+      "collaborator": {
+        "name": "Order Fulfillment"
+      },
+      "relationship": {
+        "ours": "conformist"
+      },
       "messages": [
         {
           "type": "event",
@@ -50,8 +54,12 @@
   ],
   "outboundCommunication": [
     {
-      "collaborator": "Messaging Platform",
-      "relationship": "conformist",
+      "collaborator": {
+        "name": "Messaging Platform"
+      },
+      "relationship": {
+        "ours": "conformist"
+      },
       "messages": [
         {
           "type": "command",

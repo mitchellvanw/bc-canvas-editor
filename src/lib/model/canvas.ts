@@ -6,15 +6,37 @@
 
 export type MessageType = 'command' | 'query' | 'event';
 
+/**
+ * Closed like `MessageType`, and for the same reason: the value drives a
+ * rendering. `type` picks a chip color, `kind` picks a collaborator icon, and
+ * an unrecognised kind has no glyph to draw (SPEC §3.2).
+ */
+export type CollaboratorKind = 'bounded-context' | 'external-system' | 'frontend' | 'user';
+
 export interface Message {
 	type: MessageType;
 	name: string;
 	description?: string;
 }
 
+export interface Collaborator {
+	name: string;
+	kind?: CollaboratorKind;
+}
+
+/**
+ * The two ends of the lane's boundary, both optional free text: the
+ * collaborator's side and this context's. `theirs` serializes first — the
+ * order the sheet draws them, collaborator's side leading (SPEC §3.2).
+ */
+export interface Relationship {
+	theirs?: string;
+	ours?: string;
+}
+
 export interface Lane {
-	collaborator: string;
-	relationship?: string;
+	collaborator: Collaborator;
+	relationship?: Relationship;
 	messages: Message[];
 }
 
@@ -38,12 +60,12 @@ export interface StrategicClassification {
 	evolution?: string;
 }
 
-export const CANVAS_VERSION = 1;
+export const CANVAS_VERSION = 2;
 
 export interface CanvasFile {
 	version: typeof CANVAS_VERSION;
 	name: string;
-	description: string;
+	purpose: string;
 	strategicClassification: StrategicClassification;
 	domainRoles: DomainRole[];
 	inboundCommunication: Lane[];
@@ -61,15 +83,15 @@ export type MessageRow = WithId<Message>;
 
 export interface LaneRow {
 	id: string;
-	collaborator: string;
-	relationship?: string;
+	collaborator: Collaborator;
+	relationship?: Relationship;
 	messages: MessageRow[];
 }
 
 export interface CanvasDoc {
 	version: typeof CANVAS_VERSION;
 	name: string;
-	description: string;
+	purpose: string;
 	strategicClassification: StrategicClassification;
 	domainRoles: WithId<DomainRole>[];
 	inboundCommunication: LaneRow[];
@@ -99,7 +121,7 @@ export function blankCanvas(): CanvasDoc {
 	return {
 		version: CANVAS_VERSION,
 		name: '',
-		description: '',
+		purpose: '',
 		strategicClassification: {},
 		domainRoles: [],
 		inboundCommunication: [],
@@ -115,8 +137,8 @@ export function blankCanvas(): CanvasDoc {
 function stampLane(lane: Lane): LaneRow {
 	return {
 		id: newId(),
-		collaborator: lane.collaborator,
-		...(lane.relationship !== undefined && { relationship: lane.relationship }),
+		collaborator: { ...lane.collaborator },
+		...(lane.relationship !== undefined && { relationship: { ...lane.relationship } }),
 		messages: lane.messages.map((message) => ({ ...message, id: newId() }))
 	};
 }
@@ -125,7 +147,7 @@ export function stampIds(file: CanvasFile): CanvasDoc {
 	return {
 		version: file.version,
 		name: file.name,
-		description: file.description,
+		purpose: file.purpose,
 		strategicClassification: { ...file.strategicClassification },
 		domainRoles: file.domainRoles.map((role) => ({ ...role, id: newId() })),
 		inboundCommunication: file.inboundCommunication.map(stampLane),

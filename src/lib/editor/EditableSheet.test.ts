@@ -138,7 +138,7 @@ describe('the commit grammar feeds the document and autosave', () => {
 	it('commits a prose edit on blur and the change survives reload via autosave', () => {
 		const el = render();
 		editAndBlur(field(el, 'Description'), 'Ships whatever was paid for.');
-		expect(canvas.doc.description).toBe('Ships whatever was paid for.');
+		expect(canvas.doc.purpose).toBe('Ships whatever was paid for.');
 		expect(canvas.unexported).toBe(true);
 		expect(localStorage.getItem(AUTOSAVE_KEY)).toContain('Ships whatever was paid for.');
 	});
@@ -164,7 +164,7 @@ describe('the commit grammar feeds the document and autosave', () => {
 		who.textContent = 'Storefront';
 		const event = press(who, 'Enter');
 		expect(event.defaultPrevented).toBe(true);
-		expect(canvas.doc.inboundCommunication[0].collaborator).toBe('Storefront');
+		expect(canvas.doc.inboundCommunication[0].collaborator.name).toBe('Storefront');
 	});
 
 	it('lets Enter insert newlines in prose fields without committing', () => {

@@ -47,7 +47,7 @@ const ENTRIES: Record<SectionKey, Entry> = {
 		shape: 'A string: the bounded context this canvas is about, as the business names it.',
 		rows: ['Shipment Tracking']
 	},
-	description: {
+	purpose: {
 		shape:
 			'A string of a few sentences, in business language. What the context is for — not how it is built.',
 		rows: ['Keeps parcels findable from dispatch to doorstep, and tells everyone else where they are.']
@@ -75,7 +75,7 @@ const ENTRIES: Record<SectionKey, Entry> = {
 	},
 	inboundCommunication: {
 		shape:
-			'An array of lanes, one per collaborator: { "collaborator": …, "relationship"?: …, "messages": [ { "type": "command" | "query" | "event", "name": …, "description"?: … } ] }. Inbound messages are the ones this context receives.',
+			'An array of lanes, one per collaborator: { "collaborator": { "name": …, "kind"?: "bounded-context" | "external-system" | "frontend" | "user" }, "relationship"?: { "theirs"?: …, "ours"?: … }, "messages": [ { "type": "command" | "query" | "event", "name": …, "description"?: … } ] }. The relationship names the context-mapping pattern at each end of the boundary — the collaborator\'s side and this context\'s. Inbound messages are the ones this context receives.',
 		vocabulary: ['relationship — the context-mapping pattern:', ...vocabularyLines(PICK_OPTIONS.relationship)],
 		rows: [
 			'Dispatch (customer-supplier)',
@@ -96,7 +96,7 @@ const ENTRIES: Record<SectionKey, Entry> = {
 	},
 	outboundCommunication: {
 		shape:
-			'The same lane shape as inbound. Outbound messages are the ones this context emits — most of them events, and each one a commitment to whoever listens.',
+			'The same lane shape as inbound — collaborator, optional relationship ends, messages. Outbound messages are the ones this context emits — most of them events, and each one a commitment to whoever listens.',
 		vocabulary: ['relationship — the context-mapping pattern:', ...vocabularyLines(PICK_OPTIONS.relationship)],
 		rows: ['Customer Notifications (open-host-service)', '  event Parcel Delivered']
 	},

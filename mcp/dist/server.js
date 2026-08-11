@@ -29521,15 +29521,54 @@ function extractEmbeddedCanvas(text) {
 }
 
 // ../src/lib/model/canvas.ts
-var CANVAS_VERSION = 1;
+var CANVAS_VERSION = 2;
 
 // ../src/lib/model/parse.ts
 function notCanvas(detail) {
   return { ok: false, reason: "not-canvas", detail: /[.!?]$/.test(detail) ? detail : `${detail}.` };
 }
 var NOT_JSON = "the file is not valid JSON";
-var MIGRATIONS = {};
+function migrateLaneV1(item) {
+  if (!isRecord(item)) return item;
+  const { collaborator, relationship, ...rest } = item;
+  return {
+    ...rest,
+    ...collaborator !== void 0 && {
+      collaborator: typeof collaborator === "string" ? { name: collaborator } : collaborator
+    },
+    ...relationship !== void 0 && {
+      relationship: typeof relationship === "string" ? { ours: relationship } : relationship
+    }
+  };
+}
+function migrateLanesV1(raw, key) {
+  const lanes2 = raw[key];
+  return Array.isArray(lanes2) ? { [key]: lanes2.map(migrateLaneV1) } : {};
+}
+var MIGRATIONS = {
+  // v1 → v2 (ticket canvas-file-v2): `description` becomes `purpose` —
+  // upstream's own v4→v5 rename, adopted with the version bump — and the two
+  // lane fields take their v2 shapes (see migrateLaneV1). Free text is never
+  // rewritten: a domain role that stopped matching the picker vocabulary
+  // survives exactly as typed.
+  1: (raw) => {
+    const { description, ...rest } = raw;
+    return {
+      ...rest,
+      version: 2,
+      ...description !== void 0 && { purpose: description },
+      ...migrateLanesV1(raw, "inboundCommunication"),
+      ...migrateLanesV1(raw, "outboundCommunication")
+    };
+  }
+};
 var MESSAGE_TYPES = ["command", "query", "event"];
+var COLLABORATOR_KINDS = [
+  "bounded-context",
+  "external-system",
+  "frontend",
+  "user"
+];
 var Refusal = class extends Error {
   constructor(path, expectation) {
     super(path === "" ? expectation : `${path}: ${expectation}`);
@@ -29615,10 +29654,44 @@ function asMessage(row, path) {
     ...optionalString(row, "description", path)
   };
 }
+function isCollaboratorKind(value) {
+  return COLLABORATOR_KINDS.includes(value);
+}
+function asCollaborator(value, path) {
+  if (!isRecord(value)) throw new Refusal(path, `expected an object, got ${typeName(value)}`);
+  const kindPath = field(path, "kind");
+  const kind = value.kind;
+  if (kind !== void 0 && typeof kind !== "string") {
+    throw new Refusal(kindPath, `expected a string or no key at all, got ${typeName(kind)}`);
+  }
+  if (typeof kind === "string" && !isCollaboratorKind(kind)) {
+    const allowed = COLLABORATOR_KINDS.map((k) => JSON.stringify(k)).join(", ");
+    throw new Refusal(
+      kindPath,
+      `expected one of ${allowed} or no key at all, got ${JSON.stringify(kind)}`
+    );
+  }
+  return {
+    name: asString(value.name, field(path, "name")),
+    ...kind !== void 0 && { kind }
+  };
+}
+function asRelationship(value, path) {
+  if (value === void 0) return {};
+  if (!isRecord(value)) {
+    throw new Refusal(path, `expected an object or no key at all, got ${typeName(value)}`);
+  }
+  return {
+    relationship: {
+      ...optionalString(value, "theirs", path),
+      ...optionalString(value, "ours", path)
+    }
+  };
+}
 function asLane(row, path) {
   return {
-    collaborator: asString(row.collaborator, field(path, "collaborator")),
-    ...optionalString(row, "relationship", path),
+    collaborator: asCollaborator(row.collaborator, field(path, "collaborator")),
+    ...asRelationship(row.relationship, field(path, "relationship")),
     messages: asRows(row.messages, field(path, "messages"), asMessage)
   };
 }
@@ -29626,7 +29699,7 @@ function asCanvasFile(raw) {
   return {
     version: CANVAS_VERSION,
     name: asString(raw.name, "name"),
-    description: asString(raw.description, "description"),
+    purpose: asString(raw.purpose, "purpose"),
     strategicClassification: asClassification(
       raw.strategicClassification,
       "strategicClassification"
@@ -29738,10 +29811,10 @@ var SECTIONS = [
     filled: (file2) => nonEmpty(file2.name)
   },
   {
-    key: "description",
+    key: "purpose",
     label: "Description",
     placeholder: "What does this context exist to do? A few sentences in business language.",
-    filled: (file2) => nonEmpty(file2.description)
+    filled: (file2) => nonEmpty(file2.purpose)
   },
   {
     key: "strategicClassification",
@@ -29845,7 +29918,7 @@ function catalog(root2) {
         path,
         uri,
         name: result.file.name,
-        description: result.file.description,
+        purpose: result.file.purpose,
         filled: filledCount(result.file),
         empty: emptySections(result.file)
       });
@@ -29884,8 +29957,9 @@ function message(row) {
 }
 function lanes(rows) {
   return rows.flatMap((lane2, index) => {
-    const relationship = lane2.relationship === void 0 || lane2.relationship === "" ? "" : ` (${lane2.relationship})`;
-    const head = `### ${lane2.collaborator}${relationship}`;
+    const ours = lane2.relationship?.ours;
+    const relationship = ours === void 0 || ours === "" ? "" : ` (${ours})`;
+    const head = `### ${lane2.collaborator.name}${relationship}`;
     const messages = lane2.messages.length === 0 ? [] : ["", ...lane2.messages.map(message)];
     return index === 0 ? [head, ...messages] : ["", head, ...messages];
   });
@@ -29898,8 +29972,8 @@ function body(section, file2) {
     case "name":
     case "strategicClassification":
       return [];
-    case "description":
-      return [file2.description];
+    case "purpose":
+      return [file2.purpose];
     case "domainRoles":
       return [file2.domainRoles.map((role) => role.name).join(", ")];
     case "inboundCommunication":
@@ -29948,7 +30022,7 @@ function readProblem(result) {
     case "unreadable":
       return `${result.path}: could not be read (${result.detail}).`;
     case "newer-version":
-      return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); this server reads up to version 1.`;
+      return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); this server reads up to version ${CANVAS_VERSION}.`;
     case "not-canvas":
       return `${result.path}: ${result.detail ?? "not a Canvas file."}`;
   }
@@ -29965,7 +30039,7 @@ function readRefusal(result) {
     case "newer-version":
       return refuse(
         `${result.path}: written by a newer version of BC Canvas (format version ${result.version});`,
-        "this server reads up to version 1. Nothing was read, and nothing was changed."
+        `this server reads up to version ${CANVAS_VERSION}. Nothing was read, and nothing was changed.`
       );
     case "not-canvas":
       return refuse(
@@ -30044,7 +30118,7 @@ function registerCanvasResource(server, root2) {
           uri: summary.uri,
           name: summary.path,
           title: summary.name === "" ? summary.path : summary.name,
-          description: summary.description,
+          description: summary.purpose,
           mimeType: "text/markdown"
         }))
       }),
@@ -30194,7 +30268,7 @@ function axisNotes(file2) {
   return axes.filter(([value, , options]) => value !== void 0 && value !== "" && !known(options, value)).map(([value, what, options]) => note(value, what, options));
 }
 function relationshipNotes(lanes2) {
-  return lanes2.map((lane2) => lane2.relationship).filter(
+  return lanes2.flatMap((lane2) => [lane2.relationship?.theirs, lane2.relationship?.ours]).filter(
     (value) => value !== void 0 && value !== "" && !known(PICK_OPTIONS.relationship, value)
   ).map((value) => note(value, "relationship pattern", PICK_OPTIONS.relationship));
 }
@@ -30224,7 +30298,7 @@ var ENTRIES = {
     shape: "A string: the bounded context this canvas is about, as the business names it.",
     rows: ["Shipment Tracking"]
   },
-  description: {
+  purpose: {
     shape: "A string of a few sentences, in business language. What the context is for \u2014 not how it is built.",
     rows: ["Keeps parcels findable from dispatch to doorstep, and tells everyone else where they are."]
   },
@@ -30248,7 +30322,7 @@ var ENTRIES = {
     rows: ["gateway context", "analysis context"]
   },
   inboundCommunication: {
-    shape: 'An array of lanes, one per collaborator: { "collaborator": \u2026, "relationship"?: \u2026, "messages": [ { "type": "command" | "query" | "event", "name": \u2026, "description"?: \u2026 } ] }. Inbound messages are the ones this context receives.',
+    shape: `An array of lanes, one per collaborator: { "collaborator": { "name": \u2026, "kind"?: "bounded-context" | "external-system" | "frontend" | "user" }, "relationship"?: { "theirs"?: \u2026, "ours"?: \u2026 }, "messages": [ { "type": "command" | "query" | "event", "name": \u2026, "description"?: \u2026 } ] }. The relationship names the context-mapping pattern at each end of the boundary \u2014 the collaborator's side and this context's. Inbound messages are the ones this context receives.`,
     vocabulary: ["relationship \u2014 the context-mapping pattern:", ...vocabularyLines(PICK_OPTIONS.relationship)],
     rows: [
       "Dispatch (customer-supplier)",
@@ -30266,7 +30340,7 @@ var ENTRIES = {
     ]
   },
   outboundCommunication: {
-    shape: "The same lane shape as inbound. Outbound messages are the ones this context emits \u2014 most of them events, and each one a commitment to whoever listens.",
+    shape: "The same lane shape as inbound \u2014 collaborator, optional relationship ends, messages. Outbound messages are the ones this context emits \u2014 most of them events, and each one a commitment to whoever listens.",
     vocabulary: ["relationship \u2014 the context-mapping pattern:", ...vocabularyLines(PICK_OPTIONS.relationship)],
     rows: ["Customer Notifications (open-host-service)", "  event Parcel Delivered"]
   },
@@ -30339,16 +30413,25 @@ var message2 = external_exports.object({
   name: external_exports.string().describe('The message itself, as the business says it: "Place Order".'),
   description: external_exports.string().optional().describe("One line on what it carries or when it fires. Omit rather than sending an empty string.")
 });
+var relationshipEnd = (whose) => external_exports.string().optional().describe(`${whose} One of: ${values(PICK_OPTIONS.relationship)}. ${CUSTOM_OK2} Omit if undecided.`);
 var lane = (direction) => external_exports.object({
-  collaborator: external_exports.string().describe(`The other context or system ${direction}. Its name, not its role.`),
-  relationship: external_exports.string().optional().describe(
-    `The context-mapping pattern between the two. One of: ${oneLiners(PICK_OPTIONS.relationship)}. ${CUSTOM_OK2} Omit if it hasn't been decided.`
+  collaborator: external_exports.object({
+    name: external_exports.string().describe(`The other context or system ${direction}. Its name, not its role.`),
+    kind: external_exports.enum(["bounded-context", "external-system", "frontend", "user"]).optional().describe(
+      "What kind of collaborator this is. Omit if unstated \u2014 an absent kind means unclassified, not bounded-context. The only other closed set on the canvas."
+    )
+  }).describe(`The other party ${direction}.`),
+  relationship: external_exports.object({
+    theirs: relationshipEnd("The collaborator's side of the boundary."),
+    ours: relationshipEnd("This context's side of the boundary.")
+  }).optional().describe(
+    `The context-mapping pattern, read from each end of the boundary \u2014 a pairing, not a duplicate field: send both ends only when each side's stance is actually known. The patterns: ${oneLiners(PICK_OPTIONS.relationship)}. Omit the whole object if it hasn't been decided.`
   ),
   messages: external_exports.array(message2).describe("What crosses this boundary, in the order it makes sense in.")
 });
 var CANVAS_SHAPE = external_exports.object({
   name: external_exports.string().describe("The bounded context this canvas is about."),
-  description: external_exports.string().describe(
+  purpose: external_exports.string().describe(
     "What the context exists to do, in a few sentences of business language \u2014 not implementation. Empty string if not yet written."
   ),
   strategicClassification: external_exports.object({
@@ -30404,10 +30487,24 @@ function fileMessage(message3) {
     ...present(message3.description) && { description: message3.description }
   };
 }
+function fileCollaborator(collaborator) {
+  return {
+    name: collaborator.name,
+    ...collaborator.kind !== void 0 && { kind: collaborator.kind }
+  };
+}
+function fileRelationship(relationship) {
+  if (relationship === void 0) return {};
+  const kept = {
+    ...present(relationship.theirs) && { theirs: relationship.theirs },
+    ...present(relationship.ours) && { ours: relationship.ours }
+  };
+  return Object.keys(kept).length === 0 ? {} : { relationship: kept };
+}
 function fileLane(lane2) {
   return {
-    collaborator: lane2.collaborator,
-    ...present(lane2.relationship) && { relationship: lane2.relationship },
+    collaborator: fileCollaborator(lane2.collaborator),
+    ...fileRelationship(lane2.relationship),
     messages: lane2.messages.map(fileMessage)
   };
 }
@@ -30422,7 +30519,7 @@ function toCanvasFile(doc) {
   return {
     version: doc.version,
     name: doc.name,
-    description: doc.description,
+    purpose: doc.purpose,
     strategicClassification: fileClassification(doc.strategicClassification),
     domainRoles: doc.domainRoles.map((role) => ({ name: role.name })),
     inboundCommunication: doc.inboundCommunication.map(fileLane),
@@ -30469,7 +30566,7 @@ function writeAtomic(path, text) {
 var CANVAS_EXTENSION = ".bcc.json";
 function summaryLines(summary) {
   const lines = [`${summary.path} \u2014 ${summary.name === "" ? "Untitled" : summary.name}`];
-  if (summary.description !== "") lines.push(`  ${summary.description}`);
+  if (summary.purpose !== "") lines.push(`  ${summary.purpose}`);
   lines.push(`  ${summary.filled} of ${SECTIONS.length} sections filled.`);
   if (summary.empty.length > 0) lines.push(`  Nothing yet under: ${summary.empty.join(", ")}.`);
   lines.push(`  ${summary.uri}`);

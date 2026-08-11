@@ -13,6 +13,7 @@
  */
 
 import type { CallToolResult } from '@modelcontextprotocol/server';
+import { CANVAS_VERSION } from '$lib/model/canvas';
 import type { CanvasRead } from './read';
 
 /** An error result: one sentence per line, no JSON envelope to unwrap. */
@@ -37,7 +38,7 @@ export function readProblem(result: Extract<CanvasRead, { ok: false }>): string 
 		case 'unreadable':
 			return `${result.path}: could not be read (${result.detail}).`;
 		case 'newer-version':
-			return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); this server reads up to version 1.`;
+			return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); this server reads up to version ${CANVAS_VERSION}.`;
 		case 'not-canvas':
 			return `${result.path}: ${result.detail ?? 'not a Canvas file.'}`;
 	}
@@ -56,7 +57,7 @@ export function readRefusal(result: Extract<CanvasRead, { ok: false }>): CallToo
 		case 'newer-version':
 			return refuse(
 				`${result.path}: written by a newer version of BC Canvas (format version ${result.version});`,
-				'this server reads up to version 1. Nothing was read, and nothing was changed.'
+				`this server reads up to version ${CANVAS_VERSION}. Nothing was read, and nothing was changed.`
 			);
 		case 'not-canvas':
 			return refuse(

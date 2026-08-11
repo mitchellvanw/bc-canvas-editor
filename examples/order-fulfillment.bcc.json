@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "Order Fulfillment",
-  "description": "Coordinates picking, packing and shipping once an order is paid.",
+  "purpose": "Coordinates picking, packing and shipping once an order is paid.",
   "strategicClassification": {
     "domain": "core",
     "businessModel": "revenue",
@@ -17,8 +17,12 @@
   ],
   "inboundCommunication": [
     {
-      "collaborator": "Checkout",
-      "relationship": "customer-supplier",
+      "collaborator": {
+        "name": "Checkout"
+      },
+      "relationship": {
+        "ours": "customer-supplier"
+      },
       "messages": [
         {
           "type": "command",
@@ -32,7 +36,9 @@
       ]
     },
     {
-      "collaborator": "Customer Service",
+      "collaborator": {
+        "name": "Customer Service"
+      },
       "messages": [
         {
           "type": "command",
@@ -46,8 +52,12 @@
       ]
     },
     {
-      "collaborator": "Warehouse",
-      "relationship": "big-ball-of-mud",
+      "collaborator": {
+        "name": "Warehouse"
+      },
+      "relationship": {
+        "ours": "big-ball-of-mud"
+      },
       "messages": [
         {
           "type": "event",
@@ -94,8 +104,12 @@
   ],
   "outboundCommunication": [
     {
-      "collaborator": "Warehouse",
-      "relationship": "big-ball-of-mud",
+      "collaborator": {
+        "name": "Warehouse"
+      },
+      "relationship": {
+        "ours": "big-ball-of-mud"
+      },
       "messages": [
         {
           "type": "command",
@@ -104,8 +118,12 @@
       ]
     },
     {
-      "collaborator": "Carriers",
-      "relationship": "published-language",
+      "collaborator": {
+        "name": "Carriers"
+      },
+      "relationship": {
+        "ours": "published-language"
+      },
       "messages": [
         {
           "type": "command",
@@ -118,7 +136,9 @@
       ]
     },
     {
-      "collaborator": "Notifications",
+      "collaborator": {
+        "name": "Notifications"
+      },
       "messages": [
         {
           "type": "event",

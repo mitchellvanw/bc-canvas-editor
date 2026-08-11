@@ -54,7 +54,7 @@ HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
 const BAD_FILE = (() => {
 	const raw = JSON.parse(REFERENCE_FILE) as Record<string, unknown>;
 	(raw.inboundCommunication as Record<string, unknown>[]).push({
-		collaborator: 'Support',
+		collaborator: { name: 'Support' },
 		messages: [{ type: 'notification', name: 'Refund asked' }]
 	});
 	return JSON.stringify(raw);
@@ -152,5 +152,38 @@ describe('a refused import says one thing to the user (SPEC §10)', () => {
 		const el = render();
 		await importText(el, BAD_FILE);
 		expect(canvas.doc.name).toBe('');
+	});
+
+	// The migration counterpart (ticket canvas-file-v2): the same door, a file
+	// one version old. It opens like any import and lands clean — the file on
+	// disk still opens and nothing the user typed is unsaved, so marking it
+	// dirty would warn about losing work that has not happened.
+	it('imports a v1 file through the migration, landing migrated and clean', async () => {
+		const v1 = JSON.stringify({
+			version: 1,
+			name: 'Legacy',
+			description: 'Written before v2 existed.',
+			strategicClassification: {},
+			domainRoles: [],
+			inboundCommunication: [
+				{ collaborator: 'Mainframe', relationship: 'anticorruption-layer', messages: [] }
+			],
+			ubiquitousLanguage: [],
+			businessDecisions: [],
+			outboundCommunication: [],
+			assumptions: [],
+			verificationMetrics: [],
+			openQuestions: []
+		});
+		const el = render();
+		await importText(el, v1);
+
+		expect(canvas.doc.name).toBe('Legacy');
+		expect(canvas.doc.purpose).toBe('Written before v2 existed.');
+		expect(canvas.doc.inboundCommunication[0].collaborator).toEqual({ name: 'Mainframe' });
+		expect(canvas.doc.inboundCommunication[0].relationship).toEqual({
+			ours: 'anticorruption-layer'
+		});
+		expect(canvas.unexported).toBe(false);
 	});
 });

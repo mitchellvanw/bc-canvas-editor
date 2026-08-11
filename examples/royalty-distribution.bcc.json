@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "Royalty Distribution",
-  "description": "Splits streaming revenue among rights holders.",
+  "purpose": "Splits streaming revenue among rights holders.",
   "strategicClassification": {
     "businessModel": "compliance"
   },
@@ -12,7 +12,9 @@
   ],
   "inboundCommunication": [
     {
-      "collaborator": "Consumption Reporting",
+      "collaborator": {
+        "name": "Consumption Reporting"
+      },
       "messages": [
         {
           "type": "event",
@@ -22,7 +24,9 @@
       ]
     },
     {
-      "collaborator": "Rights Management",
+      "collaborator": {
+        "name": "Rights Management"
+      },
       "messages": [
         {
           "type": "event",
@@ -49,7 +53,9 @@
   ],
   "outboundCommunication": [
     {
-      "collaborator": "Payments",
+      "collaborator": {
+        "name": "Payments"
+      },
       "messages": [
         {
           "type": "command",

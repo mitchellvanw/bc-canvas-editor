@@ -36,7 +36,7 @@ const CANVAS_EXTENSION = '.bcc.json';
 /** One canvas in the listing: what it is, how far along, and where to read it. */
 function summaryLines(summary: CanvasSummary): string[] {
 	const lines = [`${summary.path} — ${summary.name === '' ? 'Untitled' : summary.name}`];
-	if (summary.description !== '') lines.push(`  ${summary.description}`);
+	if (summary.purpose !== '') lines.push(`  ${summary.purpose}`);
 	lines.push(`  ${summary.filled} of ${SECTIONS.length} sections filled.`);
 	if (summary.empty.length > 0) lines.push(`  Nothing yet under: ${summary.empty.join(', ')}.`);
 	lines.push(`  ${summary.uri}`);

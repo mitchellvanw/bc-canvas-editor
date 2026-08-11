@@ -41,6 +41,9 @@ Object.defineProperty(globalThis, 'localStorage', {
 function referenceDoc() {
 	const result = parseCanvasFile(REFERENCE_FILE);
 	if (!result.ok) throw new Error('reference fixture must parse');
+	// The reference's outbound lane carries both relationship ends; these tests
+	// also need a lane with none, so Notifications is cleared back to unset.
+	delete result.file.outboundCommunication[0].relationship;
 	return stampIds(result.file);
 }
 
@@ -278,9 +281,9 @@ describe('relationship picker (SPEC §4.3)', () => {
 		click(trigger(el, 'Relationship for Checkout'));
 		click(option(el, 'conformist'));
 
-		expect(canvas.doc.inboundCommunication[0].relationship).toBe('conformist');
+		expect(canvas.doc.inboundCommunication[0].relationship).toEqual({ ours: 'conformist' });
 		expect(setItem).toHaveBeenCalledTimes(1);
-		expect(serialized().inboundCommunication[0].relationship).toBe('conformist');
+		expect(serialized().inboundCommunication[0].relationship).toEqual({ ours: 'conformist' });
 		expect(trigger(el, 'Relationship for Checkout').textContent?.trim()).toBe('conformist');
 	});
 
@@ -302,7 +305,7 @@ describe('relationship picker (SPEC §4.3)', () => {
 		expect(button.textContent?.trim()).toBe('—');
 		click(button);
 		click(option(el, 'open-host-service'));
-		expect(canvas.doc.outboundCommunication[0].relationship).toBe('open-host-service');
+		expect(canvas.doc.outboundCommunication[0].relationship).toEqual({ ours: 'open-host-service' });
 	});
 
 	it('accepts a custom relationship through custom…', () => {
@@ -315,9 +318,9 @@ describe('relationship picker (SPEC §4.3)', () => {
 		input!.value = 'api-consumer';
 		press(input!, 'Enter');
 
-		expect(canvas.doc.inboundCommunication[0].relationship).toBe('api-consumer');
+		expect(canvas.doc.inboundCommunication[0].relationship).toEqual({ ours: 'api-consumer' });
 		expect(setItem).toHaveBeenCalledTimes(1);
-		expect(serialized().inboundCommunication[0].relationship).toBe('api-consumer');
+		expect(serialized().inboundCommunication[0].relationship).toEqual({ ours: 'api-consumer' });
 		expect(trigger(el, 'Relationship for Checkout').textContent?.trim()).toBe('api-consumer');
 	});
 });
@@ -477,7 +480,7 @@ describe('the keyboard grammar (SPEC §8.3)', () => {
 		press(focused(), 'ArrowDown');
 		press(focused(), 'Escape');
 
-		expect(canvas.doc.inboundCommunication[0].relationship).toBe('customer-supplier');
+		expect(canvas.doc.inboundCommunication[0].relationship).toEqual({ ours: 'customer-supplier' });
 		expect(setItem).not.toHaveBeenCalled();
 		expect(options(el)).toHaveLength(0);
 		await expectFocused(button);

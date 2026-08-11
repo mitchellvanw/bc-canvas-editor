@@ -104,13 +104,19 @@ describe('tools/list', () => {
 		expect(schema).toContain('anticorruption-layer');
 		expect(schema).toContain('A translation layer at the boundary');
 		expect(schema).toContain('octopus coordinator');
-		// Only the genuinely closed set is an enum; everything else is a string
+		// Only the genuinely closed sets are enums; everything else is a string
 		// with an escape hatch, per SPEC §4.
 		const canvas = (write?.inputSchema as any).properties.canvas.properties;
-		expect(canvas.inboundCommunication.items.properties.messages.items.properties.type.enum).toEqual(
-			['command', 'query', 'event']
-		);
-		expect(canvas.inboundCommunication.items.properties.relationship.enum).toBeUndefined();
+		const lane = canvas.inboundCommunication.items.properties;
+		expect(lane.messages.items.properties.type.enum).toEqual(['command', 'query', 'event']);
+		expect(lane.collaborator.properties.kind.enum).toEqual([
+			'bounded-context',
+			'external-system',
+			'frontend',
+			'user'
+		]);
+		expect(lane.relationship.properties.theirs.enum).toBeUndefined();
+		expect(lane.relationship.properties.ours.enum).toBeUndefined();
 		expect(canvas.strategicClassification.properties.domain.enum).toBeUndefined();
 	});
 
@@ -205,7 +211,7 @@ describe('refusals that teach', () => {
 
 		expect(result.isError).toBe(true);
 		expect(text(result)).toContain('format version 9');
-		expect(text(result)).toContain('reads up to version 1');
+		expect(text(result)).toContain('reads up to version 2');
 		expect(text(result)).toContain('nothing was changed');
 	});
 
@@ -254,7 +260,7 @@ describe('refusals that teach', () => {
 			canvas: {
 				...blank(),
 				inboundCommunication: [
-					{ collaborator: 'Checkout', messages: [{ type: 'shout', name: 'Hi' }] }
+					{ collaborator: { name: 'Checkout' }, messages: [{ type: 'shout', name: 'Hi' }] }
 				]
 			}
 		});
@@ -296,7 +302,7 @@ describe('bcc_write_canvas', () => {
 	it('names what came out empty, which is the only guard against a dropped section', async () => {
 		const result = await call('bcc_write_canvas', {
 			path: 'thin.bcc.json',
-			canvas: { ...blank(), name: 'Thin', description: 'Barely started.' }
+			canvas: { ...blank(), name: 'Thin', purpose: 'Barely started.' }
 		});
 
 		expect(result.isError).toBeFalsy();
@@ -314,7 +320,7 @@ describe('bcc_write_canvas', () => {
 				name: 'Legacy Bridge',
 				domainRoles: [{ name: 'strangler' }],
 				outboundCommunication: [
-					{ collaborator: 'Mainframe', relationship: 'strangler-fig', messages: [] }
+					{ collaborator: { name: 'Mainframe' }, relationship: { ours: 'strangler-fig' }, messages: [] }
 				]
 			}
 		});
@@ -440,7 +446,7 @@ describe('the canvas resource', () => {
 function blank() {
 	return {
 		name: '',
-		description: '',
+		purpose: '',
 		strategicClassification: {},
 		domainRoles: [],
 		inboundCommunication: [],

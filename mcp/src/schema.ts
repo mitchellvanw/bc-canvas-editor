@@ -11,11 +11,12 @@
  * to ask, and a confident wrong pick is exactly the failure that never asks.
  *
  * **Closed enums are enums; escape-hatched vocabularies are described strings.**
- * `message.type` is the only genuinely closed set (SPEC §3.2), so it is the only
- * `z.enum`. Everywhere else SPEC §4 promises a custom value renders and
- * round-trips like any other, so a hard enum here would refuse "strangler-fig"
- * before the handler ran — the server being stricter than the editor it serves.
- * The describe text says so, and the handler notes the value instead.
+ * `message.type` and `collaborator.kind` are the two genuinely closed sets
+ * (SPEC §3.2), so they are the two `z.enum`s. Everywhere else SPEC §4 promises
+ * a custom value renders and round-trips like any other, so a hard enum here
+ * would refuse "strangler-fig" before the handler ran — the server being
+ * stricter than the editor it serves. The describe text says so, and the
+ * handler notes the value instead.
  *
  * What this schema is *not* is a validator. `parseCanvasFile` decides whether a
  * document is a Canvas file; this only tells the model what to send. Where the
@@ -55,23 +56,40 @@ const message = z.object({
 		.describe('One line on what it carries or when it fires. Omit rather than sending an empty string.')
 });
 
+const relationshipEnd = (whose: string) =>
+	z
+		.string()
+		.optional()
+		.describe(`${whose} One of: ${values(PICK_OPTIONS.relationship)}. ${CUSTOM_OK} Omit if undecided.`);
+
 const lane = (direction: string) =>
 	z.object({
 		collaborator: z
-			.string()
-			.describe(`The other context or system ${direction}. Its name, not its role.`),
+			.object({
+				name: z.string().describe(`The other context or system ${direction}. Its name, not its role.`),
+				kind: z
+					.enum(['bounded-context', 'external-system', 'frontend', 'user'])
+					.optional()
+					.describe(
+						'What kind of collaborator this is. Omit if unstated — an absent kind means unclassified, not bounded-context. The only other closed set on the canvas.'
+					)
+			})
+			.describe(`The other party ${direction}.`),
 		relationship: z
-			.string()
+			.object({
+				theirs: relationshipEnd("The collaborator's side of the boundary."),
+				ours: relationshipEnd("This context's side of the boundary.")
+			})
 			.optional()
 			.describe(
-				`The context-mapping pattern between the two. One of: ${oneLiners(PICK_OPTIONS.relationship)}. ${CUSTOM_OK} Omit if it hasn't been decided.`
+				`The context-mapping pattern, read from each end of the boundary — a pairing, not a duplicate field: send both ends only when each side's stance is actually known. The patterns: ${oneLiners(PICK_OPTIONS.relationship)}. Omit the whole object if it hasn't been decided.`
 			),
 		messages: z.array(message).describe('What crosses this boundary, in the order it makes sense in.')
 	});
 
 export const CANVAS_SHAPE = z.object({
 	name: z.string().describe('The bounded context this canvas is about.'),
-	description: z
+	purpose: z
 		.string()
 		.describe(
 			'What the context exists to do, in a few sentences of business language — not implementation. Empty string if not yet written.'

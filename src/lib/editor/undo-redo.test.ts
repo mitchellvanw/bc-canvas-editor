@@ -112,7 +112,7 @@ describe('⌘Z / ⇧⌘Z on the live sheet', () => {
 		editAndBlur(field(el, 'Description'), 'Edited description.');
 		const event = press(window, 'z', { metaKey: true });
 		expect(event.defaultPrevented).toBe(true);
-		expect(canvas.doc.description).toBe(
+		expect(canvas.doc.purpose).toBe(
 			'Coordinates picking, packing and shipping once an order is paid.'
 		);
 		expect(field(el, 'Description').textContent).toBe(

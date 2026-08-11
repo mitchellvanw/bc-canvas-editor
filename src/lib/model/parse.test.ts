@@ -44,14 +44,20 @@ describe('parseCanvasFile', () => {
 	it('keeps escape-hatch strings as-is: custom classification and relationship values', () => {
 		const text = referenceJson((raw) => {
 			raw.strategicClassification = { domain: 'weird custom axis value' };
-			(raw.inboundCommunication as { relationship: string }[])[0].relationship = 'my own pattern';
+			(raw.inboundCommunication as { relationship: unknown }[])[0].relationship = {
+				theirs: 'my own pattern',
+				ours: 'another of mine'
+			};
 		});
 		const result = parseCanvasFile(text);
 		if (!result.ok) throw new Error('expected ok');
 		expect(result.file.strategicClassification).toEqual({
 			domain: 'weird custom axis value'
 		});
-		expect(result.file.inboundCommunication[0].relationship).toBe('my own pattern');
+		expect(result.file.inboundCommunication[0].relationship).toEqual({
+			theirs: 'my own pattern',
+			ours: 'another of mine'
+		});
 	});
 
 	it('drops unknown extra keys instead of letting them ride along', () => {
@@ -66,20 +72,20 @@ describe('parseCanvasFile', () => {
 	});
 
 	it('refuses a newer format version, reporting the file version', () => {
+		const text = referenceJson((raw) => (raw.version = 4));
+		expect(parseCanvasFile(text)).toEqual({
+			ok: false,
+			reason: 'newer-version',
+			version: 4
+		});
+	});
+
+	it('refuses version 3 — the app reads up to version 2', () => {
 		const text = referenceJson((raw) => (raw.version = 3));
 		expect(parseCanvasFile(text)).toEqual({
 			ok: false,
 			reason: 'newer-version',
 			version: 3
-		});
-	});
-
-	it('refuses version 2 — the app reads up to version 1', () => {
-		const text = referenceJson((raw) => (raw.version = 2));
-		expect(parseCanvasFile(text)).toEqual({
-			ok: false,
-			reason: 'newer-version',
-			version: 2
 		});
 	});
 
@@ -163,18 +169,54 @@ describe('parseCanvasFile', () => {
 		[
 			'a lane without a collaborator',
 			(raw: Record<string, unknown>) => (raw.inboundCommunication = [{ messages: [] }]),
-			'inboundCommunication[0].collaborator: expected a string, got nothing'
+			'inboundCommunication[0].collaborator: expected an object, got nothing'
+		],
+		[
+			'a collaborator without a name',
+			(raw: Record<string, unknown>) => (raw.inboundCommunication = [{ collaborator: {}, messages: [] }]),
+			'inboundCommunication[0].collaborator.name: expected a string, got nothing'
+		],
+		[
+			'a collaborator kind outside the closed enum',
+			(raw: Record<string, unknown>) =>
+				(raw.inboundCommunication = [
+					{ collaborator: { name: 'Checkout', kind: 'microservice' }, messages: [] }
+				]),
+			'inboundCommunication[0].collaborator.kind: expected one of "bounded-context", "external-system", "frontend", "user" or no key at all, got "microservice"'
+		],
+		[
+			'a non-string collaborator kind',
+			(raw: Record<string, unknown>) =>
+				(raw.inboundCommunication = [{ collaborator: { name: 'Checkout', kind: 7 }, messages: [] }]),
+			'inboundCommunication[0].collaborator.kind: expected a string or no key at all, got a number'
+		],
+		[
+			'a v1-style relationship string on a v2 lane',
+			(raw: Record<string, unknown>) =>
+				(raw.outboundCommunication = [
+					{ collaborator: { name: 'X' }, relationship: 'conformist', messages: [] }
+				]),
+			'outboundCommunication[0].relationship: expected an object or no key at all, got a string'
+		],
+		[
+			'a non-string relationship end',
+			(raw: Record<string, unknown>) =>
+				(raw.outboundCommunication = [
+					{ collaborator: { name: 'X' }, relationship: { theirs: 4 }, messages: [] }
+				]),
+			'outboundCommunication[0].relationship.theirs: expected a string or no key at all, got a number'
 		],
 		[
 			'a lane without messages',
-			(raw: Record<string, unknown>) => (raw.outboundCommunication = [{ collaborator: 'X' }]),
+			(raw: Record<string, unknown>) =>
+				(raw.outboundCommunication = [{ collaborator: { name: 'X' } }]),
 			'outboundCommunication[0].messages: expected an array, got nothing'
 		],
 		[
 			'a message type outside the closed enum',
 			(raw: Record<string, unknown>) =>
 				(raw.inboundCommunication as Record<string, unknown>[]).push({
-					collaborator: 'Support',
+					collaborator: { name: 'Support' },
 					messages: [{ type: 'notification', name: 'Refund asked' }]
 				}),
 			'inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification"'
@@ -202,6 +244,141 @@ describe('parseCanvasFile', () => {
 	});
 });
 
+/**
+ * The SPEC §3.1 reference example as version 1 wrote it — `description` where
+ * v2 says `purpose`, both lane fields as plain strings. The v1 → v2 migration's
+ * own fixture.
+ */
+const V1_REFERENCE_FILE = `{
+  "version": 1,
+  "name": "Order Fulfillment",
+  "description": "Coordinates picking, packing and shipping once an order is paid.",
+  "strategicClassification": {
+    "domain": "core",
+    "businessModel": "revenue",
+    "evolution": "custom-built"
+  },
+  "domainRoles": [
+    { "name": "execution context" },
+    { "name": "octopus coordinator" }
+  ],
+  "inboundCommunication": [
+    {
+      "collaborator": "Checkout",
+      "relationship": "customer-supplier",
+      "messages": [
+        { "type": "command", "name": "Place Order" },
+        { "type": "event", "name": "Payment Confirmed", "description": "Triggers fulfillment." }
+      ]
+    }
+  ],
+  "ubiquitousLanguage": [
+    { "term": "Shipment", "definition": "A physical parcel dispatched against an order." }
+  ],
+  "businessDecisions": [
+    { "name": "No partial shipments", "description": "An order ships complete or not at all." }
+  ],
+  "outboundCommunication": [
+    { "collaborator": "Notifications", "messages": [{ "type": "event", "name": "Order Shipped" }] }
+  ],
+  "assumptions": ["Warehouse stock counts are accurate within the hour."],
+  "verificationMetrics": ["Time from payment to dispatch under 4 hours."],
+  "openQuestions": ["Who owns returns — this context or a new one?"]
+}`;
+
+describe('the v1 → v2 migration', () => {
+	function v1Json(mutate: (raw: Record<string, unknown>) => void = () => {}): string {
+		const raw = JSON.parse(V1_REFERENCE_FILE) as Record<string, unknown>;
+		mutate(raw);
+		return JSON.stringify(raw);
+	}
+
+	it('loads a v1 file as v2: description becomes purpose, the lane fields take their v2 shapes', () => {
+		const result = parseCanvasFile(V1_REFERENCE_FILE);
+		if (!result.ok) throw new Error('expected ok');
+		expect(result.file.version).toBe(2);
+		expect(result.file.purpose).toBe(
+			'Coordinates picking, packing and shipping once an order is paid.'
+		);
+		expect(result.file).not.toHaveProperty('description');
+		expect(result.file.inboundCommunication[0].collaborator).toEqual({ name: 'Checkout' });
+		expect(result.file.outboundCommunication[0].collaborator).toEqual({ name: 'Notifications' });
+	});
+
+	it('puts a v1 relationship string on ours, uniformly, and invents no theirs', () => {
+		const result = parseCanvasFile(V1_REFERENCE_FILE);
+		if (!result.ok) throw new Error('expected ok');
+		expect(result.file.inboundCommunication[0].relationship).toEqual({
+			ours: 'customer-supplier'
+		});
+		expect(result.file.outboundCommunication[0].relationship).toBeUndefined();
+	});
+
+	it('is indistinguishable from a file authored at v2: migrate → export matches the v2 authoring', () => {
+		const migrated = parseCanvasFile(V1_REFERENCE_FILE);
+		if (!migrated.ok) throw new Error('expected ok');
+		const authored = parseCanvasFile(
+			JSON.stringify({
+				...(JSON.parse(V1_REFERENCE_FILE) as Record<string, unknown>),
+				version: 2,
+				description: undefined,
+				purpose: 'Coordinates picking, packing and shipping once an order is paid.',
+				inboundCommunication: [
+					{
+						collaborator: { name: 'Checkout' },
+						relationship: { ours: 'customer-supplier' },
+						messages: [
+							{ type: 'command', name: 'Place Order' },
+							{ type: 'event', name: 'Payment Confirmed', description: 'Triggers fulfillment.' }
+						]
+					}
+				],
+				outboundCommunication: [
+					{
+						collaborator: { name: 'Notifications' },
+						messages: [{ type: 'event', name: 'Order Shipped' }]
+					}
+				]
+			})
+		);
+		if (!authored.ok) throw new Error('expected ok');
+		expect(serializeCanvas(stampIds(migrated.file))).toBe(serializeCanvas(stampIds(authored.file)));
+	});
+
+	it('never rewrites free text: an off-vocabulary domain role survives exactly as typed', () => {
+		const result = parseCanvasFile(V1_REFERENCE_FILE);
+		if (!result.ok) throw new Error('expected ok');
+		// `octopus coordinator` stopped matching the picker vocabulary; the
+		// migration is not entitled to an opinion about the user's prose.
+		expect(result.file.domainRoles[1]).toEqual({ name: 'octopus coordinator' });
+	});
+
+	it('round-trips a migrated file byte-identically once it is v2: import → export → import → export', () => {
+		const result = parseCanvasFile(V1_REFERENCE_FILE);
+		if (!result.ok) throw new Error('expected ok');
+		const exported = serializeCanvas(stampIds(result.file));
+		const again = parseCanvasFile(exported);
+		if (!again.ok) throw new Error('expected ok');
+		expect(serializeCanvas(stampIds(again.file))).toBe(exported);
+	});
+
+	it('still refuses a malformed v1 file, naming the field in v2 terms', () => {
+		const result = parseCanvasFile(v1Json((raw) => (raw.description = 7)));
+		expect(result).toMatchObject({ ok: false, reason: 'not-canvas' });
+		expect(refusalDetail(result)).toBe('purpose: expected a string, got a number.');
+	});
+
+	it('passes a non-v1-shaped lane field through for the v2 walk to refuse by name', () => {
+		const result = parseCanvasFile(
+			v1Json((raw) => (raw.inboundCommunication = [{ collaborator: 7, messages: [] }]))
+		);
+		expect(result).toMatchObject({ ok: false, reason: 'not-canvas' });
+		expect(refusalDetail(result)).toBe(
+			'inboundCommunication[0].collaborator: expected an object, got a number.'
+		);
+	});
+});
+
 function artifactAround(block: string): string {
 	return `<!doctype html>\n<html lang="en"><head><title>T</title></head><body>\n${block}\n</body></html>`;
 }
@@ -215,7 +392,7 @@ describe('embeddedCanvasBlock / extractEmbeddedCanvas', () => {
 
 	it('survives </script> in canvas content — the serializer keeps < out of the bytes', () => {
 		const doc = blankCanvas();
-		doc.description = 'Mind the </script> tag.';
+		doc.purpose = 'Mind the </script> tag.';
 		const exported = serializeCanvas(doc);
 		expect(extractEmbeddedCanvas(artifactAround(embeddedCanvasBlock(exported)))).toBe(exported);
 	});
@@ -274,9 +451,9 @@ describe('parseCanvasImport — one path for .bcc.json and .bcc.html', () => {
 		// Only our serializer escapes <; a hand-authored file may carry the
 		// marker raw inside a string value and must not be routed to extraction.
 		const marker = '<script type="application/json" data-canvas-file>';
-		const foreign = referenceJson((raw) => (raw.description = `About ${marker} blocks.`));
+		const foreign = referenceJson((raw) => (raw.purpose = `About ${marker} blocks.`));
 		const result = parseCanvasImport(foreign);
 		if (!result.ok) throw new Error('expected ok');
-		expect(result.file.description).toBe(`About ${marker} blocks.`);
+		expect(result.file.purpose).toBe(`About ${marker} blocks.`);
 	});
 });

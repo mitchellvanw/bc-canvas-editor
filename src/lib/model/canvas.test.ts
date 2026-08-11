@@ -4,7 +4,7 @@ import { blankCanvas, moveItem, stampIds, type CanvasFile } from '$lib/model/can
 const SECTION_KEYS = [
 	'version',
 	'name',
-	'description',
+	'purpose',
 	'strategicClassification',
 	'domainRoles',
 	'inboundCommunication',
@@ -20,9 +20,9 @@ describe('blankCanvas', () => {
 	it('holds all eleven section keys plus version, empty', () => {
 		const doc = blankCanvas();
 		expect(Object.keys(doc)).toEqual([...SECTION_KEYS]);
-		expect(doc.version).toBe(1);
+		expect(doc.version).toBe(2);
 		expect(doc.name).toBe('');
-		expect(doc.description).toBe('');
+		expect(doc.purpose).toBe('');
 		expect(doc.strategicClassification).toEqual({});
 		expect(doc.domainRoles).toEqual([]);
 		expect(doc.inboundCommunication).toEqual([]);
@@ -38,15 +38,15 @@ describe('blankCanvas', () => {
 describe('stampIds', () => {
 	it('stamps a distinct ephemeral id on every row, lane and message', () => {
 		const file: CanvasFile = {
-			version: 1,
+			version: 2,
 			name: 'Order Fulfillment',
-			description: 'Ships paid orders.',
+			purpose: 'Ships paid orders.',
 			strategicClassification: { domain: 'core' },
 			domainRoles: [{ name: 'execution context' }],
 			inboundCommunication: [
 				{
-					collaborator: 'Checkout',
-					relationship: 'customer-supplier',
+					collaborator: { name: 'Checkout', kind: 'bounded-context' },
+					relationship: { theirs: 'customer-supplier' },
 					messages: [
 						{ type: 'command', name: 'Place Order' },
 						{ type: 'event', name: 'Payment Confirmed' }
@@ -56,7 +56,7 @@ describe('stampIds', () => {
 			ubiquitousLanguage: [{ term: 'Shipment', definition: 'A parcel.' }],
 			businessDecisions: [{ name: 'No partial shipments' }],
 			outboundCommunication: [
-				{ collaborator: 'Notifications', messages: [{ type: 'event', name: 'Order Shipped' }] }
+				{ collaborator: { name: 'Notifications' }, messages: [{ type: 'event', name: 'Order Shipped' }] }
 			],
 			assumptions: ['Stock counts are accurate.'],
 			verificationMetrics: [],
@@ -80,8 +80,11 @@ describe('stampIds', () => {
 
 		// Content survives untouched.
 		expect(doc.name).toBe('Order Fulfillment');
-		expect(doc.inboundCommunication[0].collaborator).toBe('Checkout');
-		expect(doc.inboundCommunication[0].relationship).toBe('customer-supplier');
+		expect(doc.inboundCommunication[0].collaborator).toEqual({
+			name: 'Checkout',
+			kind: 'bounded-context'
+		});
+		expect(doc.inboundCommunication[0].relationship).toEqual({ theirs: 'customer-supplier' });
 		expect(doc.inboundCommunication[0].messages[1].name).toBe('Payment Confirmed');
 		expect(doc.assumptions).toEqual(['Stock counts are accurate.']);
 	});
@@ -89,10 +92,22 @@ describe('stampIds', () => {
 	it('does not mutate the input file', () => {
 		const file: CanvasFile = {
 			...blankFile(),
-			domainRoles: [{ name: 'audit model' }]
+			domainRoles: [{ name: 'audit model' }],
+			inboundCommunication: [
+				{
+					collaborator: { name: 'Checkout' },
+					relationship: { ours: 'conformist' },
+					messages: []
+				}
+			]
 		};
-		stampIds(file);
+		const doc = stampIds(file);
+		doc.inboundCommunication[0].collaborator.name = 'Renamed';
+		doc.inboundCommunication[0].relationship!.ours = 'partnership';
 		expect(file.domainRoles[0]).toEqual({ name: 'audit model' });
+		// The lane's objects are copies, not shared references.
+		expect(file.inboundCommunication[0].collaborator).toEqual({ name: 'Checkout' });
+		expect(file.inboundCommunication[0].relationship).toEqual({ ours: 'conformist' });
 	});
 });
 
@@ -118,9 +133,9 @@ describe('moveItem', () => {
 
 function blankFile(): CanvasFile {
 	return {
-		version: 1,
+		version: 2,
 		name: '',
-		description: '',
+		purpose: '',
 		strategicClassification: {},
 		domainRoles: [],
 		inboundCommunication: [],

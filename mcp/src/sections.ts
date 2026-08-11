@@ -40,10 +40,10 @@ export const SECTIONS: readonly Section[] = [
 		filled: (file) => nonEmpty(file.name)
 	},
 	{
-		key: 'description',
+		key: 'purpose',
 		label: 'Description',
 		placeholder: 'What does this context exist to do? A few sentences in business language.',
-		filled: (file) => nonEmpty(file.description)
+		filled: (file) => nonEmpty(file.purpose)
 	},
 	{
 		key: 'strategicClassification',

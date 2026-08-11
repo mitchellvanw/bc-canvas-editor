@@ -40,9 +40,9 @@ function message(row: Message): string {
 
 function lanes(rows: Lane[]): string[] {
 	return rows.flatMap((lane, index) => {
-		const relationship =
-			lane.relationship === undefined || lane.relationship === '' ? '' : ` (${lane.relationship})`;
-		const head = `### ${lane.collaborator}${relationship}`;
+		const ours = lane.relationship?.ours;
+		const relationship = ours === undefined || ours === '' ? '' : ` (${ours})`;
+		const head = `### ${lane.collaborator.name}${relationship}`;
 		const messages = lane.messages.length === 0 ? [] : ['', ...lane.messages.map(message)];
 		return index === 0 ? [head, ...messages] : ['', head, ...messages];
 	});
@@ -59,8 +59,8 @@ function body(section: Section, file: CanvasFile): string[] {
 		case 'strategicClassification':
 			// Both live in the title block, above the sections; see `canvasDigest`.
 			return [];
-		case 'description':
-			return [file.description];
+		case 'purpose':
+			return [file.purpose];
 		case 'domainRoles':
 			return [file.domainRoles.map((role) => role.name).join(', ')];
 		case 'inboundCommunication':

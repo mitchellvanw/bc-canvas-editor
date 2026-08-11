@@ -96,14 +96,14 @@
 								{#if grip}{@render grip()}{/if}
 								<h3 class="lane__who">
 									{@render text({
-										value: lane.collaborator,
+										value: lane.collaborator.name,
 										label: 'Collaborator',
 										placeholder: 'Collaborator',
-										set: (value) => (lane.collaborator = value)
+										set: (value) => (lane.collaborator.name = value)
 									})}
 								</h3>
 								{@render removeItem?.({
-									label: `Remove collaborator ${lane.collaborator}`.trim(),
+									label: `Remove collaborator ${lane.collaborator.name}`.trim(),
 									type: 'Collaborator',
 									remove: () => lanes.splice(laneIndex, 1)
 								})}
@@ -112,12 +112,23 @@
 										{@render pickValue({
 											kind: 'relationship',
 											key: lane.id,
-											label: `Relationship for ${lane.collaborator}`.trim(),
-											value: lane.relationship,
-											set: (value) => (lane.relationship = value)
+											label: `Relationship for ${lane.collaborator.name}`.trim(),
+											value: lane.relationship?.ours,
+											set: (value) => {
+												const theirs = lane.relationship?.theirs;
+												lane.relationship =
+													theirs === undefined && value === undefined
+														? undefined
+														: {
+																...(theirs !== undefined && { theirs }),
+																...(value !== undefined && { ours: value })
+															};
+											}
 										})}
 									</span>
-								{:else if lane.relationship}<span class="lane__rel">{lane.relationship}</span>{/if}
+								{:else if lane.relationship?.ours}<span class="lane__rel"
+										>{lane.relationship.ours}</span
+									>{/if}
 							</div>
 							{#if lane.messages.length > 0}
 								<ul class="msgs">
@@ -159,7 +170,7 @@
 			{@render addItem?.({
 				...ghostFace(lanes.length, '+ collaborator', question),
 				focusField: 'Collaborator',
-				add: () => lanes.push({ id: newId(), collaborator: '', messages: [] })
+				add: () => lanes.push({ id: newId(), collaborator: { name: '' }, messages: [] })
 			})}
 		</div>
 	</section>
@@ -242,15 +253,15 @@
 		<section class="panel area-description">
 			<h2 class="panel__label">Description</h2>
 			<div class="panel__body">
-				{#if field || doc.description}
+				{#if field || doc.purpose}
 					<p class="prose">
 						{@render text({
-							value: doc.description,
+							value: doc.purpose,
 							label: 'Description',
 							placeholder:
 								'What does this context exist to do? A few sentences in business language.',
 							multiline: true,
-							set: (value) => (doc.description = value)
+							set: (value) => (doc.purpose = value)
 						})}
 					</p>
 				{/if}

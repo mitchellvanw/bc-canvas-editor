@@ -34,7 +34,7 @@ export function registerCanvasResource(server: McpServer, root: CanvasRoot): voi
 					uri: summary.uri,
 					name: summary.path,
 					title: summary.name === '' ? summary.path : summary.name,
-					description: summary.description,
+					description: summary.purpose,
 					mimeType: 'text/markdown'
 				}))
 			}),

@@ -25,7 +25,7 @@ const REGIONS = {
 	description: {
 		selector: '.quiet-sheet .area-description',
 		name: 'Description',
-		content: (doc) => doc.description
+		content: (doc) => doc.purpose
 	},
 	roles: {
 		selector: '.quiet-sheet .area-roles',

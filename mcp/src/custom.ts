@@ -39,7 +39,7 @@ function axisNotes(file: CanvasFile): string[] {
 
 function relationshipNotes(lanes: Lane[]): string[] {
 	return lanes
-		.map((lane) => lane.relationship)
+		.flatMap((lane) => [lane.relationship?.theirs, lane.relationship?.ours])
 		.filter(
 			(value): value is string =>
 				value !== undefined && value !== '' && !known(PICK_OPTIONS.relationship, value)

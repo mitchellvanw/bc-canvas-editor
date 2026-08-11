@@ -35,15 +35,15 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 
 ## 3. The Canvas file schema
 
-The Canvas file is the portable, re-importable serialization: flat camelCase JSON, integer root `version`, then the eleven V5 sections in canonical order. Full decision record: `wayfinder/tickets/003-canvas-file-schema.md`.
+The Canvas file is the portable, re-importable serialization: flat camelCase JSON, integer root `version`, then the eleven V5 sections in canonical order. Full decision record: `wayfinder/tickets/003-canvas-file-schema.md`, amended to version 2 by `wayfinder/tickets/035-canonical-v5-amendments.md` (carried by `036-canvas-file-v2.md`): `description` → `purpose`, the collaborator promoted to an object with an optional `kind`, and `relationship` made two-sided.
 
 ### 3.1 Reference example
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "name": "Order Fulfillment",
-  "description": "Coordinates picking, packing and shipping once an order is paid.",
+  "purpose": "Coordinates picking, packing and shipping once an order is paid.",
   "strategicClassification": {
     "domain": "core",
     "businessModel": "revenue",
@@ -54,8 +54,8 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
   ],
   "inboundCommunication": [
     {
-      "collaborator": "Checkout",
-      "relationship": "customer-supplier",
+      "collaborator": { "name": "Checkout" },
+      "relationship": { "ours": "customer-supplier" },
       "messages": [
         { "type": "command", "name": "Place Order" },
         { "type": "event", "name": "Payment Confirmed", "description": "Triggers fulfillment." }
@@ -69,7 +69,11 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
     { "name": "No partial shipments", "description": "An order ships complete or not at all." }
   ],
   "outboundCommunication": [
-    { "collaborator": "Notifications", "messages": [{ "type": "event", "name": "Order Shipped" }] }
+    {
+      "collaborator": { "name": "Notifications", "kind": "bounded-context" },
+      "relationship": { "theirs": "conformist", "ours": "open-host-service" },
+      "messages": [{ "type": "event", "name": "Order Shipped" }]
+    }
   ],
   "assumptions": ["Warehouse stock counts are accurate within the hour."],
   "verificationMetrics": ["Time from payment to dispatch under 4 hours."],
@@ -79,20 +83,22 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
 
 ### 3.2 Shape rules
 
-- **Sections:** `name` and `description` are strings; `strategicClassification` is an object of three optional axes; `domainRoles` are `{ name }` rows — no per-role description (sign-off amendment to the schema decision: the trait one-liners are app-side teaching text, never file content, and no approved interaction writes a per-role description); `businessDecisions` are `{ name, description? }` rows; `ubiquitousLanguage` is `{ term, definition? }` rows; `inboundCommunication`/`outboundCommunication` are lists of lanes; `assumptions`, `verificationMetrics`, `openQuestions` are plain string arrays (one-liner stickies).
-- **Lane:** `{ collaborator, relationship?, messages }`. `collaborator` is a plain name string — no `kind` field. `relationship` is a single optional escape-hatched string (context-mapping pattern); it only applies when the collaborator is another bounded context, but nothing enforces that — the distinction stays glossary prose.
+- **Sections:** `name` and `purpose` are strings (`purpose` is upstream's own v4→v5 rename, adopted at version 2); `strategicClassification` is an object of three optional axes; `domainRoles` are `{ name }` rows — no per-role description (sign-off amendment to the schema decision: the trait one-liners are app-side teaching text, never file content, and no approved interaction writes a per-role description); `businessDecisions` are `{ name, description? }` rows; `ubiquitousLanguage` is `{ term, definition? }` rows; `inboundCommunication`/`outboundCommunication` are lists of lanes; `assumptions`, `verificationMetrics`, `openQuestions` are plain string arrays (one-liner stickies).
+- **Lane:** `{ collaborator, relationship?, messages }`. `collaborator` is `{ name, kind? }` — the kind belongs to the collaborator, the relationship to the boundary, so they live on different levels. `kind` is optional and **closed**: `bounded-context | external-system | frontend | user`, canonical's four collaborator types; a lane without one renders with no icon, and an absent kind means unclassified, not bounded-context. `relationship` is `{ theirs?, ours? }` — the context-mapping pattern read from each end of the boundary, the collaborator's side and this context's, both optional escape-hatched strings. A symmetric pattern carries the same word at both ends; an asymmetric one carries two, which is the case a single string could not express. `theirs` serializes first, the order the sheet draws them. A relationship with neither end is omitted whole.
 - **Message row:** `{ type, name, description? }`; `type` is a genuinely **closed** enum `command | query | event` — no escape hatch (it carries the Event Storming color semantics).
+- **Closed where the value drives a rendering, lax everywhere else.** `type` picks a chip color and `kind` picks an icon, so those two sets are closed; classification axes, relationship ends and domain roles accept any string, matching canonical, which never closes those sets either.
 - **Escape hatch = single string field.** Curated values are canonical well-known strings; any other string is a custom value the UI renders as-is. No tagged unions. Unknown values round-trip by construction.
 - **No row ids** — the file is pure content; runtime keys are ephemeral (§6.1). No metadata envelope: no timestamps, no generator string.
-- **Presence:** all eleven section keys always present (empty arrays/strings, never missing). Optional fields (`description`, `definition`, `relationship`, unset classification axes) are omitted entirely, never `null`.
+- **Presence:** all eleven section keys always present (empty arrays/strings, never missing). Optional fields (`description`, `definition`, `kind`, `relationship` and each of its ends, unset classification axes) are omitted entirely, never `null`.
 - **Deterministic serialization:** 2-space indent, fixed key order — an unchanged canvas serializes byte-identically.
 
 ### 3.3 Versioning & migration
 
-- Integer root `version` (currently `1`); ordered raw-JSON migrations applied on load.
+- Integer root `version` (currently `2`); ordered raw-JSON migrations applied on load.
+- **v1 → v2** (the first migration ever run): `description` → `purpose`, `collaborator` string → `{ name }`, and a v1 `relationship` string lands on **`ours`, uniformly, with no interpretation**. The rule is deliberately not "that is what people meant" — the nine teaching one-liners are written from mixed perspectives, so no single side ever was. It carries because both ends are optional free text: a wrong guess renders visibly on the lane and is one pick to correct, with nothing lost. The migration never rewrites free text (an off-vocabulary domain role survives as typed), and a migrated import lands **clean, not dirty** — the file on disk still opens, and nothing the user typed is unsaved.
 - Files with a version **newer** than the app knows are **refused** with a clear message (§10) and never mutated — no best-effort parsing.
 - A missing/unparsable structure is refused as "not a Canvas file" (§10).
-- **One validator, two levels of disclosure.** A "not a Canvas file" refusal also carries an optional `detail`: one line naming the offending field and what was expected there — `inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification".` — with paths written the way a developer would type them to reach the value, and a full stop on the end so a caller can join it with sentences of its own. The editor ignores it; the user sees the §10 sentence and nothing more. It exists so a non-interactive caller of the same parser can teach rather than merely refuse, from the same walk, so the two levels cannot describe different schemas.
+- **One validator, two levels of disclosure.** A "not a Canvas file" refusal also carries an optional `detail`: one line naming the offending field and what was expected there — `inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification".` — with paths written the way a developer would type them to reach the value (the v2 fields included: `inboundCommunication[0].collaborator.kind`, `outboundCommunication[0].relationship.theirs`), and a full stop on the end so a caller can join it with sentences of its own. The editor ignores it; the user sees the §10 sentence and nothing more. It exists so a non-interactive caller of the same parser can teach rather than merely refuse, from the same walk, so the two levels cannot describe different schemas.
 
 ### 3.4 File naming
 
@@ -326,7 +332,7 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
 **File-refusal notices:**
 
 > **This file is from a newer version of BC Canvas.**
-> It was exported with format version 3; this app reads up to version 1. The file hasn't been touched. Reload the page to pick up the latest app, then import again.
+> It was exported with format version 3; this app reads up to version 2. The file hasn't been touched. Reload the page to pick up the latest app, then import again.
 
 > **This file couldn't be read as a Canvas file.**
 > It isn't a Canvas file export, or it's been modified. Nothing was imported.

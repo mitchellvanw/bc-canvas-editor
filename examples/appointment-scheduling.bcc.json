@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "Appointment Scheduling",
-  "description": "Books patients into clinic slots and keeps no-shows down.",
+  "purpose": "Books patients into clinic slots and keeps no-shows down.",
   "strategicClassification": {
     "domain": "supporting",
     "businessModel": "cost-reduction",
@@ -14,8 +14,12 @@
   ],
   "inboundCommunication": [
     {
-      "collaborator": "Patient Portal",
-      "relationship": "open-host-service",
+      "collaborator": {
+        "name": "Patient Portal"
+      },
+      "relationship": {
+        "ours": "open-host-service"
+      },
       "messages": [
         {
           "type": "command",
@@ -32,7 +36,9 @@
       ]
     },
     {
-      "collaborator": "Front Desk",
+      "collaborator": {
+        "name": "Front Desk"
+      },
       "messages": [
         {
           "type": "command",
@@ -78,7 +84,9 @@
   ],
   "outboundCommunication": [
     {
-      "collaborator": "Reminders",
+      "collaborator": {
+        "name": "Reminders"
+      },
       "messages": [
         {
           "type": "event",
@@ -92,8 +100,12 @@
       ]
     },
     {
-      "collaborator": "Patient Records",
-      "relationship": "anticorruption-layer",
+      "collaborator": {
+        "name": "Patient Records"
+      },
+      "relationship": {
+        "ours": "anticorruption-layer"
+      },
       "messages": [
         {
           "type": "event",

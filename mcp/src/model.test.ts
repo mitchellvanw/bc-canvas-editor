@@ -27,7 +27,7 @@ import { extractEmbeddedCanvas } from '$lib/model/embed';
 import { parseCanvasFile } from '$lib/model/parse';
 import { serializeCanvasFile } from '$lib/model/serialize';
 
-const refusal = parseCanvasFile('{"version":1,"name":1}');
+const refusal = parseCanvasFile('{"version":2,"name":1}');
 process.stdout.write(
 	JSON.stringify({
 		version: CANVAS_VERSION,
@@ -35,9 +35,9 @@ process.stdout.write(
 		relationships: PICK_OPTIONS.relationship.length,
 		detail: refusal.ok ? null : refusal.detail,
 		bytes: serializeCanvasFile({
-			version: 1,
+			version: 2,
 			name: 'Orders',
-			description: '',
+			purpose: '',
 			strategicClassification: {},
 			domainRoles: [],
 			inboundCommunication: [],
@@ -72,11 +72,11 @@ describe('the model layer under Node', () => {
 
 		const out = JSON.parse(execFileSync(process.execPath, [outfile], { encoding: 'utf8' }));
 
-		expect(out.version).toBe(1);
+		expect(out.version).toBe(2);
 		expect(out.domains).toEqual(['core', 'supporting', 'generic']);
 		expect(out.relationships).toBeGreaterThan(0);
 		expect(out.detail).toBe('name: expected a string, got a number.');
-		expect(out.bytes).toBe('{\n  "version": 1');
+		expect(out.bytes).toBe('{\n  "version": 2');
 		expect(out.embedded).toBe(null);
 	});
 });

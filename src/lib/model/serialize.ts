@@ -11,9 +11,11 @@ import type {
 	BusinessDecision,
 	CanvasDoc,
 	CanvasFile,
-	DomainRole,
+	Collaborator,
 	Lane,
 	Message,
+	DomainRole,
+	Relationship,
 	StrategicClassification,
 	UbiquitousTerm
 } from '$lib/model/canvas';
@@ -30,10 +32,31 @@ function fileMessage(message: Message): Message {
 	};
 }
 
+function fileCollaborator(collaborator: Collaborator): Collaborator {
+	return {
+		name: collaborator.name,
+		...(collaborator.kind !== undefined && { kind: collaborator.kind })
+	};
+}
+
+/**
+ * `theirs` before `ours` — the fixed key order doubles as teaching: a reader
+ * of the raw JSON meets the two ends in the order the sheet draws them,
+ * collaborator's side first. A relationship with neither end is omitted whole.
+ */
+function fileRelationship(relationship: Relationship | undefined): { relationship?: Relationship } {
+	if (relationship === undefined) return {};
+	const kept = {
+		...(present(relationship.theirs) && { theirs: relationship.theirs }),
+		...(present(relationship.ours) && { ours: relationship.ours })
+	};
+	return Object.keys(kept).length === 0 ? {} : { relationship: kept };
+}
+
 function fileLane(lane: Lane): Lane {
 	return {
-		collaborator: lane.collaborator,
-		...(present(lane.relationship) && { relationship: lane.relationship }),
+		collaborator: fileCollaborator(lane.collaborator),
+		...fileRelationship(lane.relationship),
 		messages: lane.messages.map(fileMessage)
 	};
 }
@@ -57,7 +80,7 @@ export function toCanvasFile(doc: CanvasFile): CanvasFile {
 	return {
 		version: doc.version,
 		name: doc.name,
-		description: doc.description,
+		purpose: doc.purpose,
 		strategicClassification: fileClassification(doc.strategicClassification),
 		domainRoles: doc.domainRoles.map((role): DomainRole => ({ name: role.name })),
 		inboundCommunication: doc.inboundCommunication.map(fileLane),

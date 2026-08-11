@@ -142,7 +142,7 @@ describe('ghost adds', () => {
 		click(button(section(el, 'inbound'), '+ collaborator'));
 		expect(canvas.doc.inboundCommunication).toHaveLength(2);
 		const lane = canvas.doc.inboundCommunication[1];
-		expect(lane.collaborator).toBe('');
+		expect(lane.collaborator).toEqual({ name: '' });
 		expect(lane.messages).toEqual([]);
 		expect(lane.id).toBeTruthy();
 		expect(setItem).toHaveBeenCalledTimes(1);
@@ -280,7 +280,11 @@ describe('drag reorder', () => {
 
 	it('reorders lanes within their section by grip in one commit', () => {
 		const doc = referenceDoc();
-		doc.inboundCommunication.push({ id: 'lane-billing', collaborator: 'Billing', messages: [] });
+		doc.inboundCommunication.push({
+			id: 'lane-billing',
+			collaborator: { name: 'Billing' },
+			messages: []
+		});
 		canvas.replace(doc);
 		const el = render();
 
@@ -296,7 +300,7 @@ describe('drag reorder', () => {
 		pointer('pointermove', window, 5, 180);
 		pointer('pointerup', window, 5, 180);
 
-		expect(canvas.doc.inboundCommunication.map((l) => l.collaborator)).toEqual([
+		expect(canvas.doc.inboundCommunication.map((l) => l.collaborator.name)).toEqual([
 			'Billing',
 			'Checkout'
 		]);
