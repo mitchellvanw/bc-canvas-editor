@@ -3,7 +3,7 @@
 Ticket: none (exploratory, at Mitchell's request).
 Researched: 2026-08-10, against primary sources (the `ddd-crew/bounded-context-canvas` repository at `master` — README, `resources/`, `tools/`, the git history of the v5 change — plus `ddd-crew/context-mapping`). Every canonical claim below cites the file it came from. Claims not confirmed against a primary source are marked **[unverified]**.
 
-Context: BC Canvas advertises itself as an editor for "the ddd-crew Bounded Context Canvas (V5 canonical layout)" (`SPEC.md:3`, `README.md:3`) and stamps `Bounded Context Canvas · V5` into the sheet's title block (`src/lib/sheet/CanvasSheet.svelte:211`). Mitchell noticed two apparent departures: no explicit **Strategic Classification** heading, and **Description** where v5 says **Purpose**. This note establishes what v5 actually specifies, reads what this repo actually implements, and lists every deviation. It proposes nothing.
+Context: BC Canvas advertises itself as an editor for "the ddd-crew Bounded Context Canvas (V5 canonical layout)" (`SPEC.md:3`; `README.md:3` links the canvas without repeating the version claim) and stamps `Bounded Context Canvas · V5` into the sheet's title block (`src/lib/sheet/CanvasSheet.svelte:211`). Mitchell noticed two apparent departures: no explicit **Strategic Classification** heading, and **Description** where v5 says **Purpose**. This note establishes what v5 actually specifies, reads what this repo actually implements, and lists every deviation. It proposes nothing.
 
 ---
 
