@@ -12,18 +12,20 @@
 
 import type { StrategicClassification } from '$lib/model/canvas';
 
-/** Which curated vocabulary (SPEC §4) a pick-one location draws from. */
-export type PickKind = keyof StrategicClassification | 'relationship';
+/**
+ * Which curated vocabulary (SPEC §4) a pick-one location draws from. Both ends
+ * of a lane's relationship share `relationship` — one boundary, one vocabulary;
+ * `collaboratorKind` is the one closed set (no custom…, SPEC §3.2).
+ */
+export type PickKind = keyof StrategicClassification | 'relationship' | 'collaboratorKind';
 
-/** A pick-one location: an axis value in the title block, a lane's relationship. */
+/** A pick-one location: a classification axis, a lane's kind or relationship end. */
 export interface PickSlot {
 	kind: PickKind;
-	/** Keys the popover open-state to this location (axis name, or the lane id). */
+	/** Keys the popover open-state to this location (axis name, or lane id + side). */
 	key: string;
 	/** Accessible name of the value button — the location's identity (SPEC §8.5). */
 	label: string;
-	/** Set on locations inside the ink title block, where editing chrome inverts. */
-	tone?: 'ink';
 	/** The committed value; undefined is unset and renders '—'. */
 	value: string | undefined;
 	/** Write a pick; undefined clears the field back to unset (SPEC §4.1). */

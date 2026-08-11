@@ -1,8 +1,9 @@
 /**
  * The sheet's regions for undo/redo reveal (SPEC §6.1): a commit touches
  * exactly one region of the CanvasSheet, so diffing two snapshots names the
- * panel to scroll into view and flash. The title block carries both the name
- * and the strategic classification; every other region is one grid panel.
+ * panel to scroll into view and flash. The title block carries only the name;
+ * every other region is one panel — the two centre-box sections answer to
+ * their panel classes, since the box holds the grid area.
  */
 
 import type { CanvasDoc } from '$lib/model/canvas';
@@ -20,12 +21,17 @@ const REGIONS = {
 	title: {
 		selector: '.quiet-sheet .tb',
 		name: 'Title block',
-		content: (doc) => [doc.name, doc.strategicClassification]
+		content: (doc) => doc.name
 	},
-	description: {
-		selector: '.quiet-sheet .area-description',
-		name: 'Description',
+	purpose: {
+		selector: '.quiet-sheet .area-purpose',
+		name: 'Purpose',
 		content: (doc) => doc.purpose
+	},
+	classification: {
+		selector: '.quiet-sheet .area-classification',
+		name: 'Strategic classification',
+		content: (doc) => doc.strategicClassification
 	},
 	roles: {
 		selector: '.quiet-sheet .area-roles',
@@ -38,12 +44,12 @@ const REGIONS = {
 		content: (doc) => doc.inboundCommunication
 	},
 	language: {
-		selector: '.quiet-sheet .area-language',
+		selector: '.quiet-sheet .panel--lang',
 		name: 'Ubiquitous language',
 		content: (doc) => doc.ubiquitousLanguage
 	},
 	decisions: {
-		selector: '.quiet-sheet .area-decisions',
+		selector: '.quiet-sheet .panel--decisions',
 		name: 'Business decisions',
 		content: (doc) => doc.businessDecisions
 	},

@@ -70,7 +70,7 @@ const ENTRIES: Record<SectionKey, Entry> = {
 	domainRoles: {
 		shape:
 			'An array of { "name": … }, usually one to three. Traits describe how the context behaves, not what it stores.',
-		vocabulary: ['The fifteen:', ...vocabularyLines(TRAITS)],
+		vocabulary: ['From the ddd-crew model-traits worksheet, plus one local addition:', ...vocabularyLines(TRAITS)],
 		rows: ['gateway context', 'analysis context']
 	},
 	inboundCommunication: {

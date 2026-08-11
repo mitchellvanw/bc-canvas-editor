@@ -36,23 +36,29 @@ const ARTIFACT_CSS = `
 body { margin: 0; }
 main { max-width: ${ARTIFACT_WIDTH}px; margin: 0 auto; padding: ${ARTIFACT_MARGIN}px; }
 
-/* One-column stack in reading order below the single breakpoint (SPEC §9.1). */
+/* One-column stack in reading order below the single breakpoint (SPEC §9.1).
+   The centre box is one stacked cell holding its two sections in order. */
 @media (max-width: ${STACK_BREAKPOINT}px) {
 	main { padding: 16px; }
 	article.quiet-sheet .grid {
 		grid-template-columns: 1fr;
 		grid-template-areas:
-			'description' 'roles' 'inbound' 'language' 'decisions'
+			'purpose' 'classification' 'roles' 'inbound' 'centre'
 			'outbound' 'assumptions' 'metrics' 'questions';
 	}
 }
 
-/* Minimal print pass: clean section breaks — printing is the PDF answer. */
+/* Minimal print pass: clean section breaks — printing is the PDF answer.
+   Sections keep together whether they sit in the grid or inside the centre
+   box; the box itself prefers to keep its pair on one page. */
 @media print {
 	main { max-width: none; padding: 0; }
 	article.quiet-sheet .grid { display: block; }
-	article.quiet-sheet .grid > section { break-inside: avoid; }
-	article.quiet-sheet .grid > section + section { margin-top: 18px; }
+	article.quiet-sheet .grid section,
+	article.quiet-sheet .centre { break-inside: avoid; }
+	article.quiet-sheet .grid > * + * { margin-top: 18px; }
+	article.quiet-sheet .centre { display: block; }
+	article.quiet-sheet .centre > section + section { margin-top: 18px; }
 	article.quiet-sheet .tb,
 	article.quiet-sheet .foot { break-inside: avoid; }
 }

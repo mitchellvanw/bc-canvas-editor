@@ -104,7 +104,7 @@ export const CANVAS_SHAPE = z.object({
 	domainRoles: z
 		.array(z.object({ name: z.string() }))
 		.describe(
-			`What kind of context this is — usually one to three traits. The fifteen: ${oneLiners(TRAITS)}. ${CUSTOM_OK}`
+			`What kind of context this is — usually one to three traits. From the ddd-crew model-traits worksheet, plus one local addition: ${oneLiners(TRAITS)}. ${CUSTOM_OK}`
 		),
 	inboundCommunication: z
 		.array(lane('that sends to this context'))

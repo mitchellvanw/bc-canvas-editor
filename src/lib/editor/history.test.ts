@@ -155,8 +155,8 @@ describe('undo/redo reports the affected region', () => {
 describe('changedRegion', () => {
 	const cases: [string, (doc: CanvasDoc) => void, string][] = [
 		['name', (doc) => (doc.name = 'Renamed'), 'title'],
-		['classification', (doc) => (doc.strategicClassification.domain = 'supporting'), 'title'],
-		['description', (doc) => (doc.purpose = 'Changed.'), 'description'],
+		['classification', (doc) => (doc.strategicClassification.domain = 'supporting'), 'classification'],
+		['purpose', (doc) => (doc.purpose = 'Changed.'), 'purpose'],
 		['domain roles', (doc) => doc.domainRoles.push({ id: newId(), name: 'gateway context' }), 'roles'],
 		['inbound lanes', (doc) => (doc.inboundCommunication[0].collaborator.name = 'Web'), 'inbound'],
 		['ubiquitous language', (doc) => (doc.ubiquitousLanguage[0].term = 'Parcel'), 'language'],

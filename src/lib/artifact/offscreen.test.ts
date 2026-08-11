@@ -33,7 +33,7 @@ describe('mountArtifactSheet', () => {
 		const el = mountReference();
 		expect(document.body.contains(el)).toBe(true);
 		expect(el.querySelector('h1')?.textContent).toBe('Order Fulfillment');
-		expect(el.querySelectorAll('h2')).toHaveLength(9);
+		expect(el.querySelectorAll('h2')).toHaveLength(10);
 		expect(el.querySelector('footer [data-legend]')).not.toBeNull();
 		expect(el.querySelector('footer')?.textContent).toContain('CC BY 4.0');
 	});

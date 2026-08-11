@@ -98,7 +98,7 @@ describe('every §3.1 free-text value is editable in place', () => {
 		const el = render();
 		const values = (label: string) => fields(el, label).map((f) => f.textContent);
 		expect(values('Name')).toEqual(['Order Fulfillment']);
-		expect(values('Description')).toEqual([
+		expect(values('Purpose')).toEqual([
 			'Coordinates picking, packing and shipping once an order is paid.'
 		]);
 		expect(values('Collaborator')).toEqual(['Checkout', 'Notifications']);
@@ -123,7 +123,7 @@ describe('every §3.1 free-text value is editable in place', () => {
 
 	it('marks prose fields multiline and single-line fields not (SPEC §6)', () => {
 		const el = render();
-		expect(field(el, 'Description').getAttribute('aria-multiline')).toBe('true');
+		expect(field(el, 'Purpose').getAttribute('aria-multiline')).toBe('true');
 		expect(field(el, 'Definition').getAttribute('aria-multiline')).toBe('true');
 		expect(field(el, 'Decision description').getAttribute('aria-multiline')).toBe('true');
 		for (const desc of fields(el, 'Message description')) {
@@ -137,7 +137,7 @@ describe('every §3.1 free-text value is editable in place', () => {
 describe('the commit grammar feeds the document and autosave', () => {
 	it('commits a prose edit on blur and the change survives reload via autosave', () => {
 		const el = render();
-		editAndBlur(field(el, 'Description'), 'Ships whatever was paid for.');
+		editAndBlur(field(el, 'Purpose'), 'Ships whatever was paid for.');
 		expect(canvas.doc.purpose).toBe('Ships whatever was paid for.');
 		expect(canvas.unexported).toBe(true);
 		expect(localStorage.getItem(AUTOSAVE_KEY)).toContain('Ships whatever was paid for.');
@@ -169,7 +169,7 @@ describe('the commit grammar feeds the document and autosave', () => {
 
 	it('lets Enter insert newlines in prose fields without committing', () => {
 		const el = render();
-		const event = press(field(el, 'Description'), 'Enter');
+		const event = press(field(el, 'Purpose'), 'Enter');
 		expect(event.defaultPrevented).toBe(false);
 		expect(canvas.unexported).toBe(false);
 	});

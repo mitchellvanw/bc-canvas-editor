@@ -1,7 +1,7 @@
 <script lang="ts">
 	/**
-	 * The domain-role trait checklist (SPEC §4.2, §8.3): a checkbox group of
-	 * the 15 traits with their one-line descriptions, plus a custom-trait input
+	 * The domain-role trait checklist (SPEC §4.3, §8.3): a checkbox group of
+	 * the worksheet traits with their one-line descriptions, plus a custom-trait input
 	 * behind custom… last. Space (or Enter) toggles — each toggle one commit —
 	 * and the popover stays open until Esc or blur, so several traits go on in
 	 * one visit. Arrows move, type-ahead jumps; Enter on custom… moves into the
@@ -25,7 +25,7 @@
 		onCancel: () => void;
 	} = $props();
 
-	// The rows: the 15 traits, then custom… last (§8.3).
+	// The rows: the worksheet traits, then custom… last (§8.3).
 	const customIndex = TRAITS.length;
 
 	let active = $state(0);
@@ -184,7 +184,7 @@
 		font-size: 0.76rem;
 		font-weight: 600;
 	}
-	/* File values are lowercase prose; displayed sentence-case (SPEC §4.2). */
+	/* File values are lowercase prose; displayed sentence-case (SPEC §4.3). */
 	.picker__value::first-letter {
 		text-transform: uppercase;
 	}

@@ -1,10 +1,36 @@
 <script lang="ts" module>
-	import type { MessageType } from '$lib/model/canvas';
+	import type { CollaboratorKind, MessageType } from '$lib/model/canvas';
 
 	// One uniform chip shape; type is carried by color + glyph (SPEC §5). The
 	// sheet is the canonical visual truth, so the editor's type popover imports
 	// this map rather than re-encoding it.
 	export const GLYPHS: Record<MessageType, string> = { command: '▶', query: '?', event: '◆' };
+
+	/**
+	 * The four canonical collaborator kinds as stroke icons — cloud, gear,
+	 * monitor, person, per upstream's collaborator-types drawing (SPEC §5) —
+	 * keyed in the footer legend. `label` is the spoken meaning (sr-only prefix,
+	 * legend entry, the kind picker's value text). Like GLYPHS, the editor
+	 * imports this map rather than re-encoding it.
+	 */
+	export const KIND_META: Record<CollaboratorKind, { label: string; icon: string }> = {
+		'bounded-context': {
+			label: 'Bounded context',
+			icon: '<path d="M4.6 12h6.2a2.6 2.6 0 0 0 .3-5.18A3.65 3.65 0 0 0 4.3 6.9 2.55 2.55 0 0 0 4.6 12Z"/>'
+		},
+		'external-system': {
+			label: 'External system',
+			icon: '<circle cx="8" cy="8" r="2.3"/><path d="M8 1.4v1.9M8 12.7v1.9M1.4 8h1.9M12.7 8h1.9M3.35 3.35l1.35 1.35M11.3 11.3l1.35 1.35M12.65 3.35 11.3 4.7M4.7 11.3l-1.35 1.35"/>'
+		},
+		frontend: {
+			label: 'Frontend',
+			icon: '<rect x="1.9" y="2.9" width="12.2" height="8.3" rx="1.1"/><path d="M6 13.7h4M8 11.2v2.5"/>'
+		},
+		user: {
+			label: 'Direct user interaction',
+			icon: '<circle cx="8" cy="5.1" r="2.4"/><path d="M3.3 13.3a4.7 4.7 0 0 1 9.4 0"/>'
+		}
+	};
 </script>
 
 <script lang="ts">
@@ -16,14 +42,17 @@
 	 * every free-text location, the structural seams of ticket 06 — a
 	 * RemoveSlot on every removable item, an AddSlot ghost per repeating
 	 * section, a MessageAddSlot per lane, a grip per lane — and the picker
-	 * seams of ticket 07: a PickSlot on every classification axis and lane
-	 * relationship, a TraitSlot on the domain-role set. Without the snippets
-	 * every slot renders its plain value and no chrome exists.
+	 * seams of ticket 07: a PickSlot on every classification axis, lane kind
+	 * and lane relationship end, a TraitSlot on the domain-role set. Without
+	 * the snippets every slot renders its plain value and no chrome exists.
 	 *
 	 * Palette pairs are AA-verified by contrast.test.ts; secondary text uses
-	 * ink-soft (the prototype's faint gray fails AA and is decorative-only).
+	 * ink-soft (the prototype's faint gray fails AA and is decorative-only) —
+	 * which is also why the relationship pair's set-back side is ink-soft, not
+	 * the mockup's ink-faint.
 	 */
 	import type { Snippet } from 'svelte';
+	import { CAUTION_TRAITS } from '$lib/editor/vocab';
 	import { newId, type CanvasDoc, type LaneRow } from '$lib/model/canvas';
 	import type { PickSlot, TraitSlot } from './pick-slots';
 	import type { AddSlot, MessageAddSlot, RemoveSlot } from './structure-slots';
@@ -52,7 +81,8 @@
 	const REPO_URL = 'https://github.com/ddd-crew/bounded-context-canvas';
 	const LICENSE_URL = 'https://creativecommons.org/licenses/by/4.0/';
 
-	// Legend order and wording per SPEC §10.
+	// Legend order and wording per SPEC §10; the kind icons and the
+	// relationship-pair key follow in the footer markup.
 	const LEGEND = [
 		{ meaning: 'command', label: 'command' },
 		{ meaning: 'query', label: 'query' },
@@ -71,6 +101,18 @@
 		return { label: count ? terse : question, teaching: count === 0 };
 	}
 
+	/**
+	 * Write one end of the lane's relationship; the pair collapses to absent
+	 * when both ends clear, so an untouched lane serializes without the key
+	 * (SPEC §3.2). Doc key order is free — the serializer writes theirs first.
+	 */
+	function setRelationshipEnd(lane: LaneRow, side: 'theirs' | 'ours', value: string | undefined) {
+		const next = { ...lane.relationship, [side]: value };
+		if (next.theirs === undefined) delete next.theirs;
+		if (next.ours === undefined) delete next.ours;
+		lane.relationship = next.theirs === undefined && next.ours === undefined ? undefined : next;
+	}
+
 	const axes = $derived([
 		{ kind: 'domain' as const, label: 'Domain', value: doc.strategicClassification.domain },
 		{
@@ -84,6 +126,22 @@
 
 {#snippet text(slot: TextSlot)}{#if field}{@render field(slot)}{:else}{slot.value}{/if}{/snippet}
 
+{#snippet kindIcon(kind: CollaboratorKind, size: 'lane' | 'key')}
+	<svg
+		class={size === 'lane' ? 'kind__svg' : 'key__svg'}
+		viewBox="0 0 16 16"
+		fill="none"
+		stroke="currentColor"
+		stroke-width={size === 'lane' ? 1.3 : 1.4}
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		aria-hidden="true"
+	>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- static icon paths from KIND_META -->
+		{@html KIND_META[kind].icon}
+	</svg>
+{/snippet}
+
 {#snippet communication(label: string, lanes: LaneRow[], area: string, question: string)}
 	<section class="panel panel--collab {area}">
 		<h2 class="panel__label">{label}</h2>
@@ -95,6 +153,20 @@
 							<div class="lane__head">
 								{#if grip}{@render grip()}{/if}
 								<h3 class="lane__who">
+									{#if pickValue}
+										{@render pickValue({
+											kind: 'collaboratorKind',
+											key: `${lane.id}:kind`,
+											label: `Collaborator kind for ${lane.collaborator.name}`.trim(),
+											value: lane.collaborator.kind,
+											set: (value) =>
+												(lane.collaborator.kind = value as CollaboratorKind | undefined)
+										})}
+									{:else if lane.collaborator.kind}
+										<span class="kind" aria-hidden="true"
+											>{@render kindIcon(lane.collaborator.kind, 'lane')}</span
+										><span class="sr-only">{`${KIND_META[lane.collaborator.kind].label}: `}</span>
+									{/if}
 									{@render text({
 										value: lane.collaborator.name,
 										label: 'Collaborator',
@@ -107,29 +179,45 @@
 									type: 'Collaborator',
 									remove: () => lanes.splice(laneIndex, 1)
 								})}
-								{#if pickValue}
-									<span class="lane__rel">
+							</div>
+							<!-- The two-sided relationship (SPEC §5): collaborator's side
+							     first, set back; this context's steps forward. The arrow is
+							     reading order across the boundary — never message flow — so
+							     it points the same way in both panels. Weight and order say
+							     nothing to a screen reader; the sr-only prefixes do. -->
+							{#if pickValue}
+								<p class="rel" class:rel--unset={lane.relationship === undefined}>
+									<span class="rel__theirs">
 										{@render pickValue({
 											kind: 'relationship',
-											key: lane.id,
-											label: `Relationship for ${lane.collaborator.name}`.trim(),
+											key: `${lane.id}:theirs`,
+											label: `Their relationship for ${lane.collaborator.name}`.trim(),
+											value: lane.relationship?.theirs,
+											set: (value) => setRelationshipEnd(lane, 'theirs', value)
+										})}
+									</span><span class="rel__arrow" aria-hidden="true">→</span><span
+										class="rel__ours"
+									>
+										{@render pickValue({
+											kind: 'relationship',
+											key: `${lane.id}:ours`,
+											label: `Our relationship for ${lane.collaborator.name}`.trim(),
 											value: lane.relationship?.ours,
-											set: (value) => {
-												const theirs = lane.relationship?.theirs;
-												lane.relationship =
-													theirs === undefined && value === undefined
-														? undefined
-														: {
-																...(theirs !== undefined && { theirs }),
-																...(value !== undefined && { ours: value })
-															};
-											}
+											set: (value) => setRelationshipEnd(lane, 'ours', value)
 										})}
 									</span>
-								{:else if lane.relationship?.ours}<span class="lane__rel"
-										>{lane.relationship.ours}</span
-									>{/if}
-							</div>
+								</p>
+							{:else if lane.relationship}
+								<p class="rel">
+									{#if lane.relationship.theirs !== undefined}<span class="sr-only"
+											>{'Collaborator: '}</span
+										><span class="rel__theirs">{lane.relationship.theirs}</span
+										>{/if}<span class="rel__arrow" aria-hidden="true">→</span
+									>{#if lane.relationship.ours !== undefined}<span class="sr-only"
+											>{'this context: '}</span
+										><span class="rel__ours">{lane.relationship.ours}</span>{/if}
+								</p>
+							{/if}
 							{#if lane.messages.length > 0}
 								<ul class="msgs">
 									{#each lane.messages as message, messageIndex (message.id)}
@@ -171,6 +259,101 @@
 				...ghostFace(lanes.length, '+ collaborator', question),
 				focusField: 'Collaborator',
 				add: () => lanes.push({ id: newId(), collaborator: { name: '' }, messages: [] })
+			})}
+		</div>
+	</section>
+{/snippet}
+
+{#snippet languageSection()}
+	<section class="panel panel--lang">
+		<h2 class="panel__label">Ubiquitous language</h2>
+		<div class="panel__body">
+			{#if doc.ubiquitousLanguage.length > 0}
+				<dl class="terms">
+					{#each doc.ubiquitousLanguage as entry, index (entry.id)}
+						<div class="terms__row">
+							<dt>
+								{@render text({
+									value: entry.term,
+									label: 'Term',
+									placeholder: 'Term',
+									set: (value) => (entry.term = value)
+								})}{@render removeItem?.({
+									label: `Remove term ${entry.term}`.trim(),
+									type: 'Term',
+									remove: () => doc.ubiquitousLanguage.splice(index, 1)
+								})}
+							</dt>
+							{#if field || entry.definition}
+								<dd>
+									{@render text({
+										value: entry.definition ?? '',
+										label: 'Definition',
+										placeholder: 'What it means here',
+										multiline: true,
+										set: (value) => (entry.definition = value)
+									})}
+								</dd>
+							{/if}
+						</div>
+					{/each}
+				</dl>
+			{/if}
+			{@render addItem?.({
+				...ghostFace(
+					doc.ubiquitousLanguage.length,
+					'+ term',
+					'+ term — which words mean something precise here?'
+				),
+				focusField: 'Term',
+				add: () => doc.ubiquitousLanguage.push({ id: newId(), term: '' })
+			})}
+		</div>
+	</section>
+{/snippet}
+
+{#snippet decisionsSection()}
+	<section class="panel panel--decisions">
+		<h2 class="panel__label">Business decisions</h2>
+		<div class="panel__body">
+			{#if doc.businessDecisions.length > 0}
+				<ul class="stack stack--policy">
+					{#each doc.businessDecisions as decision, index (decision.id)}
+						<li>
+							<b
+								>{@render text({
+									value: decision.name,
+									label: 'Decision',
+									placeholder: 'Rule',
+									set: (value) => (decision.name = value)
+								})}</b
+							>
+							{#if field || decision.description}<span class="stack__detail"
+									>{@render text({
+										value: decision.description ?? '',
+										label: 'Decision description',
+										placeholder: 'detail',
+										multiline: true,
+										set: (value) => (decision.description = value)
+									})}</span
+								>{/if}
+							{@render removeItem?.({
+								label: `Remove decision ${decision.name}`.trim(),
+								type: 'Decision',
+								remove: () => doc.businessDecisions.splice(index, 1)
+							})}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+			{@render addItem?.({
+				...ghostFace(
+					doc.businessDecisions.length,
+					'+ decision',
+					'+ decision — which rules does this context enforce?'
+				),
+				focusField: 'Decision',
+				add: () => doc.businessDecisions.push({ id: newId(), name: '' })
 			})}
 		</div>
 	</section>
@@ -230,34 +413,17 @@
 				})}
 			</h1>
 		</div>
-		<dl class="tb__class">
-			{#each axes as axis (axis.label)}
-				<div>
-					<dt>{axis.label}</dt>
-					<dd>
-						{#if pickValue}{@render pickValue({
-								kind: axis.kind,
-								key: axis.kind,
-								label: axis.label,
-								tone: 'ink',
-								value: axis.value,
-								set: (value) => (doc.strategicClassification[axis.kind] = value)
-							})}{:else}{axis.value ?? '—'}{/if}
-					</dd>
-				</div>
-			{/each}
-		</dl>
 	</header>
 
 	<div class="grid">
-		<section class="panel area-description">
-			<h2 class="panel__label">Description</h2>
+		<section class="panel area-purpose">
+			<h2 class="panel__label">Purpose</h2>
 			<div class="panel__body">
 				{#if field || doc.purpose}
 					<p class="prose">
 						{@render text({
 							value: doc.purpose,
-							label: 'Description',
+							label: 'Purpose',
 							placeholder:
 								'What does this context exist to do? A few sentences in business language.',
 							multiline: true,
@@ -268,14 +434,39 @@
 			</div>
 		</section>
 
+		<section class="panel area-classification">
+			<h2 class="panel__label">Strategic classification</h2>
+			<div class="panel__body">
+				<dl class="axes">
+					{#each axes as axis (axis.label)}
+						<div>
+							<dt>{axis.label}</dt>
+							<dd>
+								{#if pickValue}{@render pickValue({
+										kind: axis.kind,
+										key: axis.kind,
+										label: axis.label,
+										value: axis.value,
+										set: (value) => (doc.strategicClassification[axis.kind] = value)
+									})}{:else}{axis.value ?? '—'}{/if}
+							</dd>
+						</div>
+					{/each}
+				</dl>
+			</div>
+		</section>
+
 		<section class="panel area-roles">
 			<h2 class="panel__label">Domain roles</h2>
 			<div class="panel__body">
 				{#if doc.domainRoles.length > 0}
 					<ul class="roles">
 						{#each doc.domainRoles as role, index (role.id)}
-							<li class="role">
-								{role.name}{@render removeItem?.({
+							<li class="role" class:role--caution={CAUTION_TRAITS.has(role.name)}>
+								{role.name}{#if CAUTION_TRAITS.has(role.name)}<span
+										class="role__caution"
+										aria-hidden="true">⚠</span
+									><span class="sr-only"> — likely anti-pattern</span>{/if}{@render removeItem?.({
 									label: `Remove trait ${role.name}`.trim(),
 									type: 'Trait',
 									remove: () => doc.domainRoles.splice(index, 1)
@@ -307,96 +498,13 @@
 			'+ collaborator — who sends this context commands, queries or events?'
 		)}
 
-		<section class="panel panel--lang area-language">
-			<h2 class="panel__label">Ubiquitous language</h2>
-			<div class="panel__body">
-				{#if doc.ubiquitousLanguage.length > 0}
-					<dl class="terms">
-						{#each doc.ubiquitousLanguage as entry, index (entry.id)}
-							<div class="terms__row">
-								<dt>
-									{@render text({
-										value: entry.term,
-										label: 'Term',
-										placeholder: 'Term',
-										set: (value) => (entry.term = value)
-									})}{@render removeItem?.({
-										label: `Remove term ${entry.term}`.trim(),
-										type: 'Term',
-										remove: () => doc.ubiquitousLanguage.splice(index, 1)
-									})}
-								</dt>
-								{#if field || entry.definition}
-									<dd>
-										{@render text({
-											value: entry.definition ?? '',
-											label: 'Definition',
-											placeholder: 'What it means here',
-											multiline: true,
-											set: (value) => (entry.definition = value)
-										})}
-									</dd>
-								{/if}
-							</div>
-						{/each}
-					</dl>
-				{/if}
-				{@render addItem?.({
-					...ghostFace(
-						doc.ubiquitousLanguage.length,
-						'+ term',
-						'+ term — which words mean something precise here?'
-					),
-					focusField: 'Term',
-					add: () => doc.ubiquitousLanguage.push({ id: newId(), term: '' })
-				})}
-			</div>
-		</section>
-
-		<section class="panel panel--decisions area-decisions">
-			<h2 class="panel__label">Business decisions</h2>
-			<div class="panel__body">
-				{#if doc.businessDecisions.length > 0}
-					<ul class="stack stack--policy">
-						{#each doc.businessDecisions as decision, index (decision.id)}
-							<li>
-								<b
-									>{@render text({
-										value: decision.name,
-										label: 'Decision',
-										placeholder: 'Rule',
-										set: (value) => (decision.name = value)
-									})}</b
-								>
-								{#if field || decision.description}<span class="stack__detail"
-										>{@render text({
-											value: decision.description ?? '',
-											label: 'Decision description',
-											placeholder: 'detail',
-											multiline: true,
-											set: (value) => (decision.description = value)
-										})}</span
-									>{/if}
-								{@render removeItem?.({
-									label: `Remove decision ${decision.name}`.trim(),
-									type: 'Decision',
-									remove: () => doc.businessDecisions.splice(index, 1)
-								})}
-							</li>
-						{/each}
-					</ul>
-				{/if}
-				{@render addItem?.({
-					...ghostFace(
-						doc.businessDecisions.length,
-						'+ decision',
-						'+ decision — which rules does this context enforce?'
-					),
-					focusField: 'Decision',
-					add: () => doc.businessDecisions.push({ id: newId(), name: '' })
-				})}
-			</div>
-		</section>
+		<!-- The canonical template draws these two inside one outer rectangle —
+		     layout, not nesting (SPEC §5): a hairline around the pair, and the
+		     two stay separate sections with their own h2s. -->
+		<div class="centre area-centre">
+			{@render languageSection()}
+			{@render decisionsSection()}
+		</div>
 
 		{@render communication(
 			'Outbound communication',
@@ -439,6 +547,19 @@
 			{#each LEGEND as entry (entry.meaning)}
 				<li><span class="key__swatch" data-meaning={entry.meaning} aria-hidden="true"></span>{entry.label}</li>
 			{/each}
+			{#each Object.keys(KIND_META) as kind (kind)}
+				<li>
+					<span class="key__icon"
+						>{@render kindIcon(kind as CollaboratorKind, 'key')}</span
+					>{KIND_META[kind as CollaboratorKind].label.toLowerCase()}
+				</li>
+			{/each}
+			<li
+				><span class="sr-only">{'relationship: '}</span><span class="key__theirs">theirs</span><span
+					class="key__arrow"
+					aria-hidden="true">→</span
+				><span class="key__ours">ours</span></li
+			>
 		</ul>
 		<p class="note">
 			Based on the <a href={REPO_URL}>Bounded Context Canvas by the ddd-crew</a> · <a
@@ -456,7 +577,7 @@
 		line-height: 1.5;
 	}
 
-	/* ---- title block (SPEC §5): ink block, eyebrow, name, classification ---- */
+	/* ---- title block (SPEC §5): ink block, eyebrow, name ---- */
 	.tb {
 		display: flex;
 		flex-wrap: wrap;
@@ -490,39 +611,22 @@
 		letter-spacing: 0.01em;
 		min-height: 1.1em;
 	}
-	.tb__class {
-		display: flex;
-		gap: 2.2rem;
-		margin: 0;
-	}
-	.tb__class dt {
-		margin: 0 0 0.25rem;
-		font-family: var(--font-sans);
-		font-size: 0.57rem;
-		font-weight: 600;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-		opacity: 0.6;
-	}
-	.tb__class dd {
-		margin: 0;
-		font-family: var(--font-mono);
-		font-size: 0.8rem;
-	}
 
-	/* ---- the V5 canonical 12-column grid (SPEC §5) ---- */
+	/* ---- the V5 canonical 12-column grid (SPEC §5): ten panels ---- */
 	.grid {
 		display: grid;
 		gap: var(--gap);
 		grid-template-columns: repeat(12, 1fr);
 		grid-template-areas:
-			'description description description description description description description roles roles roles roles roles'
-			'inbound inbound inbound inbound language language language language outbound outbound outbound outbound'
-			'inbound inbound inbound inbound decisions decisions decisions decisions outbound outbound outbound outbound'
+			'purpose purpose purpose purpose purpose classification classification classification classification roles roles roles'
+			'inbound inbound inbound inbound centre centre centre centre outbound outbound outbound outbound'
 			'assumptions assumptions assumptions assumptions metrics metrics metrics metrics questions questions questions questions';
 	}
-	.area-description {
-		grid-area: description;
+	.area-purpose {
+		grid-area: purpose;
+	}
+	.area-classification {
+		grid-area: classification;
 	}
 	.area-roles {
 		grid-area: roles;
@@ -530,11 +634,8 @@
 	.area-inbound {
 		grid-area: inbound;
 	}
-	.area-language {
-		grid-area: language;
-	}
-	.area-decisions {
-		grid-area: decisions;
+	.area-centre {
+		grid-area: centre;
 	}
 	.area-outbound {
 		grid-area: outbound;
@@ -593,6 +694,43 @@
 		line-height: 1.55;
 	}
 
+	/* ---- strategic classification: the tenth panel ---- */
+	/* The title block's own idiom, kept verbatim on the panel: spaced-caps
+	   label, mono value, no fill and no box — the finding was about where
+	   classification lives, not how it looks. */
+	.axes {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-rows: auto auto;
+		gap: 0.45rem 0.9rem;
+		margin: 0;
+	}
+	/* Subgrid keeps the three sub-labels on one row, so the values share a
+	   baseline even when "Business model" wraps. */
+	.axes > div {
+		display: grid;
+		grid-row: span 2;
+		grid-template-rows: subgrid;
+		align-content: start;
+		min-width: 0;
+	}
+	.axes dt {
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: 0.57rem;
+		font-weight: 600;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--color-ink-soft);
+	}
+	.axes dd {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		line-height: 1.35;
+		overflow-wrap: break-word;
+	}
+
 	/* ---- domain roles ---- */
 	.roles {
 		display: flex;
@@ -614,6 +752,20 @@
 	.role::first-letter {
 		text-transform: uppercase;
 	}
+	/* The worksheet flags the trait "(likely anti-pattern)": a caution ring in
+	   hotspot ink so an exported PNG carries the warning (pair AA-gated in
+	   contrast.test.ts; the wash is the hotspot fill at 8%). */
+	.role--caution {
+		border-color: var(--color-hotspot-ink);
+		color: var(--color-hotspot-ink);
+		background: rgb(247 107 163 / 0.08);
+	}
+	.role__caution {
+		margin-left: 0.4em;
+		font-family: var(--font-mono);
+		font-size: 0.86em;
+		font-weight: 400;
+	}
 
 	/* ---- communication lanes ---- */
 	.lanes {
@@ -633,6 +785,9 @@
 		gap: 0.45rem;
 	}
 	.lane__who {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.4rem;
 		margin: 0;
 		padding-bottom: 0.1rem;
 		border-bottom: 2px solid var(--color-collaborator);
@@ -641,13 +796,42 @@
 		font-weight: 600;
 		color: var(--color-collaborator-ink);
 	}
-	.lane__rel {
-		margin-left: auto;
+	.kind {
+		flex: none;
+		align-self: center;
+		width: 15px;
+		height: 15px;
+		color: var(--color-collaborator-ink);
+	}
+	.kind :global(.kind__svg) {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	/* The two-sided relationship: theirs set back in ink-soft (the sheet's
+	   AA-passing secondary text — ink-faint is decorative-only), ours forward
+	   in full ink at 500. The pair works without labels because order is fixed
+	   and the footer legend keys it. */
+	.rel {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.34rem;
+		margin: 0.45rem 0 0;
 		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.06em;
-		white-space: nowrap;
+		font-size: 0.69rem;
+		line-height: 1.4;
+	}
+	.rel__theirs {
 		color: var(--color-ink-soft);
+	}
+	.rel__arrow {
+		color: var(--color-ink-soft);
+	}
+	.rel__ours {
+		color: var(--color-ink);
+		font-weight: 500;
 	}
 	.msgs {
 		display: flex;
@@ -708,6 +892,20 @@
 		font-family: var(--font-serif);
 		font-style: italic;
 		font-size: 0.78rem;
+	}
+
+	/* ---- the shared centre box (SPEC §5) ---- */
+	.centre {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+		min-width: 0;
+		padding: var(--gap);
+		border: 1.5px solid var(--color-ink-faint);
+		border-radius: 6px;
+	}
+	.centre .panel {
+		flex: 1 1 auto;
 	}
 
 	/* ---- ubiquitous language ---- */
@@ -817,6 +1015,29 @@
 		background: var(--fill);
 		border: 1px solid var(--edge);
 		border-radius: 3px;
+	}
+	.key__icon {
+		display: inline-block;
+		width: 12px;
+		height: 12px;
+		color: var(--color-collaborator-ink);
+	}
+	.key__icon :global(.key__svg) {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+	/* The relationship-pair key: the same set-back/forward inks the lanes use,
+	   so the legend entry is the convention. */
+	.key__theirs {
+		color: var(--color-ink-soft);
+	}
+	.key__ours {
+		color: var(--color-ink);
+		font-weight: 500;
+	}
+	.key__arrow {
+		margin: 0 0.35rem;
 	}
 	/* The §10 one-line legend separators — decorative, hidden from AT. */
 	.key li:not(:last-child)::after {

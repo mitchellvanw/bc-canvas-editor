@@ -30169,6 +30169,24 @@ var PICK_OPTIONS = {
     { value: "product" },
     { value: "commodity" }
   ],
+  collaboratorKind: [
+    {
+      value: "bounded-context",
+      description: "Another modelled context in the system, with its own team and language."
+    },
+    {
+      value: "external-system",
+      description: "A system outside the design \u2014 third-party or legacy \u2014 taken as it is."
+    },
+    {
+      value: "frontend",
+      description: "A user interface that consumes this context from outside it."
+    },
+    {
+      value: "user",
+      description: "Direct user interaction \u2014 this context owns the interface people use."
+    }
+  ],
   relationship: [
     {
       value: "partnership",
@@ -30213,16 +30231,21 @@ var TRAITS = [
     value: "specification model",
     description: "Encodes the detailed rules of a critical business calculation."
   },
+  { value: "draft context", description: "A model still being explored; expect churn." },
   {
     value: "execution context",
     description: "Carries out a business workflow from trigger to outcome."
+  },
+  {
+    value: "analysis context",
+    description: "Derives insight from data other contexts produce."
   },
   { value: "audit model", description: "Records what happened for traceability and compliance." },
   { value: "approver", description: "Decides whether a requested action may proceed." },
   { value: "enforcer", description: "Makes other contexts comply with a policy or standard." },
   {
-    value: "octopus coordinator",
-    description: "Orchestrates several contexts to fulfil one process."
+    value: "octopus enforcer",
+    description: "Holds many contexts at once to the same standard rule."
   },
   {
     value: "interchange context",
@@ -30233,22 +30256,36 @@ var TRAITS = [
     description: "Fronts an external system or protocol for the rest of the system."
   },
   {
-    value: "service context",
-    description: "Offers a capability other contexts consume on demand."
+    value: "gateway interchange",
+    description: "Fronts an external protocol and translates its model in the same place."
   },
   {
-    value: "analysis context",
-    description: "Derives insight from data other contexts produce."
+    value: "dogfood context",
+    description: "Used daily by the team that builds it, so the model is tested from inside."
   },
-  { value: "engagement context", description: "Drives user interaction and experience." },
-  { value: "funnel context", description: "Condenses input from many sources into one stream." },
-  { value: "draft context", description: "A model still being explored; expect churn." },
-  { value: "brain context", description: "Concentrates the cleverest, most valuable logic." },
+  {
+    value: "bubble context",
+    description: "A clean model kept apart from legacy behind a translation layer."
+  },
   {
     value: "autonomous bubble",
     description: "Deliberately isolated from legacy models so it can evolve freely."
+  },
+  {
+    value: "brain context",
+    description: "Concentrates so much logic that everything else leans on it \u2014 likely an anti-pattern.",
+    caution: true
+  },
+  { value: "funnel context", description: "Condenses input from many sources into one stream." },
+  { value: "engagement context", description: "Drives user interaction and experience." },
+  {
+    value: "service context",
+    description: "Offers a capability other contexts consume on demand. Local addition, not on the community worksheet."
   }
 ];
+var CAUTION_TRAITS = new Set(
+  TRAITS.filter((trait) => trait.caution).map((trait) => trait.value)
+);
 
 // src/custom.ts
 function known(options, value) {
@@ -30318,7 +30355,7 @@ var ENTRIES = {
   },
   domainRoles: {
     shape: 'An array of { "name": \u2026 }, usually one to three. Traits describe how the context behaves, not what it stores.',
-    vocabulary: ["The fifteen:", ...vocabularyLines(TRAITS)],
+    vocabulary: ["From the ddd-crew model-traits worksheet, plus one local addition:", ...vocabularyLines(TRAITS)],
     rows: ["gateway context", "analysis context"]
   },
   inboundCommunication: {
@@ -30440,7 +30477,7 @@ var CANVAS_SHAPE = external_exports.object({
     evolution: axis("How settled the thing being built is.", PICK_OPTIONS.evolution)
   }).describe("Three independent axes. Send an empty object if none has been picked."),
   domainRoles: external_exports.array(external_exports.object({ name: external_exports.string() })).describe(
-    `What kind of context this is \u2014 usually one to three traits. The fifteen: ${oneLiners(TRAITS)}. ${CUSTOM_OK2}`
+    `What kind of context this is \u2014 usually one to three traits. From the ddd-crew model-traits worksheet, plus one local addition: ${oneLiners(TRAITS)}. ${CUSTOM_OK2}`
   ),
   inboundCommunication: external_exports.array(lane("that sends to this context")).describe("Who sends this context commands, queries or events \u2014 one entry per collaborator."),
   ubiquitousLanguage: external_exports.array(

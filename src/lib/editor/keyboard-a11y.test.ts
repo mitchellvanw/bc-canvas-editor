@@ -146,7 +146,7 @@ describe('Delete removes the focused item container (SPEC §8.2)', () => {
 
 	it('removes the whole lane when focus sits on its relationship value', () => {
 		const el = render();
-		const pick = button(el, 'Relationship for Checkout');
+		const pick = button(el, 'Our relationship for Checkout');
 		pick.focus();
 		press(pick, 'Delete');
 		expect(inboundLanes()).toEqual(['Billing']);
@@ -226,7 +226,7 @@ describe('Alt+arrows reorder as stateless one-commit moves (SPEC §8.2)', () => 
 
 	it('leaves Alt+arrows native outside chips and lanes', () => {
 		const el = render();
-		const prose = el.querySelector<HTMLElement>('[contenteditable][aria-label="Description"]');
+		const prose = el.querySelector<HTMLElement>('[contenteditable][aria-label="Purpose"]');
 		prose!.focus();
 		const event = press(prose!, 'ArrowRight', { altKey: true });
 		expect(event.defaultPrevented).toBe(false);

@@ -95,8 +95,19 @@ describe('quiet-sheet tokens meet WCAG AA (SPEC §8.4)', () => {
 
 	it('the faint gray is never a text color — it fails AA and is reserved for decorative rules', () => {
 		// Documents the shift: the visual-language prototype set relationship
-		// badges and the attribution in this gray; both now use ink-soft.
+		// badges and the attribution in this gray; both now use ink-soft. The
+		// two-sided relationship's set-back side is the same case again — the
+		// canonical-v5 mockup drew `theirs` in ink-faint, and it ships in
+		// ink-soft for exactly this reason.
 		expect(contrast(token('ink-faint'), token('sheet'))).toBeLessThan(4.5);
 		expect(contrast(token('ink-soft'), token('sheet'))).toBeGreaterThanOrEqual(4.5);
+	});
+
+	it('the caution ring passes 4.5:1 — hotspot-ink text on its 8% hotspot wash over sheet', () => {
+		// The anti-pattern trait chip (SPEC §5): text and ⚠ in hotspot ink on
+		// `rgb(247 107 163 / 0.08)` over the sheet, per CanvasSheet's
+		// .role--caution. The wash literal here mirrors the component's.
+		const ground = blend(token('hotspot'), token('sheet'), 0.08);
+		expect(contrast(token('hotspot-ink'), ground)).toBeGreaterThanOrEqual(4.5);
 	});
 });

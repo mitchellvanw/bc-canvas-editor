@@ -109,13 +109,13 @@ afterEach(() => {
 describe('⌘Z / ⇧⌘Z on the live sheet', () => {
 	it('undoes the last commit, consuming the event so native undo never fires', () => {
 		const el = render(EditableSheet);
-		editAndBlur(field(el, 'Description'), 'Edited description.');
+		editAndBlur(field(el, 'Purpose'), 'Edited description.');
 		const event = press(window, 'z', { metaKey: true });
 		expect(event.defaultPrevented).toBe(true);
 		expect(canvas.doc.purpose).toBe(
 			'Coordinates picking, packing and shipping once an order is paid.'
 		);
-		expect(field(el, 'Description').textContent).toBe(
+		expect(field(el, 'Purpose').textContent).toBe(
 			'Coordinates picking, packing and shipping once an order is paid.'
 		);
 	});

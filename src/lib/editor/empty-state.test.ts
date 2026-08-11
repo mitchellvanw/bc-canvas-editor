@@ -73,8 +73,11 @@ function click(target: HTMLElement) {
 }
 
 function section(el: HTMLElement, area: string): HTMLElement {
-	const found = el.querySelector<HTMLElement>(`.area-${area}`);
-	if (!found) throw new Error(`no .area-${area} section`);
+	// The centre-box pair holds no grid area of its own — panel classes name it.
+	const selector =
+		area === 'language' ? '.panel--lang' : area === 'decisions' ? '.panel--decisions' : `.area-${area}`;
+	const found = el.querySelector<HTMLElement>(selector);
+	if (!found) throw new Error(`no ${selector} section`);
 	return found;
 }
 
@@ -125,14 +128,14 @@ describe('a new canvas teaches through the form itself (SPEC §7)', () => {
 	it('asks the name and description questions as placeholders', () => {
 		const el = render();
 		expect(placeholders(el, 'Name')).toEqual(['Name this context']);
-		expect(placeholders(el, 'Description')).toEqual([
+		expect(placeholders(el, 'Purpose')).toEqual([
 			'What does this context exist to do? A few sentences in business language.'
 		]);
 	});
 
 	it('renders classification values as em dashes until picked', () => {
 		const el = render();
-		const values = [...el.querySelectorAll('header dl dd')].map((d) => d.textContent?.trim());
+		const values = [...el.querySelectorAll('.axes dd')].map((d) => d.textContent?.trim());
 		expect(values).toEqual(['—', '—', '—']);
 	});
 });

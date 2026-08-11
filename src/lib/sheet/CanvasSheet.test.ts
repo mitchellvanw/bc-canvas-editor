@@ -35,7 +35,8 @@ afterEach(() => {
 });
 
 const SECTION_LABELS = [
-	'Description',
+	'Purpose',
+	'Strategic classification',
 	'Domain roles',
 	'Inbound communication',
 	'Ubiquitous language',
@@ -47,16 +48,16 @@ const SECTION_LABELS = [
 ];
 
 describe('CanvasSheet renders the reference example (SPEC §3.1)', () => {
-	it('shows the name as h1 and the nine section sheets as h2, in the V5 order', () => {
+	it('shows the name as h1 and the ten section sheets as h2, in the V5 order', () => {
 		const el = render(referenceDoc());
 		expect(el.querySelector('h1')?.textContent).toBe('Order Fulfillment');
 		const labels = [...el.querySelectorAll('h2')].map((h) => h.textContent);
 		expect(labels).toEqual(SECTION_LABELS);
 	});
 
-	it('shows the strategic classification as label + value pairs in the title block', () => {
+	it('shows the strategic classification as its own panel — sub-columns, nothing left in the title block', () => {
 		const el = render(referenceDoc());
-		const pairs = [...el.querySelectorAll('header dl div')].map((d) =>
+		const pairs = [...el.querySelectorAll('.area-classification .axes > div')].map((d) =>
 			[...d.children].map((c) => c.textContent)
 		);
 		expect(pairs).toEqual([
@@ -64,6 +65,8 @@ describe('CanvasSheet renders the reference example (SPEC §3.1)', () => {
 			['Business model', 'revenue'],
 			['Evolution', 'custom-built']
 		]);
+		// The block keeps its eyebrow and the context name — the axes left it.
+		expect(el.querySelector('.tb dl')).toBeNull();
 	});
 
 	it('renders domain roles as chips', () => {
@@ -71,15 +74,63 @@ describe('CanvasSheet renders the reference example (SPEC §3.1)', () => {
 		expect(el.textContent).toContain('execution context');
 	});
 
-	it('renders lanes with collaborator h3, quiet relationship text, and message chips', () => {
+	it('draws the centre box around ubiquitous language and business decisions, still two sections', () => {
 		const el = render(referenceDoc());
-		const collaborators = [...el.querySelectorAll('h3')].map((h) => h.textContent);
-		expect(collaborators).toEqual(['Checkout', 'Notifications']);
-		expect(el.textContent).toContain('customer-supplier');
+		const centre = el.querySelector('.centre');
+		const labels = [...(centre?.querySelectorAll('h2') ?? [])].map((h) => h.textContent);
+		expect(labels).toEqual(['Ubiquitous language', 'Business decisions']);
+	});
+
+	it('renders lanes with collaborator h3 and message chips', () => {
+		const el = render(referenceDoc());
+		const collaborators = [...el.querySelectorAll('h3')].map((h) => h.textContent?.trim());
+		expect(collaborators[0]).toBe('Checkout');
+		expect(collaborators[1]).toContain('Notifications');
 		expect(el.textContent).toContain('Place Order');
 		expect(el.textContent).toContain('Payment Confirmed');
 		expect(el.textContent).toContain('Triggers fulfillment.');
 		expect(el.textContent).toContain('Order Shipped');
+	});
+
+	it('renders a one-sided relationship as the arrow plus that side alone (SPEC §5)', () => {
+		const el = render(referenceDoc());
+		// Inbound reference lane: { ours: 'customer-supplier' } — value after
+		// the arrow, prefixed for AT; no theirs invented.
+		const rel = el.querySelector('.area-inbound .rel');
+		expect(rel?.querySelector('.rel__theirs')).toBeNull();
+		expect(rel?.querySelector('.rel__ours')?.textContent).toBe('customer-supplier');
+		expect(rel?.querySelector('.rel__arrow')?.getAttribute('aria-hidden')).toBe('true');
+		expect(rel?.textContent).toContain('this context:');
+	});
+
+	it('renders both relationship ends collaborator-first, sr prefixes naming the sides', () => {
+		const el = render(referenceDoc());
+		// Outbound reference lane: { theirs: 'conformist', ours: 'open-host-service' }.
+		const rel = el.querySelector('.area-outbound .rel');
+		expect(rel?.querySelector('.rel__theirs')?.textContent).toBe('conformist');
+		expect(rel?.querySelector('.rel__ours')?.textContent).toBe('open-host-service');
+		const spoken = rel?.textContent?.replace(/\s+/g, ' ');
+		expect(spoken).toContain('Collaborator: conformist');
+		expect(spoken).toContain('this context: open-host-service');
+	});
+
+	it('draws the collaborator kind as an icon with a spoken meaning; no kind, no icon', () => {
+		const el = render(referenceDoc());
+		const checkout = el.querySelector('.area-inbound h3');
+		expect(checkout?.querySelector('.kind')).toBeNull();
+		const notifications = el.querySelector('.area-outbound h3');
+		expect(notifications?.querySelector('.kind svg')).not.toBeNull();
+		expect(notifications?.textContent).toContain('Bounded context:');
+	});
+
+	it('rings an anti-pattern trait with the caution mark; ordinary traits stay plain', () => {
+		const doc = referenceDoc();
+		doc.domainRoles.push({ id: 'caution-1', name: 'brain context' });
+		const el = render(doc);
+		const rung = [...el.querySelectorAll('.role--caution')];
+		expect(rung).toHaveLength(1);
+		expect(rung[0].textContent).toContain('brain context');
+		expect(rung[0].textContent).toContain('likely anti-pattern');
 	});
 
 	it('chips lead with their type as text and carry the glyph as decoration (SPEC §8.5)', () => {
@@ -122,12 +173,24 @@ describe('CanvasSheet renders the reference example (SPEC §3.1)', () => {
 });
 
 describe('CanvasSheet footer (SPEC §10)', () => {
-	it('shows the one-line swatch legend in the canonical order', () => {
+	it('shows the one-line legend: swatches, the four kind icons, and the relationship-pair key', () => {
 		const el = render(referenceDoc());
 		const legend = [...el.querySelectorAll('footer [data-legend] li')].map((s) =>
-			s.textContent?.trim()
+			s.textContent?.replace(/\s+/g, ' ').trim()
 		);
-		expect(legend).toEqual(['command', 'query', 'event', 'decision', 'collaborator', 'open question']);
+		expect(legend).toEqual([
+			'command',
+			'query',
+			'event',
+			'decision',
+			'collaborator',
+			'open question',
+			'bounded context',
+			'external system',
+			'frontend',
+			'direct user interaction',
+			'relationship: theirs→ours'
+		]);
 	});
 
 	it('links the attribution to the ddd-crew repo and the CC BY 4.0 license', () => {

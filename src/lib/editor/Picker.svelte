@@ -15,6 +15,7 @@
 		options,
 		value,
 		clearLabel,
+		custom = true,
 		onPick,
 		onCancel
 	}: {
@@ -24,15 +25,18 @@
 		value: string | undefined;
 		/** The clear entry's wording: '— none —' / '— no relationship —' (SPEC §10). */
 		clearLabel: string;
+		/** False for a closed vocabulary (collaborator kind): no custom… entry. */
+		custom?: boolean;
 		/** A pick: a curated value, a custom string, or undefined for clear. */
 		onPick: (value: string | undefined) => void;
 		/** Esc: close without changing. */
 		onCancel: () => void;
 	} = $props();
 
-	// The two entries after the curated options: clear, then custom… last (§8.3).
+	// The entries after the curated options: clear, then — open vocabularies
+	// only — custom… last (§8.3). A closed set has no custom index to reach.
 	const clearIndex = $derived(options.length);
-	const customIndex = $derived(options.length + 1);
+	const customIndex = $derived(custom ? options.length + 1 : -1);
 
 	let active = $state(0);
 	let customOpen = $state(false);
@@ -60,7 +64,11 @@
 	}
 
 	const onListKeydown = listNavigation({
-		labels: () => [...options.map((option) => option.value), clearLabel, 'custom…'],
+		labels: () => [
+			...options.map((option) => option.value),
+			clearLabel,
+			...(custom ? ['custom…'] : [])
+		],
 		active: () => active,
 		setActive: (index) => (active = index),
 		activate,
@@ -122,15 +130,17 @@
 				<span class="picker__check" aria-hidden="true">{value === undefined ? '✓' : ''}</span>
 				<span class="picker__label">{clearLabel}</span>
 			</li>
-			<li
-				role="option"
-				aria-selected="false"
-				tabindex={active === customIndex ? 0 : -1}
-				onclick={() => activate(customIndex)}
-			>
-				<span class="picker__check" aria-hidden="true"></span>
-				<span class="picker__label">custom…</span>
-			</li>
+			{#if custom}
+				<li
+					role="option"
+					aria-selected="false"
+					tabindex={active === customIndex ? 0 : -1}
+					onclick={() => activate(customIndex)}
+				>
+					<span class="picker__check" aria-hidden="true"></span>
+					<span class="picker__label">custom…</span>
+				</li>
+			{/if}
 		</ul>
 	{/if}
 </div>

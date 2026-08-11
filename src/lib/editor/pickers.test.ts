@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 /**
  * Pickers (SPEC §4, §6, §8.3, ticket 07): curated vocabularies open as
- * popovers on the value itself. Classification axes and lane relationships are
- * pick-one listboxes with — none — / — no relationship — and custom…; the
- * domain-role ghost opens the 15-trait multi-select checklist. One pick,
- * toggle or clear is exactly one commit — one autosave write — and custom
- * values render identically to curated ones and round-trip through the
+ * popovers on the value itself. Classification axes, lane kinds and both
+ * relationship ends are pick-one listboxes with their clear entry — and, on
+ * the open vocabularies only, custom…; the collaborator kind is closed. The
+ * domain-role ghost opens the worksheet-trait multi-select checklist. One
+ * pick, toggle or clear is exactly one commit — one autosave write — and
+ * custom values render identically to curated ones and round-trip through the
  * serializer. The keyboard grammar of SPEC §8.3 is exercised per picker.
  */
 import { flushSync, mount, unmount } from 'svelte';
@@ -206,7 +207,7 @@ describe('classification axis pickers (SPEC §4.1)', () => {
 		click(option(el, 'core'));
 		expect(options(el)).toHaveLength(0);
 
-		click(trigger(el, 'Relationship for Notifications'));
+		click(trigger(el, 'Our relationship for Notifications'));
 		click(option(el, '— no relationship —'));
 		expect(options(el)).toHaveLength(0);
 		expect(setItem).not.toHaveBeenCalled();
@@ -246,10 +247,10 @@ describe('classification axis pickers (SPEC §4.1)', () => {
 	});
 });
 
-describe('relationship picker (SPEC §4.3)', () => {
+describe('relationship picker (SPEC §4.4)', () => {
 	it('teaches the nine patterns via their one-liners, ✓ on the current value', () => {
 		const el = render();
-		const button = trigger(el, 'Relationship for Checkout');
+		const button = trigger(el, 'Our relationship for Checkout');
 		expect(button.textContent?.trim()).toBe('customer-supplier');
 		click(button);
 
@@ -278,30 +279,30 @@ describe('relationship picker (SPEC §4.3)', () => {
 	it('picks a pattern in one commit and renders it as the quiet lane text', () => {
 		const el = render();
 		const setItem = vi.spyOn(localStorage, 'setItem');
-		click(trigger(el, 'Relationship for Checkout'));
+		click(trigger(el, 'Our relationship for Checkout'));
 		click(option(el, 'conformist'));
 
 		expect(canvas.doc.inboundCommunication[0].relationship).toEqual({ ours: 'conformist' });
 		expect(setItem).toHaveBeenCalledTimes(1);
 		expect(serialized().inboundCommunication[0].relationship).toEqual({ ours: 'conformist' });
-		expect(trigger(el, 'Relationship for Checkout').textContent?.trim()).toBe('conformist');
+		expect(trigger(el, 'Our relationship for Checkout').textContent?.trim()).toBe('conformist');
 	});
 
 	it('clears via — no relationship —, omitting the field from the file', () => {
 		const el = render();
 		const setItem = vi.spyOn(localStorage, 'setItem');
-		click(trigger(el, 'Relationship for Checkout'));
+		click(trigger(el, 'Our relationship for Checkout'));
 		click(option(el, '— no relationship —'));
 
 		expect(canvas.doc.inboundCommunication[0].relationship).toBeUndefined();
 		expect(setItem).toHaveBeenCalledTimes(1);
 		expect('relationship' in serialized().inboundCommunication[0]).toBe(false);
-		expect(trigger(el, 'Relationship for Checkout').textContent?.trim()).toBe('—');
+		expect(trigger(el, 'Our relationship for Checkout').textContent?.trim()).toBe('—');
 	});
 
 	it('offers a lane without a relationship its picker on a — placeholder', () => {
 		const el = render();
-		const button = trigger(el, 'Relationship for Notifications');
+		const button = trigger(el, 'Our relationship for Notifications');
 		expect(button.textContent?.trim()).toBe('—');
 		click(button);
 		click(option(el, 'open-host-service'));
@@ -311,52 +312,143 @@ describe('relationship picker (SPEC §4.3)', () => {
 	it('accepts a custom relationship through custom…', () => {
 		const el = render();
 		const setItem = vi.spyOn(localStorage, 'setItem');
-		click(trigger(el, 'Relationship for Checkout'));
+		click(trigger(el, 'Our relationship for Checkout'));
 		click(option(el, 'custom…'));
 		const input = el.querySelector<HTMLInputElement>('.picker input');
-		expect(input?.getAttribute('aria-label')).toBe('Custom relationship for Checkout');
+		expect(input?.getAttribute('aria-label')).toBe('Custom our relationship for Checkout');
 		input!.value = 'api-consumer';
 		press(input!, 'Enter');
 
 		expect(canvas.doc.inboundCommunication[0].relationship).toEqual({ ours: 'api-consumer' });
 		expect(setItem).toHaveBeenCalledTimes(1);
 		expect(serialized().inboundCommunication[0].relationship).toEqual({ ours: 'api-consumer' });
-		expect(trigger(el, 'Relationship for Checkout').textContent?.trim()).toBe('api-consumer');
+		expect(trigger(el, 'Our relationship for Checkout').textContent?.trim()).toBe('api-consumer');
+	});
+
+	it('sets their relationship without touching ours — one boundary, theirs serialized first', () => {
+		const el = render();
+		const setItem = vi.spyOn(localStorage, 'setItem');
+		click(trigger(el, 'Their relationship for Checkout'));
+		click(option(el, 'open-host-service'));
+
+		expect(canvas.doc.inboundCommunication[0].relationship).toEqual({
+			theirs: 'open-host-service',
+			ours: 'customer-supplier'
+		});
+		expect(setItem).toHaveBeenCalledTimes(1);
+		expect(Object.keys(serialized().inboundCommunication[0].relationship!)).toEqual([
+			'theirs',
+			'ours'
+		]);
+	});
+
+	it('collapses the pair to absent only when both ends clear', () => {
+		const el = render();
+		click(trigger(el, 'Their relationship for Checkout'));
+		click(option(el, 'conformist'));
+		click(trigger(el, 'Our relationship for Checkout'));
+		click(option(el, '— no relationship —'));
+
+		expect(canvas.doc.inboundCommunication[0].relationship).toEqual({ theirs: 'conformist' });
+		click(trigger(el, 'Their relationship for Checkout'));
+		click(option(el, '— no relationship —'));
+		expect(canvas.doc.inboundCommunication[0].relationship).toBeUndefined();
+		expect('relationship' in serialized().inboundCommunication[0]).toBe(false);
 	});
 });
 
-describe('the domain-role trait checklist (SPEC §4.2)', () => {
+describe('the collaborator-kind picker (SPEC §4.2) — the one closed vocabulary', () => {
+	it('offers the four kinds and the clear entry, and no custom…', () => {
+		const el = render();
+		const button = trigger(el, 'Collaborator kind for Checkout');
+		expect(button.textContent?.trim()).toBe('—');
+		click(button);
+
+		expect(options(el).map(optionLabel)).toEqual([
+			'bounded-context',
+			'external-system',
+			'frontend',
+			'user',
+			'— no kind —'
+		]);
+		expect(option(el, 'user').textContent).toContain(
+			'Direct user interaction — this context owns the interface people use.'
+		);
+	});
+
+	it('picks a kind in one commit; the face becomes the icon with the meaning spoken', () => {
+		const el = render();
+		const setItem = vi.spyOn(localStorage, 'setItem');
+		click(trigger(el, 'Collaborator kind for Checkout'));
+		click(option(el, 'frontend'));
+
+		expect(canvas.doc.inboundCommunication[0].collaborator.kind).toBe('frontend');
+		expect(setItem).toHaveBeenCalledTimes(1);
+		expect(serialized().inboundCommunication[0].collaborator).toEqual({
+			name: 'Checkout',
+			kind: 'frontend'
+		});
+		const button = trigger(el, 'Collaborator kind for Checkout');
+		expect(button.querySelector('svg')).not.toBeNull();
+		expect(button.textContent?.trim()).toBe('Frontend');
+	});
+
+	it('clears via — no kind —, omitting the field and dropping the icon', () => {
+		const el = render();
+		// Notifications ships with kind bounded-context in the reference.
+		const button = trigger(el, 'Collaborator kind for Notifications');
+		expect(button.textContent?.trim()).toBe('Bounded context');
+		click(button);
+		click(option(el, '— no kind —'));
+
+		expect(canvas.doc.outboundCommunication[0].collaborator.kind).toBeUndefined();
+		expect('kind' in serialized().outboundCommunication[0].collaborator).toBe(false);
+		expect(trigger(el, 'Collaborator kind for Notifications').textContent?.trim()).toBe('—');
+	});
+});
+
+describe('the domain-role trait checklist (SPEC §4.3)', () => {
 	const roleNames = () => canvas.doc.domainRoles.map((role) => role.name);
 
-	it('opens the 15 traits as a checkbox group with descriptions, current traits checked', () => {
+	it('opens the worksheet traits as a checkbox group in worksheet order, current traits checked', () => {
 		const el = render();
 		click(trigger(el, '+ trait'));
 
 		const listed = checkboxes(el).map((c) => c.getAttribute('data-value'));
 		expect(listed).toEqual([
 			'specification model',
+			'draft context',
 			'execution context',
+			'analysis context',
 			'audit model',
 			'approver',
 			'enforcer',
-			'octopus coordinator',
+			'octopus enforcer',
 			'interchange context',
 			'gateway context',
-			'service context',
-			'analysis context',
-			'engagement context',
-			'funnel context',
-			'draft context',
+			'gateway interchange',
+			'dogfood context',
+			'bubble context',
+			'autonomous bubble',
 			'brain context',
-			'autonomous bubble'
+			'funnel context',
+			'engagement context',
+			'service context'
 		]);
 		expect(checkbox(el, 'execution context').getAttribute('aria-checked')).toBe('true');
 		expect(checkbox(el, 'audit model').getAttribute('aria-checked')).toBe('false');
 		expect(checkbox(el, 'execution context').textContent).toContain(
 			'Carries out a business workflow from trigger to outcome.'
 		);
-		expect(checkbox(el, 'autonomous bubble').textContent).toContain(
-			'Deliberately isolated from legacy models so it can evolve freely.'
+		// The worksheet's meanings hold where the old list drifted: octopus is
+		// compliance (not orchestration), brain carries its caveat, service is
+		// labelled the local addition it is.
+		expect(checkbox(el, 'octopus enforcer').textContent).toContain(
+			'Holds many contexts at once to the same standard rule.'
+		);
+		expect(checkbox(el, 'brain context').textContent).toContain('likely an anti-pattern');
+		expect(checkbox(el, 'service context').textContent).toContain(
+			'Local addition, not on the community worksheet.'
 		);
 	});
 
@@ -373,7 +465,7 @@ describe('the domain-role trait checklist (SPEC §4.2)', () => {
 		click(checkbox(el, 'execution context'));
 		expect(roleNames()).toEqual(['audit model']);
 		expect(setItem).toHaveBeenCalledTimes(2);
-		expect(checkboxes(el)).toHaveLength(15);
+		expect(checkboxes(el)).toHaveLength(18);
 	});
 
 	it('closes on Escape without a commit, and on a pointerdown elsewhere', () => {
@@ -404,7 +496,7 @@ describe('the domain-role trait checklist (SPEC §4.2)', () => {
 
 		expect(roleNames()).toEqual(['execution context', 'metrics hub']);
 		expect(setItem).toHaveBeenCalledTimes(1);
-		expect(checkboxes(el)).toHaveLength(15);
+		expect(checkboxes(el)).toHaveLength(18);
 		expect(input!.value).toBe('');
 	});
 
@@ -473,7 +565,7 @@ describe('the keyboard grammar (SPEC §8.3)', () => {
 	it('closes unchanged on Esc, returning focus to the value button', async () => {
 		const el = render();
 		const setItem = vi.spyOn(localStorage, 'setItem');
-		const button = trigger(el, 'Relationship for Checkout');
+		const button = trigger(el, 'Our relationship for Checkout');
 		click(button);
 		await expectFocused(option(el, 'customer-supplier'));
 
@@ -517,11 +609,13 @@ describe('the keyboard grammar (SPEC §8.3)', () => {
 		await expectFocused(checkbox(el, 'specification model'));
 
 		press(focused(), 'ArrowDown');
+		await expectFocused(checkbox(el, 'draft context'));
+		press(focused(), 'ArrowDown');
 		await expectFocused(checkbox(el, 'execution context'));
 		press(focused(), ' ');
 		expect(canvas.doc.domainRoles).toEqual([]);
 		expect(setItem).toHaveBeenCalledTimes(1);
-		expect(checkboxes(el)).toHaveLength(15);
+		expect(checkboxes(el)).toHaveLength(18);
 
 		press(focused(), ' ');
 		expect(canvas.doc.domainRoles.map((role) => role.name)).toEqual(['execution context']);
@@ -560,7 +654,7 @@ describe('custom values round-trip (SPEC §3.2)', () => {
 		input.value = 'vision';
 		press(input, 'Enter');
 
-		click(trigger(el, 'Relationship for Checkout'));
+		click(trigger(el, 'Our relationship for Checkout'));
 		click(option(el, 'custom…'));
 		input = el.querySelector<HTMLInputElement>('.picker input')!;
 		input.value = 'api-consumer';
@@ -579,7 +673,7 @@ describe('custom values round-trip (SPEC §3.2)', () => {
 		flushSync();
 
 		expect(trigger(el, 'Domain').textContent?.trim()).toBe('vision');
-		expect(trigger(el, 'Relationship for Checkout').textContent?.trim()).toBe('api-consumer');
+		expect(trigger(el, 'Our relationship for Checkout').textContent?.trim()).toBe('api-consumer');
 		const chips = [...el.querySelectorAll('.role')].map((r) => r.textContent?.replace('×', '').trim());
 		expect(chips).toEqual(['execution context', 'metrics hub']);
 

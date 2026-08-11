@@ -103,7 +103,7 @@ describe('tools/list', () => {
 		// whether or not the model thought to ask bcc_explain first.
 		expect(schema).toContain('anticorruption-layer');
 		expect(schema).toContain('A translation layer at the boundary');
-		expect(schema).toContain('octopus coordinator');
+		expect(schema).toContain('octopus enforcer');
 		// Only the genuinely closed sets are enums; everything else is a string
 		// with an escape hatch, per SPEC §4.
 		const canvas = (write?.inputSchema as any).properties.canvas.properties;
@@ -361,8 +361,10 @@ describe('bcc_explain', () => {
 
 		expect(roles).toContain('# Domain roles');
 		expect(roles).toContain('how does this context behave?');
-		// The fifteen, with their teaching, from the same module the pickers read.
-		expect(roles).toContain('octopus coordinator — Orchestrates several contexts to fulfil one process.');
+		// The worksheet set, with its teaching, from the same module the pickers
+		// read — named by source, not by count (the worksheet fixes none).
+		expect(roles).toContain('From the ddd-crew model-traits worksheet, plus one local addition:');
+		expect(roles).toContain('octopus enforcer — Holds many contexts at once to the same standard rule.');
 		expect(roles).toContain('kept as written');
 	});
 

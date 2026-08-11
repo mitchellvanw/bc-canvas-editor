@@ -114,7 +114,7 @@ Four curated example canvases — Order Fulfillment (core, every section filled)
 
 ## 4. Curated vocabularies
 
-All picker-plus-escape-hatch: the picker offers the canonical strings below; **custom…** accepts any string, which renders identically to curated values and round-trips through the serializer.
+Picker-plus-escape-hatch throughout, with one exception: the picker offers the canonical strings below; **custom…** accepts any string, which renders identically to curated values and round-trips through the serializer. The exception is the collaborator kind (§4.2), a closed set — its picker has no **custom…**, because the value picks an icon and the parser refuses unknown kinds by name (§3.2).
 
 ### 4.1 Strategic classification (kebab-case axis values)
 
@@ -126,31 +126,49 @@ All picker-plus-escape-hatch: the picker offers the canonical strings below; **c
 
 Each axis picker additionally offers **— none —** (clears the axis back to unset, rendering "—") and **custom…**.
 
-### 4.2 Domain-role traits (the 15)
+### 4.2 Collaborator kinds (the closed picker set)
 
-File values are natural lowercase prose (`"execution context"`), not slugs. Displayed sentence-case in the picker with these one-line descriptions (approved in the inline-editing prototype):
+The four canonical collaborator types, drawn as icons on the sheet and keyed in the footer legend (§5):
+
+| Kind | Icon | One-liner |
+|---|---|---|
+| `bounded-context` | cloud | Another modelled context in the system, with its own team and language. |
+| `external-system` | gear | A system outside the design — third-party or legacy — taken as it is. |
+| `frontend` | monitor | A user interface that consumes this context from outside it. |
+| `user` | person | Direct user interaction — this context owns the interface people use. |
+
+The kind picker additionally offers **— no kind —** (clears back to unset; a lane without a kind renders no icon) and, uniquely, no **custom…** (§4 intro).
+
+### 4.3 Domain-role traits (the model-traits worksheet, plus one local addition)
+
+The set is the ddd-crew model-traits worksheet in the worksheet's own order — the worksheet fixes no count and invites custom traits, so no count is claimed anywhere; where the worksheet slashes two names into one row (Specification/Draft, Analysis/Audit), the project's split keeps the slash's order. `service context` is the local addition and sits last, marked as local in its description. File values are natural lowercase prose (`"execution context"`), not slugs; displayed sentence-case in the picker with these one-line descriptions:
 
 | Trait | Description |
 |---|---|
 | specification model | Encodes the detailed rules of a critical business calculation. |
+| draft context | A model still being explored; expect churn. |
 | execution context | Carries out a business workflow from trigger to outcome. |
+| analysis context | Derives insight from data other contexts produce. |
 | audit model | Records what happened for traceability and compliance. |
 | approver | Decides whether a requested action may proceed. |
 | enforcer | Makes other contexts comply with a policy or standard. |
-| octopus coordinator | Orchestrates several contexts to fulfil one process. |
+| octopus enforcer | Holds many contexts at once to the same standard rule. |
 | interchange context | Translates between two models so neither has to bend. |
 | gateway context | Fronts an external system or protocol for the rest of the system. |
-| service context | Offers a capability other contexts consume on demand. |
-| analysis context | Derives insight from data other contexts produce. |
-| engagement context | Drives user interaction and experience. |
-| funnel context | Condenses input from many sources into one stream. |
-| draft context | A model still being explored; expect churn. |
-| brain context | Concentrates the cleverest, most valuable logic. |
+| gateway interchange | Fronts an external protocol and translates its model in the same place. |
+| dogfood context | Used daily by the team that builds it, so the model is tested from inside. |
+| bubble context | A clean model kept apart from legacy behind a translation layer. |
 | autonomous bubble | Deliberately isolated from legacy models so it can evolve freely. |
+| brain context | Concentrates so much logic that everything else leans on it — likely an anti-pattern. |
+| funnel context | Condenses input from many sources into one stream. |
+| engagement context | Drives user interaction and experience. |
+| service context | Offers a capability other contexts consume on demand. Local addition, not on the community worksheet. |
 
-### 4.3 Relationship patterns (kebab-case)
+`brain context` carries the worksheet's "(likely anti-pattern)" flag and renders with a caution ring on the sheet (§5) — matched by name, so a hand-typed custom `brain context` rings too. The local-addition marker stays off the sheet: provenance lives in the picker description and `bcc_explain`, not on the modelled context.
 
-Taught in the picker via these one-liners (no separate reference section — see §12):
+### 4.4 Relationship patterns (kebab-case)
+
+One vocabulary for both ends of a lane's relationship — the collaborator's side and this context's share it, because they name the two sides of one boundary. Taught in the picker via these one-liners (no separate reference section — see §12):
 
 | Pattern | One-liner |
 |---|---|
@@ -164,14 +182,16 @@ Taught in the picker via these one-liners (no separate reference section — see
 | `separate-ways` | No integration — duplication costs less than coupling here. |
 | `big-ball-of-mud` | The other side is entangled legacy; defend this context's boundary. |
 
-The relationship picker additionally offers **— no relationship —** (clears the field) and **custom…**; neither carries a description.
+Each relationship picker additionally offers **— no relationship —** (clears that end; the pair is omitted from the file once both ends clear) and **custom…**; neither carries a description.
 
 ## 5. Visual language — the quiet sheet
 
 Winner of three prototype rounds; primary source `prototype/canvas-visual-language/6-quiet-sheet/` on branch `prototype/canvas-visual-language`.
 
-- **Ground:** warm cream paper `#EAE7DE` with a faint 32px drafting grid; sections as near-white sheets `#FDFDFB`, 1px `#D8D4C8` border, 5px radius, whisper of shadow. V5 canonical layout on a 12-column grid: description/classification/roles top; inbound left; ubiquitous language + business decisions center; outbound right; assumptions/metrics/open questions bottom.
-- **Title block:** near-black ink block (`#1A1E20`, 6px radius) with spaced-caps eyebrow "Bounded Context Canvas · V5", the context name in Archivo 700, and strategic classification as three label + mono-value pairs inside the block.
+- **Ground:** warm cream paper `#EAE7DE` with a faint 32px drafting grid; sections as near-white sheets `#FDFDFB`, 1px `#D8D4C8` border, 5px radius, whisper of shadow. V5 canonical layout on a 12-column grid, ten panels matching the printed canvas: purpose ×5 / classification ×4 / roles ×3 on top; inbound left; ubiquitous language + business decisions centre; outbound right; assumptions/metrics/open questions bottom.
+- **Title block:** near-black ink block (`#1A1E20`, 6px radius) carrying the spaced-caps eyebrow "Bounded Context Canvas · V5" and the context name in Archivo 700 — nothing else. (Strategic classification lived here through canvas-file v1; it is now the tenth panel, below.)
+- **Strategic classification panel:** the three axes as `Domain` / `Business model` / `Evolution` sub-columns, keeping the title block's idiom — spaced-caps label, mono value, no fill and no box. Unset axes render "—".
+- **Centre box:** the canonical template draws Ubiquitous Language and Business Decisions inside one outer rectangle, so a hairline box wraps the centre pair — layout, not nesting; they stay two sections with their own headings.
 - **Type trio:** Archivo for structure/labels, Source Serif 4 for user prose, IBM Plex Mono for identifiers (messages, terms, classification values, relationships).
 - **Palette** (EventStorming fill + same-hue ink border):
 
@@ -187,10 +207,11 @@ Winner of three prototype rounds; primary source `prototype/canvas-visual-langua
 
   These tokens are subject to the AA-contrast rule in §8.4: if a pair fails AA in the artifact, the token shifts everywhere (shared renderer — editor and artifact cannot diverge).
 - **Messages:** one uniform chip shape (rounded mono chip, fill + ink border) for all three types, distinguished by color and glyph: ▶ command, ? query, ◆ event. No per-type shapes.
-- **Collaborators:** name in collaborator-pink ink with a pink underline — no sticky box; relationship as quiet right-aligned mono text.
+- **Collaborators:** name in collaborator-pink ink with a pink underline — no sticky box — led by the kind's stroke icon (cloud / gear / monitor / person, §4.2) when a kind is set; the icon is decorative, with the meaning as a visually-hidden prefix ("Bounded context: ").
+- **Relationship, two-sided:** one quiet mono line under the lane head, collaborator's side first: theirs set back in ink-soft, an arrow, ours forward in full ink at weight 500. The arrow is reading order across the boundary — never message flow, which the panels already carry — so it points the same way in both panels. A one-sided value keeps the arrow, and the side is read from its position (before the arrow = theirs, after = ours). Weight and order say nothing to a screen reader, so each side carries a visually-hidden "Collaborator: " / "this context: " prefix. (The alignment mockup drew theirs in ink-faint; it ships in ink-soft because faint fails the §8.4 AA gate as text.)
 - **Section labels:** small-caps Archivo with a short 2px underline in the section's hue (neutral gray where no hue applies).
 - **Terms:** highlighter stroke under the mono term. **Decisions/questions:** small colored square markers (policy lilac; hotspot pink, rotated).
-- **Footer** (on the sheet, inside the PNG capture region): one-line swatch legend + attribution (§10 has the exact strings).
+- **Footer** (on the sheet, inside the PNG capture region): one-line legend + attribution (§10 has the exact strings) — the six swatches, then the four kind icons, then the relationship-pair key `theirs → ours` in the lanes' own inks, since ink weight is not self-describing and the legend is where this sheet explains its notation.
 - No teaching hints on a filled canvas — teaching lives in the empty state (§7) and pickers.
 
 ## 6. Interaction model — the live sheet
@@ -199,8 +220,8 @@ Winner of the inline-editing prototype; primary source `prototype/inline-editing
 
 - **Modeless.** No edit mode, no per-section forms — the canvas is a document. Every free-text value is contenteditable (plaintext) in place, always. Blur commits; Enter commits single-line fields; Esc reverts the field.
 - **Affordances materialize on approach.** The presentation view carries zero editing chrome. Hovering a panel fades in its ghost adds; hovering an item reveals its ×; hovering a lane reveals its ⠿ drag grip. Editable text shows a faint halo on hover, a hairline outline on focus. (Focus reveals the same affordances — §8.2.)
-- **Curated vocabularies are popovers on the value itself.** Classification and relationship values are clickable where they render → popover with the curated list, ✓ on the current value, **custom…** input as escape hatch; classification axes offer **— none —** (clears the axis back to unset), relationship offers **— no relationship —**. Custom values render identically to curated ones.
-- **Domain roles:** ghost "+ trait" chip → multi-select popover checklist of the 15 traits with inline one-line descriptions, plus a custom-trait input; chips removed via hover ×. The prototype's "Why these roles?" free-text note is **dropped** (ui-copy decision) — domain roles are chips only; do not rebuild that field even though it appears in the primary-source prototype.
+- **Curated vocabularies are popovers on the value itself.** Classification axes, the collaborator kind and both relationship ends are clickable where they render → popover with the curated list, ✓ on the current value, **custom…** input as escape hatch on the open vocabularies (the kind is closed, §4.2); classification axes offer **— none —**, the kind **— no kind —**, each relationship end **— no relationship —**. Custom values render identically to curated ones. A lane header carries three pick-slots — kind, their relationship, our relationship — never a bespoke paired control.
+- **Domain roles:** ghost "+ trait" chip → multi-select popover checklist of the worksheet traits with inline one-line descriptions, plus a custom-trait input; chips removed via hover ×. The prototype's "Why these roles?" free-text note is **dropped** (ui-copy decision) — domain roles are chips only; do not rebuild that field even though it appears in the primary-source prototype.
 - **Messages:** ghost "+" per lane → mini type popover (▶ command / ? query / ◆ event), then the new chip's name field is focused for immediate typing. Chips drag-reorder within their lane; lanes drag-reorder by grip; lane × removes the collaborator.
 - **Commit granularity:** one field blur = one commit; one structural action (add / remove / reorder / pick) = one commit. Commits are the unit of undo and autosave (§6.1).
 - **Known accepted risks** (soften in build, don't change the model): discoverability of hover-only affordances, stray-click carets in prose.
@@ -233,7 +254,7 @@ Winner of the empty-state prototype; primary source `prototype/empty-state/1-pla
 - **Empty free-text fields** carry the section's ddd-crew helper question as their italic placeholder; **empty-section ghost adds** carry the question too. Final copy in §10.
 - **Ghost adds are always visible on an empty section**, hover/focus-materialized once the section has content (amendment to the live-sheet hover rule).
 - **Disappearance is instant and granular:** typing replaces a placeholder; the first item shortens the ghost to its terse label. Both return automatically whenever a field or section is emptied — state-driven, no first-run flag.
-- **Title block:** name placeholder "Name this context"; classification values render "—" until picked; classification teaching stays in the pickers.
+- **Title block and classification panel:** name placeholder "Name this context"; classification values render "—" until picked; classification teaching stays in the pickers.
 
 ## 8. Keyboard model & accessibility
 
@@ -253,7 +274,7 @@ One linear sequence in reading order — every editable field, chip, and pickabl
 
 ### 8.3 Popovers
 
-The rendered value is a button (Enter/Space opens). Pick-one pickers are **listboxes** — arrows move, type-ahead jumps, Enter picks-and-closes, Esc closes unchanged. The 15-trait checklist is a **checkbox group** — Space toggles (each toggle one commit), stays open until Esc/blur. **custom…** is the last option; Enter moves focus into its text input, Enter commits, Esc backs out to the list.
+The rendered value is a button (Enter/Space opens). Pick-one pickers are **listboxes** — arrows move, type-ahead jumps, Enter picks-and-closes, Esc closes unchanged. The trait checklist is a **checkbox group** — Space toggles (each toggle one commit), stays open until Esc/blur. **custom…** is the last option on the open vocabularies; Enter moves focus into its text input, Enter commits, Esc backs out to the list.
 
 **Chrome menus** (Export, Examples) share one grammar: the control is a button with `aria-haspopup="menu"`; the dropdown is `role="menu"` with `menuitem` buttons in the tab flow; Esc closes and returns focus to the control; focus-out and click-outside close.
 
@@ -263,7 +284,8 @@ Non-text targets get a 2px ink-colored ring with small offset on `:focus-visible
 
 ### 8.5 Assistive-tech semantics
 
-- Every free-text field is `role="textbox"` (`aria-multiline` for prose); its accessible name is the field's **identity** ("Name", "Description", "Term"), never its content. Placeholder questions ride along as `aria-placeholder`/description.
+- Every free-text field is `role="textbox"` (`aria-multiline` for prose); its accessible name is the field's **identity** ("Name", "Purpose", "Term"), never its content. Placeholder questions ride along as `aria-placeholder`/description.
+- The lane pick-slots are named "Collaborator kind for ‹name›", "Their relationship for ‹name›", "Our relationship for ‹name›" — always "relationship", never "role", which belongs to Domain Roles and would teach the wrong thing two inches from that panel.
 - Repeating structures are native lists (lanes are lists of messages; sections are lists of lanes; traits a list of chips). Accessible names lead with the type where color/glyph carries meaning: "Command, Place Order".
 - **One polite live region**; announces only structural commits and non-local effects (strings in §10), including the multi-tab notice when it appears. Field-blur commits announce nothing. No assertive interruptions.
 
@@ -285,7 +307,7 @@ Full decision record: `wayfinder/tickets/007-artifact-design.md`.
 - **CSS:** the app's entire compiled Tailwind stylesheet, fetched same-origin at export time, inlined in one `<style>` (Vite `?inline` unverified — runtime fetch is the default).
 - **Fonts:** only the used weights of the three families, latin subset, as base64 WOFF2 data URIs (~300–500 KB artifact — acceptable; per-document glyph subsetting is a noted future optimization).
 - **Credit:** an HTML comment near the top crediting ddd-crew with the CC BY 4.0 license URL.
-- **Responsive pass:** below a single breakpoint the 12-column grid stacks to one column in reading order (title block → description → classification → roles → inbound → ubiquitous language → business decisions → outbound → assumptions/metrics/questions), sections full-width; typography and palette unchanged. No miniature, no horizontal scroll.
+- **Responsive pass:** below a single breakpoint the 12-column grid stacks to one column in reading order (title block → purpose → classification → roles → inbound → the centre box with ubiquitous language then business decisions → outbound → assumptions/metrics/questions), sections full-width; typography and palette unchanged. No miniature, no horizontal scroll.
 - **Print pass:** minimal `@media print` with clean section breaks — printing the artifact is the PDF answer.
 - Delivered as a Blob download.
 
@@ -341,14 +363,14 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
 
 > **This canvas is open in another tab.** Whichever tab edits last overwrites the other — close one of them.
 
-**Footer legend + attribution** (on the sheet, inside the PNG capture region): swatch + lowercase mono labels on one line — `command · query · event · decision · collaborator · open question` — with the attribution line **"Based on the Bounded Context Canvas by the ddd-crew · CC BY 4.0"**, linked to the ddd-crew repo and license in the editor and HTML artifact, plain text in the PNG.
+**Footer legend + attribution** (on the sheet, inside the PNG capture region): lowercase mono labels on one line — the six swatches `command · query · event · decision · collaborator · open question`, the four kind icons `bounded context · external system · frontend · direct user interaction`, and the relationship-pair key `theirs → ours` (theirs in ink-soft, ours in full ink at 500, sr-prefixed "relationship: ") — with the attribution line **"Based on the Bounded Context Canvas by the ddd-crew · CC BY 4.0"**, linked to the ddd-crew repo and license in the editor and HTML artifact, plain text in the PNG.
 
 **Placeholder questions (final):**
 
 | Surface | Copy |
 |---|---|
 | Name | *Name this context* |
-| Description | *What does this context exist to do? A few sentences in business language.* |
+| Purpose | *What does this context exist to do? A few sentences in business language.* |
 | Classification values | — (em dash until picked; teaching lives in the picker) |
 | Domain roles ghost | *+ trait — how does this context behave?* |
 | Inbound ghost | *+ collaborator — who sends this context commands, queries or events?* |
@@ -362,7 +384,7 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
 
 Terse row-field placeholders once a section has content: `Collaborator`, `Message name`, `Term`, `Rule`, `detail`, `…`.
 
-**Popover microcopy:** escape hatch **custom…** (lowercase, ellipsis signals it opens a field); clear/unset entry **— none —** in the classification pickers, reading **— no relationship —** in the relationship picker. No hint lines in any picker — the descriptions are the teaching.
+**Popover microcopy:** escape hatch **custom…** (lowercase, ellipsis signals it opens a field; absent from the closed kind picker); clear/unset entry **— none —** in the classification pickers, **— no kind —** in the kind picker, **— no relationship —** in each relationship picker. No hint lines in any picker — the descriptions are the teaching.
 
 **Live-region announcements** (terse, type-led): `Collaborator removed` · `Trait added` · `Moved up` / `Moved down` · `Undone: <section name>` / `Redone: <section name>` · `Canvas imported` · `New canvas` · `Example opened`.
 

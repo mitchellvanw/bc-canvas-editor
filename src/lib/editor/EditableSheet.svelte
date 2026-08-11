@@ -17,8 +17,8 @@
 	 */
 	import { tick } from 'svelte';
 	import { announce } from '$lib/a11y/announce';
-	import type { MessageType } from '$lib/model/canvas';
-	import CanvasSheet, { GLYPHS } from '$lib/sheet/CanvasSheet.svelte';
+	import type { CollaboratorKind, MessageType } from '$lib/model/canvas';
+	import CanvasSheet, { GLYPHS, KIND_META } from '$lib/sheet/CanvasSheet.svelte';
 	import type { PickSlot, TraitSlot } from '$lib/sheet/pick-slots';
 	import type { AddSlot, MessageAddSlot, RemoveSlot } from '$lib/sheet/structure-slots';
 	import type { TextSlot } from '$lib/sheet/text-slot';
@@ -186,20 +186,39 @@
 				<button
 					type="button"
 					class="pick"
-					class:pick--ink={slot.tone === 'ink'}
+					class:pick--kind={slot.kind === 'collaboratorKind'}
 					class:pick--unset={slot.value === undefined}
 					aria-label={slot.label}
 					aria-haspopup="listbox"
 					aria-expanded={openPicker === slot.key}
 					onclick={(event) => togglePicker(slot.key, event.currentTarget)}
-					>{slot.value ?? '—'}</button
 				>
+					{#if slot.kind === 'collaboratorKind' && slot.value !== undefined && slot.value in KIND_META}
+						<!-- The kind's face is the sheet's icon; the value still reads
+						     out (SPEC §8.5: name is identity, content is value). -->
+						<svg
+							class="pick__kindicon"
+							viewBox="0 0 16 16"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.3"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -- static icon paths from KIND_META -->
+							{@html KIND_META[slot.value as CollaboratorKind].icon}
+						</svg>
+						<span class="sr-only">{KIND_META[slot.value as CollaboratorKind].label}</span>
+					{:else}{slot.value ?? '—'}{/if}
+				</button>
 				{#if openPicker === slot.key}
 					<Picker
 						label={slot.label}
 						options={PICK_OPTIONS[slot.kind]}
 						value={slot.value}
 						clearLabel={CLEAR_LABELS[slot.kind]}
+						custom={slot.kind !== 'collaboratorKind'}
 						onPick={(value) => {
 							// Re-picking the current value changes nothing and commits
 							// nothing — the pickers' "unchanged text commits nothing".
@@ -446,19 +465,37 @@
 	.pick:hover {
 		background: rgb(26 30 32 / 0.055);
 	}
-	.pick--ink:hover {
-		background: rgb(253 253 251 / 0.12);
+
+	/* The kind pick's face is the sheet's icon (imported KIND_META), sized and
+	   centered like the plain render's .kind span. */
+	.pick--kind {
+		display: inline-flex;
+		align-items: center;
 	}
-	/* The app-wide §8.4 ink ring inverts on the ink title block (as above). */
-	.pick--ink:focus-visible {
-		outline-color: var(--color-sheet);
+	.pick__kindicon {
+		display: block;
+		width: 15px;
+		height: 15px;
+		color: var(--color-collaborator-ink);
+	}
+	.editable :global(.lane__who > .pickwrap) {
+		align-self: center;
 	}
 
-	/* An unset relationship renders '—' but, like the other affordances,
-	   materializes on approach (SPEC §6) — classification axes render their '—'
-	   always (SPEC §7). Opacity, not display: it stays a tab stop (SPEC §8.2). */
+	/* An unset lane value — kind or either relationship end — renders '—' but,
+	   like the other affordances, materializes on approach (SPEC §6) —
+	   classification axes render their '—' always (SPEC §7). Opacity, not
+	   display: it stays a tab stop (SPEC §8.2). The pair's arrow rests with
+	   them while the whole relationship is unset, so an untouched lane shows
+	   nothing at rest. */
 	.editable :global(.lane:not(:hover, :focus-within) .pick--unset:not(:focus-visible)) {
 		opacity: 0;
+	}
+	.editable :global(.lane:not(:hover, :focus-within) .rel--unset:not(:focus-within) .rel__arrow) {
+		opacity: 0;
+	}
+	.editable :global(.rel__arrow) {
+		transition: opacity 120ms ease;
 	}
 
 	/* ---- the message-type mini popover (SPEC §6) ---- */
