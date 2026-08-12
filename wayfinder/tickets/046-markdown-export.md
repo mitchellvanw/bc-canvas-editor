@@ -3,7 +3,7 @@ name: markdown-export
 title: "Task: Markdown as a fourth export"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [shared-digest-seam]
 ---
 
