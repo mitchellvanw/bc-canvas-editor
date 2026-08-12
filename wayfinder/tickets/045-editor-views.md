@@ -3,7 +3,7 @@ name: editor-views
 title: "Task: build the three views in the editor"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [shared-digest-seam, view-switcher-prototype, json-buffer-prototype, json-refusal-copy]
 ---
 
