@@ -19,8 +19,8 @@
  */
 
 import { ResourceTemplate, type McpServer } from '@modelcontextprotocol/server';
+import { canvasDigest } from '$lib/model/digest';
 import { canvasUri, catalog, CANVAS_URI_TEMPLATE, pathFromUri } from './catalog';
-import { canvasDigest } from './digest';
 import { readProblem } from './errors';
 import { readCanvas } from './read';
 import type { CanvasRoot } from './root';

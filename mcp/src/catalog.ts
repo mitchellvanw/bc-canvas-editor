@@ -12,10 +12,10 @@
  */
 
 import { UriTemplate } from '@modelcontextprotocol/server';
+import { emptySections, filledCount, SECTIONS } from '$lib/model/sections';
 import { findCanvases } from './discover';
 import { readCanvas } from './read';
 import type { CanvasRoot } from './root';
-import { emptySections, filledCount, SECTIONS } from './sections';
 
 /**
  * Reserved expansion (`{+path}`) rather than plain `{path}`: canvases live in

@@ -1,5 +1,14 @@
 /**
- * The digest: what the sheet says, in words.
+ * The digest: what the sheet says, in words. One renderer, two audiences.
+ *
+ * This is the Markdown a model reads through the MCP server and the Markdown a
+ * person reads in the Markdown View and downloads as `.bcc.md` — the same
+ * function, the same bytes, on purpose: two renderings of one canvas would drift
+ * and there would be no way to say which was the canvas in words. The two names
+ * are audience, not implementation: **View** is what the app calls one of the
+ * three ways of looking at a Canvas (CONTEXT.md), and `digest` is MCP-internal
+ * jargon for this output. The jargon never reaches a user-facing string — a tab
+ * labelled "Digest" would be the app talking to itself.
  *
  * A model reading a canvas to understand it should not pay for JSON's braces
  * and repeated keys, and it should not be handed the sheet's glyphs either.
@@ -19,7 +28,7 @@
  */
 
 import type { CanvasFile, Lane, Message } from '$lib/model/canvas';
-import { SECTIONS, type Section } from './sections';
+import { SECTIONS, type Section } from '$lib/model/sections';
 
 /** The classification line: only the axes that have been picked. */
 function classification(file: CanvasFile): string[] {

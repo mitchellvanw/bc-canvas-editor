@@ -19,16 +19,16 @@ import { dirname } from 'node:path';
 import type { CallToolResult, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { CANVAS_VERSION } from '$lib/model/canvas';
+import { canvasDigest } from '$lib/model/digest';
 import { parseCanvasFile } from '$lib/model/parse';
+import { emptySections, SECTIONS } from '$lib/model/sections';
 import { canvasUri, catalog, type CanvasSummary } from './catalog';
 import { customValueNotes } from './custom';
-import { canvasDigest } from './digest';
 import { readRefusal, refuse } from './errors';
 import { explain, TOPICS } from './explain';
 import { readCanvas } from './read';
 import { OutsideRoot, type CanvasRoot } from './root';
 import { WRITE_INPUT } from './schema';
-import { emptySections, SECTIONS } from './sections';
 import { canvasBytes, writeAtomic } from './write';
 
 const CANVAS_EXTENSION = '.bcc.json';

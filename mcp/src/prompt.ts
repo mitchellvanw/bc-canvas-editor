@@ -25,8 +25,8 @@ import {
 	type McpServer
 } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { canvasDigest } from '$lib/model/digest';
 import { canvasUri, catalog } from './catalog';
-import { canvasDigest } from './digest';
 import { readProblem } from './errors';
 import { readCanvas } from './read';
 import type { CanvasRoot } from './root';

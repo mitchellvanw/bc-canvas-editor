@@ -18,7 +18,9 @@ Glossary for the bounded context canvas editor. The app's own domain — not the
 
 **Relationship type** — a context-mapping pattern naming how one side of a Lane's boundary stands toward the other. A Lane has two ends, and each may name its own: the Collaborator's and this context's. Where the pattern is symmetric both ends carry the same one; where it is asymmetric they differ, which is the case a single value cannot express. Not to be confused with a Domain Role: a Relationship type describes a boundary, a Domain Role describes this context's own character.
 
-**Artifact** — a read-only export of a Canvas for sharing: a self-contained single-file HTML render, or a PNG. An Artifact is read-only as a document — it is never edited in place. The HTML Artifact carries the Canvas file embedded within it and can be imported back; the PNG is presentation only.
+**View** — one of three ways of looking at the same Canvas: the **Sheet** (the canvas as drawn), the **Canvas file's JSON**, and **Markdown**. Three renderings of one document, not three documents and not three exports: switching View never changes what the Canvas is. In the editor the Sheet and the JSON are editable and the Markdown is read; in an Artifact all three are read-only. Markdown is additionally a one-way export (`.bcc.md`) and never an import. One function renders it (`src/lib/model/digest.ts`), which the MCP server calls a **digest** — internal jargon for the model-facing audience, never a user-facing string.
+
+**Artifact** — a read-only export of a Canvas for sharing: a self-contained single-file HTML render, or a PNG. An Artifact is read-only as a document — it is never edited in place. The HTML Artifact carries the Canvas file embedded within it and can be imported back; the PNG is presentation only. The HTML Artifact carries all three Views, pre-rendered into the file so none of them depends on script to be readable; the PNG is the Sheet only.
 
 **Canvas file** — the portable, re-importable serialization of a Canvas (JSON; schema owned by this project, versioned). The durable format; localStorage autosave is only a safety net.
 

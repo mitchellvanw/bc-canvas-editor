@@ -29469,6 +29469,176 @@ function openRoot(input) {
   };
 }
 
+// ../src/lib/model/sections.ts
+function nonEmpty(value) {
+  return value !== void 0 && value.trim() !== "";
+}
+var SECTIONS = [
+  {
+    key: "name",
+    label: "Name",
+    placeholder: "Name this context",
+    filled: (file2) => nonEmpty(file2.name)
+  },
+  {
+    key: "purpose",
+    label: "Purpose",
+    placeholder: "What does this context exist to do? A few sentences in business language.",
+    filled: (file2) => nonEmpty(file2.purpose)
+  },
+  {
+    key: "strategicClassification",
+    label: "Strategic classification",
+    // No placeholder in SPEC §10: the axes render an em dash until picked,
+    // and their teaching lives in the picker — the vocabularies themselves.
+    filled: (file2) => nonEmpty(file2.strategicClassification.domain) || nonEmpty(file2.strategicClassification.businessModel) || nonEmpty(file2.strategicClassification.evolution)
+  },
+  {
+    key: "domainRoles",
+    label: "Domain roles",
+    placeholder: "+ trait \u2014 how does this context behave?",
+    filled: (file2) => file2.domainRoles.length > 0
+  },
+  {
+    key: "inboundCommunication",
+    label: "Inbound communication",
+    placeholder: "+ collaborator \u2014 who sends this context commands, queries or events?",
+    filled: (file2) => file2.inboundCommunication.length > 0
+  },
+  {
+    key: "ubiquitousLanguage",
+    label: "Ubiquitous language",
+    placeholder: "+ term \u2014 which words mean something precise here?",
+    filled: (file2) => file2.ubiquitousLanguage.length > 0
+  },
+  {
+    key: "businessDecisions",
+    label: "Business decisions",
+    placeholder: "+ decision \u2014 which rules does this context enforce?",
+    filled: (file2) => file2.businessDecisions.length > 0
+  },
+  {
+    key: "outboundCommunication",
+    label: "Outbound communication",
+    placeholder: "+ collaborator \u2014 who consumes what this context emits?",
+    filled: (file2) => file2.outboundCommunication.length > 0
+  },
+  {
+    key: "assumptions",
+    label: "Assumptions",
+    placeholder: "+ assumption \u2014 what are you taking to be true?",
+    filled: (file2) => file2.assumptions.length > 0
+  },
+  {
+    key: "verificationMetrics",
+    label: "Verification metrics",
+    placeholder: "+ metric \u2014 what would verify this design?",
+    filled: (file2) => file2.verificationMetrics.length > 0
+  },
+  {
+    key: "openQuestions",
+    label: "Open questions",
+    placeholder: "+ question \u2014 what's still unresolved?",
+    filled: (file2) => file2.openQuestions.length > 0
+  }
+];
+function question(section) {
+  const placeholder = section.placeholder;
+  if (placeholder === void 0) return void 0;
+  const dash = placeholder.indexOf(" \u2014 ");
+  return placeholder.startsWith("+ ") && dash >= 0 ? placeholder.slice(dash + 3) : placeholder;
+}
+function sectionByKey(key) {
+  const section = SECTIONS.find((candidate) => candidate.key === key);
+  if (!section) throw new Error(`no such section: ${key}`);
+  return section;
+}
+function emptySections(file2) {
+  return SECTIONS.filter((section) => !section.filled(file2)).map((section) => section.label);
+}
+function filledCount(file2) {
+  return SECTIONS.filter((section) => section.filled(file2)).length;
+}
+
+// ../src/lib/model/digest.ts
+function classification(file2) {
+  const { domain: domain2, businessModel, evolution } = file2.strategicClassification;
+  const picked = [
+    ["Domain", domain2],
+    ["Business model", businessModel],
+    ["Evolution", evolution]
+  ].filter(([, value]) => value !== void 0 && value !== "");
+  if (picked.length === 0) return [];
+  return [picked.map(([label, value]) => `${label}: ${value}`).join(" \xB7 ")];
+}
+function message(row) {
+  const detail = row.description === void 0 || row.description === "" ? "" : ` \u2014 ${row.description}`;
+  return `${row.type} ${row.name}${detail}`;
+}
+function relationshipLine(lane2) {
+  const present2 = (end) => end !== void 0 && end !== "";
+  const theirs = lane2.relationship?.theirs;
+  const ours = lane2.relationship?.ours;
+  if (present2(theirs) && present2(ours)) return `Collaborator: ${theirs} \u2192 this context: ${ours}`;
+  if (present2(theirs)) return `Collaborator: ${theirs} \u2192`;
+  if (present2(ours)) return `\u2192 this context: ${ours}`;
+  return void 0;
+}
+function lanes(rows) {
+  return rows.flatMap((lane2, index) => {
+    const kind = lane2.collaborator.kind;
+    const head = `### ${lane2.collaborator.name}${kind === void 0 ? "" : ` \u2014 ${kind}`}`;
+    const relationship = relationshipLine(lane2);
+    const block = relationship === void 0 ? [head] : [head, "", relationship];
+    const messages = lane2.messages.length === 0 ? [] : ["", ...lane2.messages.map(message)];
+    return index === 0 ? [...block, ...messages] : ["", ...block, ...messages];
+  });
+}
+function pair(head, detail) {
+  return detail === void 0 || detail === "" ? head : `${head} \u2014 ${detail}`;
+}
+function body(section, file2) {
+  switch (section.key) {
+    case "name":
+      return [];
+    case "strategicClassification":
+      return classification(file2);
+    case "purpose":
+      return [file2.purpose];
+    case "domainRoles":
+      return [file2.domainRoles.map((role) => role.name).join(", ")];
+    case "inboundCommunication":
+      return lanes(file2.inboundCommunication);
+    case "outboundCommunication":
+      return lanes(file2.outboundCommunication);
+    case "ubiquitousLanguage":
+      return file2.ubiquitousLanguage.map((row) => pair(row.term, row.definition));
+    case "businessDecisions":
+      return file2.businessDecisions.map((row) => pair(row.name, row.description));
+    case "assumptions":
+      return file2.assumptions;
+    case "verificationMetrics":
+      return file2.verificationMetrics;
+    case "openQuestions":
+      return file2.openQuestions;
+  }
+}
+function canvasDigest(file2) {
+  const lines = [`# ${file2.name.trim() === "" ? "Untitled" : file2.name}`];
+  const missing = [];
+  for (const section of SECTIONS) {
+    if (!section.filled(file2)) {
+      missing.push(section.label);
+      continue;
+    }
+    if (section.key === "name") continue;
+    lines.push("", `## ${section.label}`, "", ...body(section, file2));
+  }
+  if (missing.length > 0) lines.push("", `Nothing yet under: ${missing.join(", ")}.`);
+  return `${lines.join("\n")}
+`;
+}
+
 // src/discover.ts
 import { readdirSync } from "node:fs";
 import { join as join2 } from "node:path";
@@ -29799,97 +29969,6 @@ function readCanvas(root2, input) {
   return { ok: true, path, file: parsed.file, text };
 }
 
-// src/sections.ts
-function nonEmpty(value) {
-  return value !== void 0 && value.trim() !== "";
-}
-var SECTIONS = [
-  {
-    key: "name",
-    label: "Name",
-    placeholder: "Name this context",
-    filled: (file2) => nonEmpty(file2.name)
-  },
-  {
-    key: "purpose",
-    label: "Purpose",
-    placeholder: "What does this context exist to do? A few sentences in business language.",
-    filled: (file2) => nonEmpty(file2.purpose)
-  },
-  {
-    key: "strategicClassification",
-    label: "Strategic classification",
-    // No placeholder in SPEC §10: the axes render an em dash until picked,
-    // and their teaching lives in the picker — the vocabularies themselves.
-    filled: (file2) => nonEmpty(file2.strategicClassification.domain) || nonEmpty(file2.strategicClassification.businessModel) || nonEmpty(file2.strategicClassification.evolution)
-  },
-  {
-    key: "domainRoles",
-    label: "Domain roles",
-    placeholder: "+ trait \u2014 how does this context behave?",
-    filled: (file2) => file2.domainRoles.length > 0
-  },
-  {
-    key: "inboundCommunication",
-    label: "Inbound communication",
-    placeholder: "+ collaborator \u2014 who sends this context commands, queries or events?",
-    filled: (file2) => file2.inboundCommunication.length > 0
-  },
-  {
-    key: "ubiquitousLanguage",
-    label: "Ubiquitous language",
-    placeholder: "+ term \u2014 which words mean something precise here?",
-    filled: (file2) => file2.ubiquitousLanguage.length > 0
-  },
-  {
-    key: "businessDecisions",
-    label: "Business decisions",
-    placeholder: "+ decision \u2014 which rules does this context enforce?",
-    filled: (file2) => file2.businessDecisions.length > 0
-  },
-  {
-    key: "outboundCommunication",
-    label: "Outbound communication",
-    placeholder: "+ collaborator \u2014 who consumes what this context emits?",
-    filled: (file2) => file2.outboundCommunication.length > 0
-  },
-  {
-    key: "assumptions",
-    label: "Assumptions",
-    placeholder: "+ assumption \u2014 what are you taking to be true?",
-    filled: (file2) => file2.assumptions.length > 0
-  },
-  {
-    key: "verificationMetrics",
-    label: "Verification metrics",
-    placeholder: "+ metric \u2014 what would verify this design?",
-    filled: (file2) => file2.verificationMetrics.length > 0
-  },
-  {
-    key: "openQuestions",
-    label: "Open questions",
-    placeholder: "+ question \u2014 what's still unresolved?",
-    filled: (file2) => file2.openQuestions.length > 0
-  }
-];
-function question(section) {
-  const placeholder = section.placeholder;
-  if (placeholder === void 0) return void 0;
-  const dash = placeholder.indexOf(" \u2014 ");
-  return placeholder.startsWith("+ ") && dash >= 0 ? placeholder.slice(dash + 3) : placeholder;
-}
-function sectionByKey(key) {
-  const section = SECTIONS.find((candidate) => candidate.key === key);
-  if (!section) throw new Error(`no such section: ${key}`);
-  return section;
-}
-function emptySections(file2) {
-  return SECTIONS.filter((section) => !section.filled(file2)).map((section) => section.label);
-}
-function filledCount(file2) {
-  return SECTIONS.filter((section) => section.filled(file2)).length;
-}
-
 // src/catalog.ts
 var CANVAS_URI_TEMPLATE = "bcc://canvas/{+path}";
 var TEMPLATE = new UriTemplate(CANVAS_URI_TEMPLATE);
@@ -29938,85 +30017,6 @@ function catalog(root2) {
     unreadable: found.unreadable,
     sections: SECTIONS.map((section) => section.label)
   };
-}
-
-// src/digest.ts
-function classification(file2) {
-  const { domain: domain2, businessModel, evolution } = file2.strategicClassification;
-  const picked = [
-    ["Domain", domain2],
-    ["Business model", businessModel],
-    ["Evolution", evolution]
-  ].filter(([, value]) => value !== void 0 && value !== "");
-  if (picked.length === 0) return [];
-  return [picked.map(([label, value]) => `${label}: ${value}`).join(" \xB7 ")];
-}
-function message(row) {
-  const detail = row.description === void 0 || row.description === "" ? "" : ` \u2014 ${row.description}`;
-  return `${row.type} ${row.name}${detail}`;
-}
-function relationshipLine(lane2) {
-  const present2 = (end) => end !== void 0 && end !== "";
-  const theirs = lane2.relationship?.theirs;
-  const ours = lane2.relationship?.ours;
-  if (present2(theirs) && present2(ours)) return `Collaborator: ${theirs} \u2192 this context: ${ours}`;
-  if (present2(theirs)) return `Collaborator: ${theirs} \u2192`;
-  if (present2(ours)) return `\u2192 this context: ${ours}`;
-  return void 0;
-}
-function lanes(rows) {
-  return rows.flatMap((lane2, index) => {
-    const kind = lane2.collaborator.kind;
-    const head = `### ${lane2.collaborator.name}${kind === void 0 ? "" : ` \u2014 ${kind}`}`;
-    const relationship = relationshipLine(lane2);
-    const block = relationship === void 0 ? [head] : [head, "", relationship];
-    const messages = lane2.messages.length === 0 ? [] : ["", ...lane2.messages.map(message)];
-    return index === 0 ? [...block, ...messages] : ["", ...block, ...messages];
-  });
-}
-function pair(head, detail) {
-  return detail === void 0 || detail === "" ? head : `${head} \u2014 ${detail}`;
-}
-function body(section, file2) {
-  switch (section.key) {
-    case "name":
-      return [];
-    case "strategicClassification":
-      return classification(file2);
-    case "purpose":
-      return [file2.purpose];
-    case "domainRoles":
-      return [file2.domainRoles.map((role) => role.name).join(", ")];
-    case "inboundCommunication":
-      return lanes(file2.inboundCommunication);
-    case "outboundCommunication":
-      return lanes(file2.outboundCommunication);
-    case "ubiquitousLanguage":
-      return file2.ubiquitousLanguage.map((row) => pair(row.term, row.definition));
-    case "businessDecisions":
-      return file2.businessDecisions.map((row) => pair(row.name, row.description));
-    case "assumptions":
-      return file2.assumptions;
-    case "verificationMetrics":
-      return file2.verificationMetrics;
-    case "openQuestions":
-      return file2.openQuestions;
-  }
-}
-function canvasDigest(file2) {
-  const lines = [`# ${file2.name.trim() === "" ? "Untitled" : file2.name}`];
-  const missing = [];
-  for (const section of SECTIONS) {
-    if (!section.filled(file2)) {
-      missing.push(section.label);
-      continue;
-    }
-    if (section.key === "name") continue;
-    lines.push("", `## ${section.label}`, "", ...body(section, file2));
-  }
-  if (missing.length > 0) lines.push("", `Nothing yet under: ${missing.join(", ")}.`);
-  return `${lines.join("\n")}
-`;
 }
 
 // src/errors.ts

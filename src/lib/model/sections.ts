@@ -1,11 +1,18 @@
 /**
  * The eleven sections, once.
  *
- * Every model-facing surface in this server walks the same table: the digest
- * renders it in order, `bcc_list_canvases` reports which entries came out
- * empty, `bcc_write_canvas` names the same emptiness back, and `bcc_explain`
- * takes its topics from the keys. One table means those four can never
- * disagree about what a section is called or when it counts as filled.
+ * Every surface that names sections outside the sheet walks the same table: the
+ * Markdown rendering (`digest.ts`) prints it in order, and across the `$lib`
+ * seam `bcc_list_canvases` reports which entries came out empty,
+ * `bcc_write_canvas` names the same emptiness back, and `bcc_explain` takes its
+ * topics from the keys. One table means they can never disagree about what a
+ * section is called or when it counts as filled.
+ *
+ * It lives on the app's side of that seam because its content does: the labels
+ * are the sheet's headings and the questions are SPEC §10 strings, both authored
+ * here. MCP borrows it the way it borrows the parser and the serializer — which
+ * leaves `question()` and `sectionByKey()` with no caller in the app today, kept
+ * beside the table rather than split from it, since it is one table's API.
  *
  * Labels are the sheet's own headings (`CanvasSheet.svelte`) and questions are
  * the SPEC §10 placeholder strings — the ones already signed off — carried

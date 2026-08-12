@@ -16,7 +16,7 @@
  */
 
 import { PICK_OPTIONS, TRAITS, type PickOption } from '$lib/editor/vocab';
-import { question, sectionByKey, SECTIONS, type SectionKey } from './sections';
+import { question, sectionByKey, SECTIONS, type SectionKey } from '$lib/model/sections';
 
 export const TOPICS = [
 	'canvas',

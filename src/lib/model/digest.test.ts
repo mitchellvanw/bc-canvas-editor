@@ -1,24 +1,29 @@
 /**
- * The digest, pinned.
+ * The Markdown rendering, pinned.
  *
- * It is the view a model forms its idea of a canvas from, so a silent change
- * in how a lane or a message reads is a silent change in what gets drafted
- * next. The committed example is the fixture on purpose: it is the same file
- * `src/lib/chrome/examples.test.ts` pins byte-exactly on the app side, so the
- * two halves of the round trip are held against one document.
+ * It is the view a model forms its idea of a canvas from, and — since the
+ * renderer crossed the seam (ticket 041) — the same bytes a person reads in the
+ * Markdown View and downloads as `.bcc.md`. A silent change in how a lane or a
+ * message reads is a silent change in what gets drafted next, in two audiences
+ * at once. These assertions are carried over from `mcp/src/digest.test.ts`
+ * unchanged, because byte-identity across the move is the whole point of it.
+ *
+ * The committed example is the fixture on purpose: it is the same file
+ * `src/lib/chrome/examples.test.ts` pins byte-exactly, so the two halves of the
+ * round trip are held against one document.
  */
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { blankCanvas, type CanvasFile } from '$lib/model/canvas';
+import { canvasDigest } from '$lib/model/digest';
 import { parseCanvasFile } from '$lib/model/parse';
 import { toCanvasFile } from '$lib/model/serialize';
-import { canvasDigest } from './digest';
 
 function example(name: string): CanvasFile {
 	const text = readFileSync(
-		fileURLToPath(new URL(`../../examples/${name}.bcc.json`, import.meta.url)),
+		fileURLToPath(new URL(`../../../examples/${name}.bcc.json`, import.meta.url)),
 		'utf8'
 	);
 	const parsed = parseCanvasFile(text);

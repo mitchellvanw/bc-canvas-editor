@@ -37,7 +37,7 @@ One Canvas, three **Views** — the Sheet as it is today, the Canvas file's JSON
 
 <!-- one line per closed ticket -->
 
-_(none yet — the map was charted 2026-08-12.)_
+- [the digest crosses the seam — one Markdown renderer, two audiences](wayfinder/tickets/041-shared-digest-seam.md) — the renderer and the eleven-section table are both the app's now (`src/lib/model/digest.ts`, `sections.ts`), MCP imports them across the unchanged `$lib` alias, the same bytes come out of both trees (proved by `.scratch/views-seam/render-digest.mjs`, not asserted), and `CONTEXT.md` carries **View** plus the rule that `digest` is jargon that never reaches a user-facing string
 
 ## Not yet specified
 
