@@ -1,6 +1,6 @@
-# C — Gutter segmented control
+# C — Gutter segmented control — **the winner**
 
-`src/lib/proto/ViewsC.svelte` · `?switcher=C` · `evidence/band-C-*.png`, `C-*.png`
+`src/lib/proto/ViewsC.svelte` · `?switcher=C` · `evidence/band-C-*.png`, `C-*.png`, `artifact-C*.png`
 
 ## Style
 
@@ -11,13 +11,19 @@ block is untouched: it belongs to the Sheet View alone.
 
 ## Design decisions
 
-- **Drawn precisely because it is the direction most at risk.** The ticket
-  settled that the switcher is not in the chrome; this variant tests whether a
-  control that *looks* exactly like chrome is saved by being left-aligned,
-  segmented, and 60px lower. Refusing to draw it would have left that argument
-  unexamined.
+- **The switcher is a control and says so.** The three Views are not a property
+  of the paper; they are three ways of looking at one document, and a control is
+  the honest shape for that. The quieter directions (A, D) buy their quietness
+  by disguising the switcher as part of the sheet, which makes the sheet claim
+  something about itself that is really about the app.
 - **No reach into `CanvasSheet` at all.** The only variant with a clean seam:
-  the strip is a sibling of the sheet, and the sheet is unchanged.
+  the strip is a sibling of the sheet, and the shared sheet component is
+  unchanged. A and B both had to square the title block's corners; A also had to
+  suppress its eyebrow. That seam matters twice over, because `CanvasSheet` is
+  shared with the offscreen artifact mount and the PNG capture.
+- **The title block does not persist.** It belongs to the Sheet View, so the
+  JSON View never shows a canvas name that an unapplied buffer might disagree
+  with — the double-source problem A would have had to answer.
 - **Focus ring is inset** (`outline-offset: -2px`) because an outset ring on a
   segmented group breaks the pill's edge.
 
@@ -26,17 +32,39 @@ block is untouched: it belongs to the Sheet View alone.
 | Ticket requirement | How it lands |
 |---|---|
 | Permanent, not hover-revealed | Always present |
-| Not chrome | **This is where it fails** — see `band-C-sheet.png`, where the pill and the chrome buttons above it are the same object at two sizes |
-| Responsive tiers | Fixed-size pill, survives every tier unchanged |
-| Unapplied marker | Trailing `•` in hotspot pink; legible but the pill is already busy |
-| Artifact | Not built — a chrome-idiom control in a file with no chrome would have to be redrawn, which is requirement 3's failure condition |
-| Tablist semantics | Same as all four |
+| Responsive tiers | Fixed-size pill, unchanged through all four widths (`C-1..4-*.png`) |
+| Unapplied marker | Trailing `•` in hotspot pink on the JSON segment |
+| Artifact | `artifact-C-sheet.png` — and see below, this is where it does better than expected |
+| Tablist semantics | One tab stop, arrows select, panels wired both ways — asserted in `shoot.mjs` |
+
+## The chrome-resemblance risk — accepted, not solved
+
+Held next to Import…/Examples/Export in `band-C-sheet.png`, the pill and the
+chrome buttons are the same family: same border, radius, fill and face. That was
+the argument against this direction, and it is **not** refuted — it is accepted,
+in the tradition of §6's "known accepted risks: soften in build, don't change
+the model". Two things bound it:
+
+- **It bites hardest at the stack tier** (`C-4-stack-sheet.png`), where the
+  chrome wraps and the pill lands directly beneath `Import…`. That is the shot
+  to look at when softening.
+- **It does not exist in the artifact at all.** An exported file has no chrome
+  band — no file verbs, nothing to be confused with — so the control is
+  unambiguous there (`artifact-C-sheet.png`). The risk is editor-only, which
+  the "draw the artifact too" requirement is what surfaced. This was missed on
+  the first pass, when C's artifact version was skipped as pre-judged.
+
+Softening levers for the build, none of which change the model: drop the fill to
+transparent, lose the outer border and keep only the dividers, shrink the type,
+or widen the gap between the chrome band and the pill.
 
 ## Trade-offs
 
-- **Gains:** cleanest seam (touches nothing), most conventional, zero
-  discoverability risk — everyone has clicked a segmented control.
-- **Costs:** it reads as chrome, which is the one thing the ticket ruled out.
-  Held next to Import…/Examples/Export in `band-C-sheet.png` it is plainly the
-  same family, just lower and smaller. Its own reasoning is the argument against
-  it: **this variant exists to be rejected with evidence**, and it earns that.
+- **Gains:** cleanest seam of the four (touches nothing shared); zero
+  discoverability risk — everyone has clicked a segmented control, which is the
+  live worry with A and D; no double-source problem for the canvas name; best
+  behaved of the four under the responsive tiers.
+- **Costs:** reads as chrome in the editor (above); adds a fifth object to a
+  page §5 wants quiet; and with script off in the artifact the `.v-bar` wrapper
+  survives as a 14px empty band once its strip is hidden — a one-line fix for
+  ticket 047, recorded so it is not rediscovered.
