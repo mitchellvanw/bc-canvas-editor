@@ -1,0 +1,1397 @@
+<!doctype html>
+<!-- PROTOTYPE (wayfinder ticket 043). Built by build.mjs — edit shell.html, not json-buffer.html. -->
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>The JSON box — prototype</title>
+		<style>
+			:root {
+				--ink: #1b1b1a;
+				--soft: #6a6862;
+				--line: #d9d6cd;
+				--paper: #faf8f3;
+				--sheet: #fff;
+				--pink: #d81b60;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				padding: 2.5rem 1.5rem 5rem;
+				background: var(--paper);
+				color: var(--ink);
+				font:
+					15px/1.55 -apple-system,
+					BlinkMacSystemFont,
+					'Segoe UI',
+					sans-serif;
+			}
+			main {
+				max-width: 62rem;
+				margin: 0 auto;
+			}
+			h1 {
+				font-size: 1.5rem;
+				margin: 0 0 0.4rem;
+			}
+			h2 {
+				font-size: 0.78rem;
+				letter-spacing: 0.09em;
+				text-transform: uppercase;
+				color: var(--soft);
+				margin: 2.25rem 0 0.75rem;
+			}
+			.lede {
+				margin: 0 0 1.5rem;
+				max-width: 46rem;
+				color: #3d3b37;
+			}
+			.lede b {
+				color: var(--ink);
+			}
+			.cols {
+				display: grid;
+				grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+				gap: 1.75rem;
+				align-items: start;
+			}
+			@media (max-width: 860px) {
+				.cols {
+					grid-template-columns: minmax(0, 1fr);
+				}
+			}
+
+			/* the switcher, as ticket 042 drew it */
+			.bar {
+				display: flex;
+				align-items: center;
+				gap: 0.75rem;
+				margin-bottom: 0.6rem;
+			}
+			.pill {
+				display: inline-flex;
+				border: 1px solid var(--line);
+				border-radius: 4px;
+				background: var(--sheet);
+				overflow: hidden;
+			}
+			.pill button {
+				border: 0;
+				border-left: 1px solid var(--line);
+				background: transparent;
+				padding: 0.3rem 0.75rem;
+				font: inherit;
+				font-size: 0.8rem;
+				font-weight: 500;
+				color: var(--soft);
+				cursor: pointer;
+			}
+			.pill button:first-child {
+				border-left: 0;
+			}
+			.pill button.active {
+				background: var(--ink);
+				color: #fff;
+				font-weight: 600;
+			}
+			#marker {
+				color: var(--pink);
+				font-size: 1.1em;
+				line-height: 0;
+				vertical-align: middle;
+			}
+			.pill button.active #marker {
+				color: #ff8fb4;
+			}
+
+			.panel {
+				background: var(--sheet);
+				border: 1px solid var(--line);
+				border-radius: 3px;
+				padding: 1.1rem 1.25rem;
+				min-height: 19rem;
+			}
+			#panel-json {
+				padding: 0.9rem;
+			}
+			textarea {
+				width: 100%;
+				height: 15rem;
+				border: 1px solid var(--line);
+				border-radius: 2px;
+				padding: 0.6rem 0.7rem;
+				font: 12px/1.5 ui-monospace, 'IBM Plex Mono', monospace;
+				resize: vertical;
+			}
+			#panel-markdown {
+				white-space: pre-wrap;
+				font: 12px/1.5 ui-monospace, 'IBM Plex Mono', monospace;
+				overflow-x: auto;
+			}
+			.sheet-title {
+				font-size: 1.2rem;
+				font-weight: 600;
+				margin: 0 0 0.25rem;
+			}
+			.sheet-field {
+				margin: 0 0 1rem;
+			}
+			.sheet-label {
+				font-size: 0.68rem;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--soft);
+				display: block;
+				margin-bottom: 0.15rem;
+			}
+			.apply-row {
+				display: flex;
+				align-items: center;
+				gap: 0.75rem;
+				margin-top: 0.7rem;
+			}
+			#apply {
+				background: var(--ink);
+				color: #fff;
+				border: 0;
+				border-radius: 3px;
+				padding: 0.4rem 1rem;
+				font: inherit;
+				font-weight: 600;
+				cursor: pointer;
+			}
+			#refusal {
+				border-left: 3px solid var(--pink);
+				background: #fff5f8;
+				padding: 0.6rem 0.8rem;
+				margin-top: 0.7rem;
+				font-size: 0.85rem;
+			}
+			#refusal-detail {
+				display: block;
+				font-family: ui-monospace, monospace;
+				font-size: 0.78rem;
+				color: #7a2244;
+				margin-top: 0.25rem;
+			}
+
+			dl.state {
+				margin: 0;
+				display: grid;
+				grid-template-columns: max-content minmax(0, 1fr);
+				gap: 0.35rem 0.9rem;
+				font-size: 0.86rem;
+			}
+			dl.state dt {
+				color: var(--soft);
+			}
+			dl.state dd {
+				margin: 0;
+			}
+			.val.on {
+				color: var(--pink);
+				font-weight: 600;
+			}
+			#log {
+				margin: 0.6rem 0 0;
+				padding-left: 1.1rem;
+				font-size: 0.82rem;
+				color: var(--soft);
+			}
+			#log li {
+				margin-bottom: 0.15rem;
+			}
+
+			#scenario-tabs {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.35rem;
+				margin-bottom: 0.8rem;
+			}
+			#scenario-tabs button,
+			#free-buttons button,
+			#free-edits button {
+				border: 1px solid var(--line);
+				background: var(--sheet);
+				border-radius: 3px;
+				padding: 0.3rem 0.7rem;
+				font: inherit;
+				font-size: 0.83rem;
+				cursor: pointer;
+			}
+			#scenario-tabs button.active {
+				background: var(--ink);
+				color: #fff;
+				border-color: var(--ink);
+			}
+			#scenario-body {
+				background: var(--sheet);
+				border: 1px solid var(--line);
+				border-radius: 3px;
+				padding: 1rem 1.25rem;
+			}
+			#scenario-body p {
+				margin: 0 0 0.9rem;
+				max-width: 46rem;
+			}
+			#scenario-body ol {
+				margin: 0;
+				padding-left: 1.3rem;
+			}
+			#scenario-body li {
+				margin-bottom: 0.4rem;
+			}
+			#scenario-body li.done {
+				color: var(--soft);
+			}
+			button.step {
+				border: 1px solid var(--line);
+				background: var(--paper);
+				border-radius: 3px;
+				padding: 0.25rem 0.7rem;
+				font: inherit;
+				font-size: 0.85rem;
+				cursor: pointer;
+			}
+			button.step:disabled {
+				opacity: 1;
+				color: var(--soft);
+				cursor: default;
+				background: transparent;
+				border-color: transparent;
+			}
+			li.done button.step::after {
+				content: ' ✓';
+				color: var(--soft);
+			}
+			.watch {
+				border-left: 3px solid var(--ink);
+				padding-left: 0.8rem;
+				margin-top: 1rem !important;
+			}
+			button.again {
+				border: 1px solid var(--line);
+				background: var(--paper);
+				border-radius: 3px;
+				padding: 0.3rem 0.8rem;
+				font: inherit;
+				cursor: pointer;
+			}
+			.hint {
+				color: var(--soft);
+			}
+			#free-buttons,
+			#free-edits {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.35rem;
+				margin-bottom: 0.5rem;
+			}
+			footer {
+				margin-top: 3rem;
+				color: var(--soft);
+				font-size: 0.82rem;
+				max-width: 46rem;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<h1>The JSON box: what can disagree with the canvas, and for how long</h1>
+			<p class="lede">
+				The JSON view shows a canvas as the file it exports to, and lets you edit that text and
+				press <b>Apply</b>. That makes something this editor has never had: a second piece of
+				text that is allowed to disagree with the canvas, for as long as you like. This page is
+				the model behind that — the real parser, the real serializer, a stand-in canvas — so the
+				awkward moments can be pressed rather than argued about. <b>Nothing here is the app.</b>
+			</p>
+
+			<div class="cols">
+				<div>
+					<div class="bar">
+						<span class="pill">
+							<button id="seg-sheet">Sheet</button>
+							<button id="seg-json">JSON <span id="marker" hidden>•</span></button>
+							<button id="seg-markdown">Markdown</button>
+						</span>
+						<button id="reset">Start over</button>
+					</div>
+
+					<div class="panel" id="panel-sheet">
+						<p class="sheet-title" id="canvas-name"></p>
+						<p class="sheet-field"><span class="sheet-label">Purpose</span><span id="canvas-purpose"></span></p>
+						<p class="sheet-field"><span class="sheet-label">Ubiquitous language</span><span id="canvas-terms"></span></p>
+						<p class="hint">A stand-in for the sheet — enough of it to see the canvas change.</p>
+					</div>
+
+					<div class="panel" id="panel-json" hidden>
+						<textarea id="box" spellcheck="false"></textarea>
+						<div class="apply-row">
+							<button id="apply">Apply</button>
+							<span class="hint">Replaces the whole canvas, as one undo step.</span>
+						</div>
+						<div id="refusal" hidden>
+							<b>Refused:</b> <span id="refusal-reason"></span>
+							<span id="refusal-detail"></span>
+						</div>
+					</div>
+
+					<div class="panel" id="panel-markdown" hidden></div>
+				</div>
+
+				<div>
+					<h2 style="margin-top: 0">Where things stand</h2>
+					<dl class="state">
+						<dt>Looking at</dt><dd id="state-view"></dd>
+						<dt>The box</dt><dd id="state-buffer"></dd>
+						<dt>Dot on the JSON tab</dt><dd id="state-marker" class="val"></dd>
+						<dt>Undo history</dt><dd id="state-undo"></dd>
+						<dt>Unexported changes</dt><dd id="state-unexported"></dd>
+						<dt>Other-tab notice</dt><dd id="state-notice"></dd>
+						<dt>Saved slot</dt><dd id="state-slot"></dd>
+					</dl>
+					<ul id="log"></ul>
+				</div>
+			</div>
+
+			<h2>Walkthroughs</h2>
+			<div id="scenario-tabs"></div>
+			<div id="scenario-body"></div>
+
+			<h2>Free play</h2>
+			<div id="free-buttons"></div>
+			<div id="free-edits"></div>
+
+			<footer>
+				Prototype for wayfinder ticket 043 (<em>the JSON buffer — Apply, divergence, and the
+				document moving underneath</em>). The parser, the serializer and the Markdown renderer
+				are the app's own, bundled in; the canvas, the sheet and the undo stack are stand-ins.
+				Typing in the box is real typing — ⌘Z in there is the browser's own text undo, which is
+				part of the answer.
+			</footer>
+		</main>
+		<script>
+			"use strict";
+(() => {
+  // src/lib/model/sections.ts
+  function nonEmpty(value) {
+    return value !== void 0 && value.trim() !== "";
+  }
+  var SECTIONS = [
+    {
+      key: "name",
+      label: "Name",
+      placeholder: "Name this context",
+      filled: (file) => nonEmpty(file.name)
+    },
+    {
+      key: "purpose",
+      label: "Purpose",
+      placeholder: "What does this context exist to do? A few sentences in business language.",
+      filled: (file) => nonEmpty(file.purpose)
+    },
+    {
+      key: "strategicClassification",
+      label: "Strategic classification",
+      // No placeholder in SPEC §10: the axes render an em dash until picked,
+      // and their teaching lives in the picker — the vocabularies themselves.
+      filled: (file) => nonEmpty(file.strategicClassification.domain) || nonEmpty(file.strategicClassification.businessModel) || nonEmpty(file.strategicClassification.evolution)
+    },
+    {
+      key: "domainRoles",
+      label: "Domain roles",
+      placeholder: "+ trait \u2014 how does this context behave?",
+      filled: (file) => file.domainRoles.length > 0
+    },
+    {
+      key: "inboundCommunication",
+      label: "Inbound communication",
+      placeholder: "+ collaborator \u2014 who sends this context commands, queries or events?",
+      filled: (file) => file.inboundCommunication.length > 0
+    },
+    {
+      key: "ubiquitousLanguage",
+      label: "Ubiquitous language",
+      placeholder: "+ term \u2014 which words mean something precise here?",
+      filled: (file) => file.ubiquitousLanguage.length > 0
+    },
+    {
+      key: "businessDecisions",
+      label: "Business decisions",
+      placeholder: "+ decision \u2014 which rules does this context enforce?",
+      filled: (file) => file.businessDecisions.length > 0
+    },
+    {
+      key: "outboundCommunication",
+      label: "Outbound communication",
+      placeholder: "+ collaborator \u2014 who consumes what this context emits?",
+      filled: (file) => file.outboundCommunication.length > 0
+    },
+    {
+      key: "assumptions",
+      label: "Assumptions",
+      placeholder: "+ assumption \u2014 what are you taking to be true?",
+      filled: (file) => file.assumptions.length > 0
+    },
+    {
+      key: "verificationMetrics",
+      label: "Verification metrics",
+      placeholder: "+ metric \u2014 what would verify this design?",
+      filled: (file) => file.verificationMetrics.length > 0
+    },
+    {
+      key: "openQuestions",
+      label: "Open questions",
+      placeholder: "+ question \u2014 what's still unresolved?",
+      filled: (file) => file.openQuestions.length > 0
+    }
+  ];
+
+  // src/lib/model/digest.ts
+  function classification(file) {
+    const { domain, businessModel, evolution } = file.strategicClassification;
+    const picked = [
+      ["Domain", domain],
+      ["Business model", businessModel],
+      ["Evolution", evolution]
+    ].filter(([, value]) => value !== void 0 && value !== "");
+    if (picked.length === 0) return [];
+    return [picked.map(([label, value]) => `${label}: ${value}`).join(" \xB7 ")];
+  }
+  function message(row) {
+    const detail = row.description === void 0 || row.description === "" ? "" : ` \u2014 ${row.description}`;
+    return `${row.type} ${row.name}${detail}`;
+  }
+  function relationshipLine(lane) {
+    const present2 = (end) => end !== void 0 && end !== "";
+    const theirs = lane.relationship?.theirs;
+    const ours = lane.relationship?.ours;
+    if (present2(theirs) && present2(ours)) return `Collaborator: ${theirs} \u2192 this context: ${ours}`;
+    if (present2(theirs)) return `Collaborator: ${theirs} \u2192`;
+    if (present2(ours)) return `\u2192 this context: ${ours}`;
+    return void 0;
+  }
+  function lanes(rows) {
+    return rows.flatMap((lane, index) => {
+      const kind = lane.collaborator.kind;
+      const head = `### ${lane.collaborator.name}${kind === void 0 ? "" : ` \u2014 ${kind}`}`;
+      const relationship = relationshipLine(lane);
+      const block = relationship === void 0 ? [head] : [head, "", relationship];
+      const messages = lane.messages.length === 0 ? [] : ["", ...lane.messages.map(message)];
+      return index === 0 ? [...block, ...messages] : ["", ...block, ...messages];
+    });
+  }
+  function pair(head, detail) {
+    return detail === void 0 || detail === "" ? head : `${head} \u2014 ${detail}`;
+  }
+  function body(section, file) {
+    switch (section.key) {
+      case "name":
+        return [];
+      case "strategicClassification":
+        return classification(file);
+      case "purpose":
+        return [file.purpose];
+      case "domainRoles":
+        return [file.domainRoles.map((role) => role.name).join(", ")];
+      case "inboundCommunication":
+        return lanes(file.inboundCommunication);
+      case "outboundCommunication":
+        return lanes(file.outboundCommunication);
+      case "ubiquitousLanguage":
+        return file.ubiquitousLanguage.map((row) => pair(row.term, row.definition));
+      case "businessDecisions":
+        return file.businessDecisions.map((row) => pair(row.name, row.description));
+      case "assumptions":
+        return file.assumptions;
+      case "verificationMetrics":
+        return file.verificationMetrics;
+      case "openQuestions":
+        return file.openQuestions;
+    }
+  }
+  function canvasDigest(file) {
+    const lines = [`# ${file.name.trim() === "" ? "Untitled" : file.name}`];
+    const missing = [];
+    for (const section of SECTIONS) {
+      if (!section.filled(file)) {
+        missing.push(section.label);
+        continue;
+      }
+      if (section.key === "name") continue;
+      lines.push("", `## ${section.label}`, "", ...body(section, file));
+    }
+    if (missing.length > 0) lines.push("", `Nothing yet under: ${missing.join(", ")}.`);
+    return `${lines.join("\n")}
+`;
+  }
+
+  // src/lib/model/embed.ts
+  var OPEN = '<script type="application/json" data-canvas-file>';
+  var CLOSE = "<\/script>";
+  function extractEmbeddedCanvas(text) {
+    const open = text.indexOf(OPEN);
+    if (open < 0) return null;
+    const start = open + OPEN.length;
+    const close = text.indexOf(CLOSE, start);
+    if (close < 0) return null;
+    return text.slice(start, close).trim();
+  }
+
+  // src/lib/model/canvas.ts
+  var CANVAS_VERSION = 2;
+
+  // src/lib/model/parse.ts
+  function notCanvas(detail) {
+    return { ok: false, reason: "not-canvas", detail: /[.!?]$/.test(detail) ? detail : `${detail}.` };
+  }
+  var NOT_JSON = "the file is not valid JSON";
+  function migrateLaneV1(item) {
+    if (!isRecord(item)) return item;
+    const { collaborator, relationship, ...rest } = item;
+    return {
+      ...rest,
+      ...collaborator !== void 0 && {
+        collaborator: typeof collaborator === "string" ? { name: collaborator } : collaborator
+      },
+      ...relationship !== void 0 && {
+        relationship: typeof relationship === "string" ? { ours: relationship } : relationship
+      }
+    };
+  }
+  function migrateLanesV1(raw, key) {
+    const lanes2 = raw[key];
+    return Array.isArray(lanes2) ? { [key]: lanes2.map(migrateLaneV1) } : {};
+  }
+  var MIGRATIONS = {
+    // v1 → v2 (ticket canvas-file-v2): `description` becomes `purpose` —
+    // upstream's own v4→v5 rename, adopted with the version bump — and the two
+    // lane fields take their v2 shapes (see migrateLaneV1). Free text is never
+    // rewritten: a domain role that stopped matching the picker vocabulary
+    // survives exactly as typed.
+    1: (raw) => {
+      const { description, ...rest } = raw;
+      return {
+        ...rest,
+        version: 2,
+        ...description !== void 0 && { purpose: description },
+        ...migrateLanesV1(raw, "inboundCommunication"),
+        ...migrateLanesV1(raw, "outboundCommunication")
+      };
+    }
+  };
+  var MESSAGE_TYPES = ["command", "query", "event"];
+  var COLLABORATOR_KINDS = [
+    "bounded-context",
+    "external-system",
+    "frontend",
+    "user"
+  ];
+  var Refusal = class extends Error {
+    constructor(path, expectation) {
+      super(path === "" ? expectation : `${path}: ${expectation}`);
+      this.path = path;
+      this.expectation = expectation;
+    }
+    path;
+    expectation;
+  };
+  function isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  function typeName(value) {
+    if (value === void 0) return "nothing";
+    if (value === null) return "null";
+    if (Array.isArray(value)) return "an array";
+    switch (typeof value) {
+      case "string":
+        return "a string";
+      case "number":
+        return "a number";
+      case "boolean":
+        return "a boolean";
+      case "object":
+        return "an object";
+      default:
+        return typeof value;
+    }
+  }
+  function field(path, key) {
+    return path === "" ? key : `${path}.${key}`;
+  }
+  function asString(value, path) {
+    if (typeof value !== "string") {
+      throw new Refusal(path, `expected a string, got ${typeName(value)}`);
+    }
+    return value;
+  }
+  function optionalString(row, key, path) {
+    const value = row[key];
+    if (value === void 0) return {};
+    if (typeof value !== "string") {
+      throw new Refusal(
+        field(path, key),
+        `expected a string or no key at all, got ${typeName(value)}`
+      );
+    }
+    return { [key]: value };
+  }
+  function asRows(value, path, row) {
+    if (!Array.isArray(value)) throw new Refusal(path, `expected an array, got ${typeName(value)}`);
+    return value.map((item, i) => {
+      const at = `${path}[${i}]`;
+      if (!isRecord(item)) throw new Refusal(at, `expected an object, got ${typeName(item)}`);
+      return row(item, at);
+    });
+  }
+  function asStrings(value, path) {
+    if (!Array.isArray(value)) throw new Refusal(path, `expected an array, got ${typeName(value)}`);
+    return value.map((item, i) => asString(item, `${path}[${i}]`));
+  }
+  function asClassification(value, path) {
+    if (!isRecord(value)) throw new Refusal(path, `expected an object, got ${typeName(value)}`);
+    return {
+      ...optionalString(value, "domain", path),
+      ...optionalString(value, "businessModel", path),
+      ...optionalString(value, "evolution", path)
+    };
+  }
+  function isMessageType(value) {
+    return MESSAGE_TYPES.includes(value);
+  }
+  function asMessage(row, path) {
+    const typePath = field(path, "type");
+    const type2 = asString(row.type, typePath);
+    if (!isMessageType(type2)) {
+      const allowed = MESSAGE_TYPES.map((t) => JSON.stringify(t)).join(", ");
+      throw new Refusal(typePath, `expected one of ${allowed}, got ${JSON.stringify(type2)}`);
+    }
+    return {
+      type: type2,
+      name: asString(row.name, field(path, "name")),
+      ...optionalString(row, "description", path)
+    };
+  }
+  function isCollaboratorKind(value) {
+    return COLLABORATOR_KINDS.includes(value);
+  }
+  function asCollaborator(value, path) {
+    if (!isRecord(value)) throw new Refusal(path, `expected an object, got ${typeName(value)}`);
+    const kindPath = field(path, "kind");
+    const kind = value.kind;
+    if (kind !== void 0 && typeof kind !== "string") {
+      throw new Refusal(kindPath, `expected a string or no key at all, got ${typeName(kind)}`);
+    }
+    if (typeof kind === "string" && !isCollaboratorKind(kind)) {
+      const allowed = COLLABORATOR_KINDS.map((k) => JSON.stringify(k)).join(", ");
+      throw new Refusal(
+        kindPath,
+        `expected one of ${allowed} or no key at all, got ${JSON.stringify(kind)}`
+      );
+    }
+    return {
+      name: asString(value.name, field(path, "name")),
+      ...kind !== void 0 && { kind }
+    };
+  }
+  function asRelationship(value, path) {
+    if (value === void 0) return {};
+    if (!isRecord(value)) {
+      throw new Refusal(path, `expected an object or no key at all, got ${typeName(value)}`);
+    }
+    return {
+      relationship: {
+        ...optionalString(value, "theirs", path),
+        ...optionalString(value, "ours", path)
+      }
+    };
+  }
+  function asLane(row, path) {
+    return {
+      collaborator: asCollaborator(row.collaborator, field(path, "collaborator")),
+      ...asRelationship(row.relationship, field(path, "relationship")),
+      messages: asRows(row.messages, field(path, "messages"), asMessage)
+    };
+  }
+  function asCanvasFile(raw) {
+    return {
+      version: CANVAS_VERSION,
+      name: asString(raw.name, "name"),
+      purpose: asString(raw.purpose, "purpose"),
+      strategicClassification: asClassification(
+        raw.strategicClassification,
+        "strategicClassification"
+      ),
+      domainRoles: asRows(raw.domainRoles, "domainRoles", (row, path) => ({
+        name: asString(row.name, field(path, "name"))
+      })),
+      inboundCommunication: asRows(raw.inboundCommunication, "inboundCommunication", asLane),
+      ubiquitousLanguage: asRows(
+        raw.ubiquitousLanguage,
+        "ubiquitousLanguage",
+        (row, path) => ({
+          term: asString(row.term, field(path, "term")),
+          ...optionalString(row, "definition", path)
+        })
+      ),
+      businessDecisions: asRows(
+        raw.businessDecisions,
+        "businessDecisions",
+        (row, path) => ({
+          name: asString(row.name, field(path, "name")),
+          ...optionalString(row, "description", path)
+        })
+      ),
+      outboundCommunication: asRows(raw.outboundCommunication, "outboundCommunication", asLane),
+      assumptions: asStrings(raw.assumptions, "assumptions"),
+      verificationMetrics: asStrings(raw.verificationMetrics, "verificationMetrics"),
+      openQuestions: asStrings(raw.openQuestions, "openQuestions")
+    };
+  }
+  function parseCanvasFile(text) {
+    let raw;
+    try {
+      raw = JSON.parse(text);
+    } catch (error) {
+      return notCanvas(`${NOT_JSON} (${error instanceof Error ? error.message : String(error)})`);
+    }
+    if (!isRecord(raw)) {
+      return notCanvas(`expected a JSON object at the top level, got ${typeName(raw)}`);
+    }
+    const version = raw.version;
+    if (typeof version !== "number" || !Number.isInteger(version) || version < 1) {
+      const got = typeof version === "number" ? String(version) : typeName(version);
+      return notCanvas(`version: expected an integer of 1 or more, got ${got}`);
+    }
+    if (version > CANVAS_VERSION) return { ok: false, reason: "newer-version", version };
+    let migrated = raw;
+    for (let v = version; v < CANVAS_VERSION; v++) {
+      const migrate = MIGRATIONS[v];
+      if (!migrate) throw new Error(`No migration from Canvas file version ${v} to ${v + 1}`);
+      migrated = migrate(migrated);
+    }
+    try {
+      return { ok: true, file: asCanvasFile(migrated) };
+    } catch (error) {
+      if (error instanceof Refusal) return notCanvas(error.message);
+      throw error;
+    }
+  }
+  var NEITHER_FORM = "expected a Canvas file (JSON) or an HTML artifact carrying an embedded Canvas file; this text is neither";
+  function parseCanvasImport(text) {
+    const direct = parseCanvasFile(text);
+    if (direct.ok || direct.reason === "newer-version") return direct;
+    const embedded = extractEmbeddedCanvas(text);
+    if (embedded !== null) return parseCanvasFile(embedded);
+    return direct.detail?.startsWith(NOT_JSON) ? notCanvas(NEITHER_FORM) : direct;
+  }
+
+  // src/lib/model/serialize.ts
+  function present(value) {
+    return value !== void 0 && value !== "";
+  }
+  function fileMessage(message2) {
+    return {
+      type: message2.type,
+      name: message2.name,
+      ...present(message2.description) && { description: message2.description }
+    };
+  }
+  function fileCollaborator(collaborator) {
+    return {
+      name: collaborator.name,
+      ...collaborator.kind !== void 0 && { kind: collaborator.kind }
+    };
+  }
+  function fileRelationship(relationship) {
+    if (relationship === void 0) return {};
+    const kept = {
+      ...present(relationship.theirs) && { theirs: relationship.theirs },
+      ...present(relationship.ours) && { ours: relationship.ours }
+    };
+    return Object.keys(kept).length === 0 ? {} : { relationship: kept };
+  }
+  function fileLane(lane) {
+    return {
+      collaborator: fileCollaborator(lane.collaborator),
+      ...fileRelationship(lane.relationship),
+      messages: lane.messages.map(fileMessage)
+    };
+  }
+  function fileClassification(sc) {
+    return {
+      ...present(sc.domain) && { domain: sc.domain },
+      ...present(sc.businessModel) && { businessModel: sc.businessModel },
+      ...present(sc.evolution) && { evolution: sc.evolution }
+    };
+  }
+  function toCanvasFile(doc) {
+    return {
+      version: doc.version,
+      name: doc.name,
+      purpose: doc.purpose,
+      strategicClassification: fileClassification(doc.strategicClassification),
+      domainRoles: doc.domainRoles.map((role) => ({ name: role.name })),
+      inboundCommunication: doc.inboundCommunication.map(fileLane),
+      ubiquitousLanguage: doc.ubiquitousLanguage.map(
+        (row) => ({
+          term: row.term,
+          ...present(row.definition) && { definition: row.definition }
+        })
+      ),
+      businessDecisions: doc.businessDecisions.map(
+        (row) => ({
+          name: row.name,
+          ...present(row.description) && { description: row.description }
+        })
+      ),
+      outboundCommunication: doc.outboundCommunication.map(fileLane),
+      assumptions: [...doc.assumptions],
+      verificationMetrics: [...doc.verificationMetrics],
+      openQuestions: [...doc.openQuestions]
+    };
+  }
+  function serializeCanvasFile(file) {
+    return JSON.stringify(toCanvasFile(file), null, 2).replaceAll("<", "\\u003c");
+  }
+
+  // .scratch/json-buffer/json-buffer.js
+  var TRACKING = { text: null, error: null };
+  function shown(state2, docBytes2) {
+    return state2.text ?? docBytes2;
+  }
+  function unapplied(state2) {
+    return state2.text !== null;
+  }
+  function edit(state2, next, docBytes2) {
+    return { text: next === docBytes2 ? null : next, error: null };
+  }
+  function apply(state2, docBytes2, parse2, serialize2) {
+    if (state2.text === null) return { kind: "settled", state: TRACKING };
+    const result = parse2(state2.text);
+    if (!result.ok) return { kind: "refused", reason: result, state: { ...state2, error: result } };
+    if (serialize2(result.file) === docBytes2) return { kind: "settled", state: TRACKING };
+    return { kind: "replace", file: result.file, state: TRACKING };
+  }
+  function boundary() {
+    return TRACKING;
+  }
+
+  // .scratch/json-buffer/world.js
+  var parse = parseCanvasImport;
+  var serialize = serializeCanvasFile;
+  var digest = canvasDigest;
+  function initial(file) {
+    return {
+      doc: file,
+      past: [],
+      future: [],
+      exported: serialize(file),
+      slot: serialize(file),
+      // the `bcc.autosave` slot, last write wins
+      notice: false,
+      // "open in another tab", persistent once seen
+      json: TRACKING,
+      view: "sheet",
+      log: []
+    };
+  }
+  function commit(world, doc) {
+    return {
+      ...world,
+      doc,
+      past: [...world.past, world.doc],
+      future: [],
+      slot: serialize(doc)
+    };
+  }
+  function swap(world, doc, past, future) {
+    return { ...world, doc, past, future, slot: serialize(doc) };
+  }
+  function boundary2(world, doc) {
+    return {
+      ...world,
+      doc,
+      past: [],
+      future: [],
+      exported: serialize(doc),
+      slot: serialize(doc),
+      json: boundary()
+    };
+  }
+  var say = (world, line) => ({ ...world, log: [...world.log, line] });
+  var docBytes = (world) => serialize(world.doc);
+  var unexported = (world) => serialize(world.doc) !== world.exported;
+  var boxText = (world) => shown(world.json, docBytes(world));
+  var marker = (world) => unapplied(world.json);
+  var ACTIONS = {
+    /** Look at a View. Pure chrome — it never touches the buffer. */
+    view: (world, name) => say({ ...world, view: name }, `Switched to the ${name} view.`),
+    /** A keystroke in the JSON box. */
+    type: (world, text) => {
+      const json = edit(world.json, text, docBytes(world));
+      return say(
+        { ...world, json },
+        json.text === null ? "Typed the box back to exactly the canvas \u2014 the box is following the canvas again." : "Typed in the JSON box."
+      );
+    },
+    apply: (world) => {
+      const outcome = apply(world.json, docBytes(world), parse, serialize);
+      const next = { ...world, json: outcome.state };
+      if (outcome.kind === "refused") {
+        return say(next, `Apply refused: ${outcome.reason.reason}.`);
+      }
+      if (outcome.kind === "settled") {
+        return say(next, "Apply changed nothing \u2014 no undo step was added.");
+      }
+      return say(commit(next, outcome.file), "Applied \u2014 one commit, one undo step.");
+    },
+    /** Any edit on the sheet: one commit, same pipeline. */
+    sheet: (world, mutate) => {
+      const doc = mutate(structuredClone(world.doc));
+      return say(commit(world, doc), "Edited the canvas on the sheet.");
+    },
+    undo: (world) => {
+      const target = world.past.at(-1);
+      if (!target) return say(world, "Nothing to undo.");
+      return say(
+        swap(world, target, world.past.slice(0, -1), [...world.future, world.doc]),
+        "Undid the last change to the canvas."
+      );
+    },
+    redo: (world) => {
+      const target = world.future.at(-1);
+      if (!target) return say(world, "Nothing to redo.");
+      return say(
+        swap(world, target, [...world.past, world.doc], world.future.slice(0, -1)),
+        "Redid the last change to the canvas."
+      );
+    },
+    /** Import / New / an example: a different canvas in the same session. */
+    open: (world, file, what) => say(boundary2(world, file), `Opened ${what}.`),
+    export: (world) => say({ ...world, exported: serialize(world.doc) }, "Exported the Canvas file."),
+    /**
+     * Another tab writes. It reaches this tab as a `storage` event, which the
+     * real app answers with the notice and nothing else — the document is not
+     * reloaded. Last write wins is settled at the slot, not on screen.
+     */
+    otherTab: (world, file) => say(
+      { ...world, notice: true, slot: serialize(file) },
+      "Another tab saved its canvas over the shared slot."
+    ),
+    /** beforeunload / backgrounding: mid-edit fields commit. The buffer is not one. */
+    flush: (world) => say(world, "Flushed mid-edit fields (the JSON box registers none)."),
+    /** Reload: the slot is restored, everything else in memory is gone. */
+    reload: (world) => {
+      const result = parse(world.slot);
+      const restored = initial(result.ok ? result.file : world.doc);
+      return say({ ...restored, log: world.log }, "Reloaded the page.");
+    }
+  };
+
+  // .scratch/json-buffer/page.js
+  var initialFile = parse(`{
+  "version": 2,
+  "name": "Notifications",
+  "purpose": "Delivers order updates to customers on their preferred channel.",
+  "strategicClassification": {
+    "domain": "generic",
+    "businessModel": "engagement",
+    "evolution": "product"
+  },
+  "domainRoles": [
+    {
+      "name": "service context"
+    },
+    {
+      "name": "gateway context"
+    }
+  ],
+  "inboundCommunication": [
+    {
+      "collaborator": {
+        "name": "Order Fulfillment",
+        "kind": "bounded-context"
+      },
+      "relationship": {
+        "ours": "conformist"
+      },
+      "messages": [
+        {
+          "type": "event",
+          "name": "Order Shipped",
+          "description": "Becomes the dispatch update to the customer."
+        }
+      ]
+    }
+  ],
+  "ubiquitousLanguage": [
+    {
+      "term": "Channel",
+      "definition": "The medium a customer chose \u2014 email, SMS or push."
+    },
+    {
+      "term": "Quiet Hours",
+      "definition": "The nightly window when only delivery-critical updates go out."
+    }
+  ],
+  "businessDecisions": [
+    {
+      "name": "Buy, don't build",
+      "description": "Delivery runs on a rented messaging platform; this context only routes."
+    },
+    {
+      "name": "Conform to senders",
+      "description": "Upstream events are adopted as-is; translating them isn't worth it here."
+    }
+  ],
+  "outboundCommunication": [
+    {
+      "collaborator": {
+        "name": "Messaging Platform",
+        "kind": "external-system"
+      },
+      "relationship": {
+        "theirs": "open-host-service",
+        "ours": "conformist"
+      },
+      "messages": [
+        {
+          "type": "command",
+          "name": "Send Message"
+        }
+      ]
+    }
+  ],
+  "assumptions": [
+    "Customers keep contact details current in Accounts."
+  ],
+  "verificationMetrics": [
+    "99% of updates leave within a minute of the triggering event."
+  ],
+  "openQuestions": [
+    "Do marketing messages belong here, or is this transactional only?"
+  ]
+}
+`).file;
+  var V1_TEXT = '{\n  "version": 1,\n  "name": "Notifications (saved by an older version)",\n  "description": "Delivers order updates to customers on their preferred channel.",\n  "strategicClassification": {\n    "domain": "supporting",\n    "businessModel": "engagement"\n  },\n  "domainRoles": [\n    {\n      "name": "execution"\n    }\n  ],\n  "inboundCommunication": [\n    {\n      "collaborator": "Order Fulfillment",\n      "relationship": "customer-supplier",\n      "messages": [\n        {\n          "type": "event",\n          "name": "OrderShipped"\n        }\n      ]\n    }\n  ],\n  "ubiquitousLanguage": [\n    {\n      "term": "Channel",\n      "definition": "How a customer wants to be reached."\n    }\n  ],\n  "businessDecisions": [\n    {\n      "name": "Quiet hours are respected in the customer\u2019s own timezone."\n    }\n  ],\n  "outboundCommunication": [],\n  "assumptions": [\n    "Customers keep one preferred channel at a time."\n  ],\n  "verificationMetrics": [],\n  "openQuestions": []\n}';
+  var state = initial(initialFile);
+  var scenario = null;
+  var $ = (id) => document.getElementById(id);
+  function render() {
+    const bytes = docBytes(state);
+    const box = boxText(state);
+    const dirty = marker(state);
+    for (const name of ["sheet", "json", "markdown"]) {
+      const seg = $(`seg-${name}`);
+      seg.classList.toggle("active", state.view === name);
+    }
+    $("marker").hidden = !dirty;
+    $("panel-sheet").hidden = state.view !== "sheet";
+    $("panel-json").hidden = state.view !== "json";
+    $("panel-markdown").hidden = state.view !== "markdown";
+    $("canvas-name").textContent = state.doc.name;
+    $("canvas-purpose").textContent = state.doc.purpose;
+    $("canvas-terms").textContent = state.doc.ubiquitousLanguage.map((t) => t.term).join(" \xB7 ") || "\u2014";
+    $("panel-markdown").textContent = digest(state.doc);
+    const area = $("box");
+    if (area.value !== box) area.value = box;
+    $("state-view").textContent = { sheet: "Sheet", json: "JSON", markdown: "Markdown" }[state.view];
+    $("state-buffer").textContent = dirty ? "Proposing \u2014 the box holds text that is not the canvas" : "Following the canvas";
+    $("state-marker").textContent = dirty ? "on" : "off";
+    $("state-marker").className = dirty ? "val on" : "val";
+    $("state-undo").textContent = `${state.past.length} back, ${state.future.length} forward`;
+    $("state-unexported").textContent = unexported(state) ? "yes" : "no";
+    $("state-notice").textContent = state.notice ? "showing" : "hidden";
+    $("state-slot").textContent = `${state.slot.length} bytes \u2014 ${state.slot === bytes ? "this tab\u2019s canvas" : "NOT this tab\u2019s canvas"}`;
+    const refusal = state.json.error;
+    $("refusal").hidden = !refusal;
+    if (refusal) {
+      $("refusal-reason").textContent = refusal.reason === "newer-version" ? `made by a newer version (${refusal.version})` : "not a Canvas file";
+      $("refusal-detail").textContent = refusal.detail ?? "";
+    }
+    const log = $("log");
+    log.innerHTML = "";
+    for (const line of state.log.slice(-8)) {
+      const li = document.createElement("li");
+      li.textContent = line;
+      log.append(li);
+    }
+    renderSteps();
+  }
+  function act(name, ...args) {
+    state = ACTIONS[name](state, ...args);
+    render();
+  }
+  var EDITS = {
+    "a valid hand-edit (renames the canvas)": () => docBytes(state).replace(/"name": "[^"]*"/, '"name": "Hand-edited in the box"'),
+    "the same canvas, reformatted (no real change)": () => JSON.stringify(JSON.parse(docBytes(state))).replaceAll("<", "\\u003c"),
+    "text that is not valid JSON": () => docBytes(state).slice(0, 120) + "\n  ...oops",
+    "JSON with a wrong field type": () => docBytes(state).replace(/"purpose": "[^"]*"/, '"purpose": 42'),
+    "a version 1 canvas": () => V1_TEXT,
+    "exactly the canvas again": () => docBytes(state)
+  };
+  var FREE = [
+    ["Switch to Sheet", () => act("view", "sheet")],
+    ["Switch to JSON", () => act("view", "json")],
+    ["Switch to Markdown", () => act("view", "markdown")],
+    ["Apply", () => act("apply")],
+    ["Edit the canvas on the sheet", () => act("sheet", renameTerm)],
+    ["Undo", () => act("undo")],
+    ["Redo", () => act("redo")],
+    ["Export the Canvas file", () => act("export")],
+    ["Another tab saves", () => act("otherTab", otherTabCanvas())],
+    ["Close/background the tab (flush)", () => act("flush")],
+    ["Reload the page", () => act("reload")],
+    ["Open a different canvas", () => act("open", otherTabCanvas(), "a different canvas")]
+  ];
+  var termCount = 0;
+  function renameTerm(doc) {
+    termCount += 1;
+    doc.ubiquitousLanguage = [
+      ...doc.ubiquitousLanguage,
+      { term: `Sheet edit ${termCount}`, definition: "Typed on the sheet, not in the box." }
+    ];
+    return doc;
+  }
+  function otherTabCanvas() {
+    const other = structuredClone(initialFile);
+    other.name = "The other tab\u2019s canvas";
+    other.purpose = "Saved over the shared slot by a second tab.";
+    return other;
+  }
+  var SCENARIOS = [
+    {
+      key: "return",
+      title: "Type, leave, come back",
+      blurb: "The plainest case, and the one everything else rests on: text left in the box survives a trip to the Sheet, and the dot on the JSON tab says so the whole time.",
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Hand-edit the canvas name in the box", () => type("a valid hand-edit (renames the canvas)")],
+        ["Switch to the Sheet", () => act("view", "sheet")],
+        ["Come back to JSON", () => act("view", "json")]
+      ],
+      watch: "The box still holds your text and the dot never went out. Nothing was applied."
+    },
+    {
+      key: "moves",
+      title: "The canvas moves under the box",
+      blurb: "You leave text in the box, then edit the sheet. Both are true at once: the canvas has moved, your text has not. Then you press Apply.",
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Hand-edit the canvas name in the box", () => type("a valid hand-edit (renames the canvas)")],
+        ["Switch to the Sheet", () => act("view", "sheet")],
+        ["Add a term on the sheet", () => act("sheet", renameTerm)],
+        ["Back to JSON", () => act("view", "json")],
+        ["Apply", () => act("apply")],
+        ["Undo", () => act("undo")]
+      ],
+      watch: "Apply replaces the whole canvas, so the term you added on the sheet is gone \u2014 and one Undo brings it back, with the box following the canvas again. Nothing warned you first. That is the sharpest thing in this ticket: is one undo enough?"
+    },
+    {
+      key: "apply-undo",
+      title: "Apply, then undo",
+      blurb: "One Apply is one commit, so one Undo pops the whole replacement. The question is what the box shows afterwards \u2014 and whether it feels like the app ate your edit.",
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Hand-edit the canvas name in the box", () => type("a valid hand-edit (renames the canvas)")],
+        ["Apply", () => act("apply")],
+        ["Undo", () => act("undo")],
+        ["Redo", () => act("redo")]
+      ],
+      watch: "After Apply the box already shows the canvas re-serialized, not your keystrokes \u2014 so Undo takes away nothing Apply had not already normalized, and Redo puts the applied canvas back."
+    },
+    {
+      key: "undo-with-text",
+      title: "Undo while the box holds unapplied text",
+      blurb: "\u2318Z inside the box is the browser\u2019s own text undo \u2014 a real textarea, which the app\u2019s global handler already steps around. This walkthrough is the other \u2318Z: pressing it outside the box, on the sheet, while the box holds text.",
+      steps: [
+        ["Add a term on the sheet", () => act("sheet", renameTerm)],
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Hand-edit the canvas name in the box", () => type("a valid hand-edit (renames the canvas)")],
+        ["Switch to the Sheet", () => act("view", "sheet")],
+        ["Undo (app undo, outside the box)", () => act("undo")],
+        ["Back to JSON", () => act("view", "json")]
+      ],
+      watch: "App undo moved the canvas and left the box alone. Undo history and the buffer are two different stacks, and the buffer is not on any stack at all."
+    },
+    {
+      key: "other-tab",
+      title: "Another tab saves",
+      blurb: "Last write wins is settled in the saved slot, not on screen: the notice appears, and this tab\u2019s canvas does not move. Watch the slot line in the state panel.",
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Hand-edit the canvas name in the box", () => type("a valid hand-edit (renames the canvas)")],
+        ["Another tab saves", () => act("otherTab", otherTabCanvas())],
+        ["Apply", () => act("apply")],
+        ["Reload the page", () => act("reload")]
+      ],
+      watch: "The box never lied, because nothing under it moved. Apply then wrote this tab\u2019s canvas back over the slot \u2014 last write wins, exactly as before the JSON view existed \u2014 so the reload restores what Apply wrote, and the box comes back empty of your text."
+    },
+    {
+      key: "noop",
+      title: "Apply that changes nothing",
+      blurb: "Reformat the JSON without changing anything real, then Apply. A pick that changes nothing does not enter history; neither should this.",
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Reformat the JSON (same canvas, one line)", () => type("the same canvas, reformatted (no real change)")],
+        ["Apply", () => act("apply")]
+      ],
+      watch: "Undo depth did not grow, and the box snapped back to the canvas\u2019s own formatting. Applying identical bytes is the easy half; this is the half a raw text comparison would have missed."
+    },
+    {
+      key: "migrate",
+      title: "Apply a version 1 canvas",
+      blurb: "Paste an old Canvas file into the box. Apply runs the same import path a file does \u2014 version check, migrations, strict validation \u2014 so it comes back migrated.",
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Paste a version 1 canvas", () => type("a version 1 canvas")],
+        ["Apply", () => act("apply")]
+      ],
+      watch: "The box now holds version 2 bytes you did not type: `description` became `purpose`, the collaborator became an object. The box re-rendering from the canvas is what makes the migration visible."
+    },
+    {
+      key: "refusal",
+      title: "Apply something broken",
+      blurb: "A refusal keeps your text \u2014 it is the one place in the app that names the offending field, because you are looking at the text it is talking about.",
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Break a field\u2019s type", () => type("JSON with a wrong field type")],
+        ["Apply", () => act("apply")],
+        ["Edit the canvas on the sheet", () => act("sheet", renameTerm)],
+        ["Type something else in the box", () => type("text that is not valid JSON")]
+      ],
+      watch: "The refusal survived the canvas moving underneath \u2014 it is about the text, and the text did not move \u2014 and went away the moment the text changed. Words are ticket 044\u2019s; this is only their lifetime."
+    },
+    {
+      key: "boundary",
+      title: "Open a different canvas with text in the box",
+      blurb: "The transition the ticket\u2019s list does not mention, and the only one that throws the buffer away.",
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Hand-edit the canvas name in the box", () => type("a valid hand-edit (renames the canvas)")],
+        ["Open a different canvas", () => act("open", otherTabCanvas(), "a different canvas")]
+      ],
+      watch: "Your text is gone, with no dialog. The session boundary already discards the whole undo history; a proposal against a canvas that is no longer open goes with it. Everything else on this page preserves the buffer."
+    },
+    {
+      key: "typed-back",
+      title: "Type it, then type it back",
+      blurb: 'The dot is not "you have been in here" \u2014 it is "the box and the canvas disagree". Undo your own typing by hand and watch it go out on its own.',
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Hand-edit the canvas name in the box", () => type("a valid hand-edit (renames the canvas)")],
+        ["Type the canvas back exactly", () => type("exactly the canvas again")],
+        ["Apply", () => act("apply")]
+      ],
+      watch: 'The dot went out without an Apply, and the Apply that followed did nothing at all. There is no state in here for "a box that has been typed in but agrees with the canvas" \u2014 the box either disagrees or it is following.'
+    },
+    {
+      key: "reload",
+      title: "Close the tab with text in the box",
+      blurb: "Backgrounding or closing commits the field you were typing on the sheet. The box is not one of those fields \u2014 it registers nothing to flush \u2014 so a reload starts clean.",
+      steps: [
+        ["Go to the JSON view", () => act("view", "json")],
+        ["Hand-edit the canvas name in the box", () => type("a valid hand-edit (renames the canvas)")],
+        ["Close/background the tab (flush)", () => act("flush")],
+        ["Reload the page", () => act("reload")]
+      ],
+      watch: "The flush changed nothing and the reload discarded the box. The saved slot holds the canvas, never the proposal."
+    }
+  ];
+  function type(kind) {
+    act("type", EDITS[kind]());
+  }
+  function startScenario(key) {
+    state = initial(initialFile);
+    termCount = 0;
+    scenario = { key, step: 0 };
+    render();
+  }
+  function renderSteps() {
+    const tabs = $("scenario-tabs");
+    for (const button of tabs.children) {
+      button.classList.toggle("active", scenario?.key === button.dataset.key);
+    }
+    const box = $("scenario-body");
+    box.innerHTML = "";
+    if (!scenario) {
+      box.innerHTML = '<p class="hint">Pick a walkthrough above, or just press things below.</p>';
+      return;
+    }
+    const s = SCENARIOS.find((x) => x.key === scenario.key);
+    const blurb = document.createElement("p");
+    blurb.textContent = s.blurb;
+    box.append(blurb);
+    const list = document.createElement("ol");
+    s.steps.forEach(([label, run], i) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.className = "step";
+      b.disabled = i !== scenario.step;
+      if (i < scenario.step) li.classList.add("done");
+      b.onclick = () => {
+        scenario.step = i + 1;
+        run();
+      };
+      li.append(b);
+      list.append(li);
+    });
+    box.append(list);
+    if (scenario.step >= s.steps.length) {
+      const watch = document.createElement("p");
+      watch.className = "watch";
+      watch.textContent = s.watch;
+      box.append(watch);
+      const again = document.createElement("button");
+      again.textContent = "Run it again";
+      again.className = "again";
+      again.onclick = () => startScenario(s.key);
+      box.append(again);
+    }
+  }
+  function boot() {
+    const tabs = $("scenario-tabs");
+    for (const s of SCENARIOS) {
+      const b = document.createElement("button");
+      b.textContent = s.title;
+      b.dataset.key = s.key;
+      b.onclick = () => startScenario(s.key);
+      tabs.append(b);
+    }
+    const free = $("free-buttons");
+    for (const [label, run] of FREE) {
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.onclick = run;
+      free.append(b);
+    }
+    const edits = $("free-edits");
+    for (const kind of Object.keys(EDITS)) {
+      const b = document.createElement("button");
+      b.textContent = `Put ${kind} in the box`;
+      b.onclick = () => type(kind);
+      edits.append(b);
+    }
+    $("box").addEventListener("input", (e) => act("type", e.target.value));
+    $("apply").onclick = () => act("apply");
+    for (const name of ["sheet", "json", "markdown"]) {
+      $(`seg-${name}`).onclick = () => act("view", name);
+    }
+    $("reset").onclick = () => {
+      state = initial(initialFile);
+      termCount = 0;
+      scenario = null;
+      render();
+    };
+    render();
+  }
+  boot();
+})();
+
+		</script>
+	</body>
+</html>

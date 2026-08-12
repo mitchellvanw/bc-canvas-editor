@@ -1,0 +1,379 @@
+<!doctype html>
+<!-- PROTOTYPE (wayfinder ticket 043). Built by build.mjs — edit shell.html, not json-buffer.html. -->
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>The JSON box — prototype</title>
+		<style>
+			:root {
+				--ink: #1b1b1a;
+				--soft: #6a6862;
+				--line: #d9d6cd;
+				--paper: #faf8f3;
+				--sheet: #fff;
+				--pink: #d81b60;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				padding: 2.5rem 1.5rem 5rem;
+				background: var(--paper);
+				color: var(--ink);
+				font:
+					15px/1.55 -apple-system,
+					BlinkMacSystemFont,
+					'Segoe UI',
+					sans-serif;
+			}
+			main {
+				max-width: 62rem;
+				margin: 0 auto;
+			}
+			h1 {
+				font-size: 1.5rem;
+				margin: 0 0 0.4rem;
+			}
+			h2 {
+				font-size: 0.78rem;
+				letter-spacing: 0.09em;
+				text-transform: uppercase;
+				color: var(--soft);
+				margin: 2.25rem 0 0.75rem;
+			}
+			.lede {
+				margin: 0 0 1.5rem;
+				max-width: 46rem;
+				color: #3d3b37;
+			}
+			.lede b {
+				color: var(--ink);
+			}
+			.cols {
+				display: grid;
+				grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+				gap: 1.75rem;
+				align-items: start;
+			}
+			@media (max-width: 860px) {
+				.cols {
+					grid-template-columns: minmax(0, 1fr);
+				}
+			}
+
+			/* the switcher, as ticket 042 drew it */
+			.bar {
+				display: flex;
+				align-items: center;
+				gap: 0.75rem;
+				margin-bottom: 0.6rem;
+			}
+			.pill {
+				display: inline-flex;
+				border: 1px solid var(--line);
+				border-radius: 4px;
+				background: var(--sheet);
+				overflow: hidden;
+			}
+			.pill button {
+				border: 0;
+				border-left: 1px solid var(--line);
+				background: transparent;
+				padding: 0.3rem 0.75rem;
+				font: inherit;
+				font-size: 0.8rem;
+				font-weight: 500;
+				color: var(--soft);
+				cursor: pointer;
+			}
+			.pill button:first-child {
+				border-left: 0;
+			}
+			.pill button.active {
+				background: var(--ink);
+				color: #fff;
+				font-weight: 600;
+			}
+			#marker {
+				color: var(--pink);
+				font-size: 1.1em;
+				line-height: 0;
+				vertical-align: middle;
+			}
+			.pill button.active #marker {
+				color: #ff8fb4;
+			}
+
+			.panel {
+				background: var(--sheet);
+				border: 1px solid var(--line);
+				border-radius: 3px;
+				padding: 1.1rem 1.25rem;
+				min-height: 19rem;
+			}
+			#panel-json {
+				padding: 0.9rem;
+			}
+			textarea {
+				width: 100%;
+				height: 15rem;
+				border: 1px solid var(--line);
+				border-radius: 2px;
+				padding: 0.6rem 0.7rem;
+				font: 12px/1.5 ui-monospace, 'IBM Plex Mono', monospace;
+				resize: vertical;
+			}
+			#panel-markdown {
+				white-space: pre-wrap;
+				font: 12px/1.5 ui-monospace, 'IBM Plex Mono', monospace;
+				overflow-x: auto;
+			}
+			.sheet-title {
+				font-size: 1.2rem;
+				font-weight: 600;
+				margin: 0 0 0.25rem;
+			}
+			.sheet-field {
+				margin: 0 0 1rem;
+			}
+			.sheet-label {
+				font-size: 0.68rem;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--soft);
+				display: block;
+				margin-bottom: 0.15rem;
+			}
+			.apply-row {
+				display: flex;
+				align-items: center;
+				gap: 0.75rem;
+				margin-top: 0.7rem;
+			}
+			#apply {
+				background: var(--ink);
+				color: #fff;
+				border: 0;
+				border-radius: 3px;
+				padding: 0.4rem 1rem;
+				font: inherit;
+				font-weight: 600;
+				cursor: pointer;
+			}
+			#refusal {
+				border-left: 3px solid var(--pink);
+				background: #fff5f8;
+				padding: 0.6rem 0.8rem;
+				margin-top: 0.7rem;
+				font-size: 0.85rem;
+			}
+			#refusal-detail {
+				display: block;
+				font-family: ui-monospace, monospace;
+				font-size: 0.78rem;
+				color: #7a2244;
+				margin-top: 0.25rem;
+			}
+
+			dl.state {
+				margin: 0;
+				display: grid;
+				grid-template-columns: max-content minmax(0, 1fr);
+				gap: 0.35rem 0.9rem;
+				font-size: 0.86rem;
+			}
+			dl.state dt {
+				color: var(--soft);
+			}
+			dl.state dd {
+				margin: 0;
+			}
+			.val.on {
+				color: var(--pink);
+				font-weight: 600;
+			}
+			#log {
+				margin: 0.6rem 0 0;
+				padding-left: 1.1rem;
+				font-size: 0.82rem;
+				color: var(--soft);
+			}
+			#log li {
+				margin-bottom: 0.15rem;
+			}
+
+			#scenario-tabs {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.35rem;
+				margin-bottom: 0.8rem;
+			}
+			#scenario-tabs button,
+			#free-buttons button,
+			#free-edits button {
+				border: 1px solid var(--line);
+				background: var(--sheet);
+				border-radius: 3px;
+				padding: 0.3rem 0.7rem;
+				font: inherit;
+				font-size: 0.83rem;
+				cursor: pointer;
+			}
+			#scenario-tabs button.active {
+				background: var(--ink);
+				color: #fff;
+				border-color: var(--ink);
+			}
+			#scenario-body {
+				background: var(--sheet);
+				border: 1px solid var(--line);
+				border-radius: 3px;
+				padding: 1rem 1.25rem;
+			}
+			#scenario-body p {
+				margin: 0 0 0.9rem;
+				max-width: 46rem;
+			}
+			#scenario-body ol {
+				margin: 0;
+				padding-left: 1.3rem;
+			}
+			#scenario-body li {
+				margin-bottom: 0.4rem;
+			}
+			#scenario-body li.done {
+				color: var(--soft);
+			}
+			button.step {
+				border: 1px solid var(--line);
+				background: var(--paper);
+				border-radius: 3px;
+				padding: 0.25rem 0.7rem;
+				font: inherit;
+				font-size: 0.85rem;
+				cursor: pointer;
+			}
+			button.step:disabled {
+				opacity: 1;
+				color: var(--soft);
+				cursor: default;
+				background: transparent;
+				border-color: transparent;
+			}
+			li.done button.step::after {
+				content: ' ✓';
+				color: var(--soft);
+			}
+			.watch {
+				border-left: 3px solid var(--ink);
+				padding-left: 0.8rem;
+				margin-top: 1rem !important;
+			}
+			button.again {
+				border: 1px solid var(--line);
+				background: var(--paper);
+				border-radius: 3px;
+				padding: 0.3rem 0.8rem;
+				font: inherit;
+				cursor: pointer;
+			}
+			.hint {
+				color: var(--soft);
+			}
+			#free-buttons,
+			#free-edits {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.35rem;
+				margin-bottom: 0.5rem;
+			}
+			footer {
+				margin-top: 3rem;
+				color: var(--soft);
+				font-size: 0.82rem;
+				max-width: 46rem;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<h1>The JSON box: what can disagree with the canvas, and for how long</h1>
+			<p class="lede">
+				The JSON view shows a canvas as the file it exports to, and lets you edit that text and
+				press <b>Apply</b>. That makes something this editor has never had: a second piece of
+				text that is allowed to disagree with the canvas, for as long as you like. This page is
+				the model behind that — the real parser, the real serializer, a stand-in canvas — so the
+				awkward moments can be pressed rather than argued about. <b>Nothing here is the app.</b>
+			</p>
+
+			<div class="cols">
+				<div>
+					<div class="bar">
+						<span class="pill">
+							<button id="seg-sheet">Sheet</button>
+							<button id="seg-json">JSON <span id="marker" hidden>•</span></button>
+							<button id="seg-markdown">Markdown</button>
+						</span>
+						<button id="reset">Start over</button>
+					</div>
+
+					<div class="panel" id="panel-sheet">
+						<p class="sheet-title" id="canvas-name"></p>
+						<p class="sheet-field"><span class="sheet-label">Purpose</span><span id="canvas-purpose"></span></p>
+						<p class="sheet-field"><span class="sheet-label">Ubiquitous language</span><span id="canvas-terms"></span></p>
+						<p class="hint">A stand-in for the sheet — enough of it to see the canvas change.</p>
+					</div>
+
+					<div class="panel" id="panel-json" hidden>
+						<textarea id="box" spellcheck="false"></textarea>
+						<div class="apply-row">
+							<button id="apply">Apply</button>
+							<span class="hint">Replaces the whole canvas, as one undo step.</span>
+						</div>
+						<div id="refusal" hidden>
+							<b>Refused:</b> <span id="refusal-reason"></span>
+							<span id="refusal-detail"></span>
+						</div>
+					</div>
+
+					<div class="panel" id="panel-markdown" hidden></div>
+				</div>
+
+				<div>
+					<h2 style="margin-top: 0">Where things stand</h2>
+					<dl class="state">
+						<dt>Looking at</dt><dd id="state-view"></dd>
+						<dt>The box</dt><dd id="state-buffer"></dd>
+						<dt>Dot on the JSON tab</dt><dd id="state-marker" class="val"></dd>
+						<dt>Undo history</dt><dd id="state-undo"></dd>
+						<dt>Unexported changes</dt><dd id="state-unexported"></dd>
+						<dt>Other-tab notice</dt><dd id="state-notice"></dd>
+						<dt>Saved slot</dt><dd id="state-slot"></dd>
+					</dl>
+					<ul id="log"></ul>
+				</div>
+			</div>
+
+			<h2>Walkthroughs</h2>
+			<div id="scenario-tabs"></div>
+			<div id="scenario-body"></div>
+
+			<h2>Free play</h2>
+			<div id="free-buttons"></div>
+			<div id="free-edits"></div>
+
+			<footer>
+				Prototype for wayfinder ticket 043 (<em>the JSON buffer — Apply, divergence, and the
+				document moving underneath</em>). The parser, the serializer and the Markdown renderer
+				are the app's own, bundled in; the canvas, the sheet and the undo stack are stand-ins.
+				Typing in the box is real typing — ⌘Z in there is the browser's own text undo, which is
+				part of the answer.
+			</footer>
+		</main>
+		<script>
+			/*ENGINE*/
+		</script>
+	</body>
+</html>
