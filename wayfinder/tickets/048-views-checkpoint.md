@@ -3,7 +3,7 @@ name: views-checkpoint
 title: "Task: the gate — the byte-identity triangle and the JS-less artifact"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [editor-views, markdown-export, artifact-views]
 ---
 
