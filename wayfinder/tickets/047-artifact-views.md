@@ -54,7 +54,7 @@ Built. `src/lib/artifact/html.ts` composes the three panels, the strip, the View
 
 **200% zoom:** at a 700px viewport `scrollWidth === clientWidth` on all three Views. Both text panels wrap (`pre-wrap` + `overflow-wrap: anywhere`) instead of scrolling — including the JSON, where the editor deliberately chose `pre` because that box is a buffer someone hand-fixes. Nothing in an artifact is edited, so a long line is something to read. Neither pane is height-capped either: the editor capped its panes so Copy and Apply stayed reachable, and there are no buttons here to keep in reach.
 
-**Print** hides the strip, the labels and both text panels, and shows `#view-panel-sheet` by id — so it prints the Sheet on whichever tab the viewer happens to be sitting, beating the `hidden` the script may just have written.
+**Print** hides the strip, the labels and both text panels, and shows `#view-panel-sheet` by id — so it prints the Sheet on whichever tab the viewer happens to be sitting. ~~beating the `hidden` the script may just have written.~~ **That last clause was false, and the gate caught it — see the amendment below.**
 
 **The PNG is untouched, confirmed by looking** (`evidence/artifact.bcc.png`): title block through footer, no tabs, no label. `svelte-check` clean, both suites green (376 app, 85 MCP — MCP imports the digest, never the artifact, so no rebuild).
 
@@ -66,3 +66,15 @@ Two test changes, both of which had started guarding the wrong thing:
 `SPEC.md` §9.1 gains the panels, the script, the no-JS guarantee, the fill divergence, the print rule and the size; §8.6 gains the tabs with the measured numbers and the paragraph-not-heading reason.
 
 One thing deliberately not shared: the editor's `tablistKeydown`. The artifact imports `VIEWS` from `$lib/editor/views` so the three labels cannot drift, but the behaviour is rewritten as ES5 in a string — it ships as text and must run from a `file://` URL in whatever browser it lands in, forever, with no build step behind it.
+
+## Amendment (reopened and fixed by [views-checkpoint](wayfinder/tickets/048-views-checkpoint.md), 2026-08-12)
+
+**Printing an artifact while a text View was live printed a blank page**, in WebKit and in Chromium alike. Not the JSON, not a mangled sheet — nothing: `bodyHeight: 0`. The Sheet tab printed correctly, and so did a script-less file, which is why the resolution above could be written in good faith and why every test in the suite stayed green.
+
+The claim it rested on — "beating the `hidden` the script may just have written" — is the wrong model of the cascade. The app stylesheet the artifact inlines is Tailwind's, and its preflight lays down `[hidden]:where(:not([hidden="until-found"])) { display: none !important }` inside `@layer base`. An id beats an attribute selector on specificity, but **specificity is never consulted here**: layer precedence is decided first, and it *reverses* for important declarations, so a layered `!important` outranks an unlayered one no matter how specific. The first attempt at a fix was `#view-panel-sheet { display: block !important }` — matching force with force — and it changed nothing, which is the useful part of the story. Measured, not reasoned: `.scratch/views-checkpoint/layer-probe.mjs` puts the two rules side by side in a bare page and both engines agree.
+
+**The fix drops the fight instead of trying to win it.** The script hides inactive panels with `views__panel--off`, a class the artifact owns, and the print pass raises `#view-panel-sheet` back up on specificity alone. Nothing in the file carries `!important` now, and the print rule no longer depends on what a third-party stylesheet does with `[hidden]`. The `hidden` attribute is still exactly right for the **strip**, which nothing ever un-hides.
+
+Nothing else about the design moves. The script stays strictly subtractive, the panels still ship visible and unhidden, and `display: none` removes an inactive panel from the accessibility tree as completely as `hidden` did — exactly one `tabpanel` is exposed at a time in both engines (`evidence/part4-a11y-tree.json`).
+
+The unit test that let this through asserted the CSS *text* and so was true throughout. It now also pins the mechanism the print rule depends on (`.views__panel--off`, `classList.add`, no `panels[i].hidden`, no `!important` anywhere in the print block) with a comment saying plainly that only a browser can check the cascade, and naming the checkpoint that does. SPEC §9.1's print bullet carries the same reason.

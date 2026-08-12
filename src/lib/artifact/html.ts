@@ -127,7 +127,16 @@ main { max-width: ${ARTIFACT_WIDTH}px; margin: 0 auto; padding: ${ARTIFACT_MARGI
 	text-transform: uppercase;
 }
 .views__panel:first-of-type .views__heading { margin-top: 0; }
-.views__panel[hidden] { display: none; }
+/* The inactive panels are hidden by a class the artifact owns, and pointedly
+   not by the hidden attribute. The app stylesheet inlined above is Tailwind's,
+   whose preflight hides [hidden] with an !important inside @layer base — and
+   cascade layers reverse for important declarations, so an unlayered
+   !important of ours would lose to it however specific. The print pass has to
+   raise the Sheet panel back up whichever tab is live; against a plain class
+   it simply outranks it by specificity, and nothing in the file needs
+   !important at all. Found by printing from the JSON tab, which produced a
+   blank page — wayfinder/tickets/048-views-checkpoint.md. */
+.views__panel--off { display: none; }
 .views--enhanced .views__heading { display: none; }
 
 /* The two text Views: the same sheet panel the canvas is drawn on, grown to
@@ -158,8 +167,8 @@ main { max-width: ${ARTIFACT_WIDTH}px; margin: 0 auto; padding: ${ARTIFACT_MARGI
 	main { max-width: none; padding: 0; }
 	/* Print is the Sheet, whichever View the viewer happens to be looking at —
 	   a printed JSON dump is nobody's PDF (SPEC §9.1). The id outranks the
-	   hidden attribute the script may have just written, so this holds on any
-	   tab. */
+	   off-class the script writes, which is the whole reason that class exists
+	   rather than the hidden attribute: see .views__panel--off above. */
 	.views__strip, .views__heading { display: none; }
 	#view-panel-sheet { display: block; }
 	#view-panel-json, #view-panel-markdown { display: none; }
@@ -211,7 +220,11 @@ const VIEWS_SCRIPT = `<script>
 		for (var i = 0; i < tabs.length; i++) {
 			tabs[i].setAttribute('aria-selected', i === index ? 'true' : 'false');
 			tabs[i].tabIndex = i === index ? 0 : -1;
-			panels[i].hidden = i !== index;
+			// A class, not the hidden attribute — the print pass has to raise
+			// the Sheet back up from here, and preflight's layered important
+			// [hidden] rule cannot be outranked from an unlayered sheet.
+			if (i === index) panels[i].classList.remove('views__panel--off');
+			else panels[i].classList.add('views__panel--off');
 		}
 	}
 

@@ -184,8 +184,19 @@ describe('buildHtmlArtifact', () => {
 		const html = await buildHtmlArtifact(referenceDoc());
 		const print = html.slice(html.indexOf('@media print'));
 		expect(print).toContain('#view-panel-json, #view-panel-markdown { display: none; }');
-		expect(print).toContain('#view-panel-sheet { display: block; }');
 		expect(print).toContain('.views__strip, .views__heading { display: none; }');
+		expect(print).toContain('#view-panel-sheet { display: block; }');
+		// And the reason that rule can win: the script hides panels with a class
+		// of the artifact's own. The `hidden` attribute is unreachable from here
+		// — Tailwind's preflight hides it with `!important` inside `@layer base`,
+		// and layers reverse for important declarations, so no unlayered rule of
+		// ours outranks it. Printing from a text tab produced a blank page until
+		// this changed. The bytes are what a unit test can read; the cascade is
+		// checked in a browser by `wayfinder/tickets/048-views-checkpoint.md`.
+		expect(html).toContain('.views__panel--off { display: none; }');
+		expect(html).toContain("panels[i].classList.add('views__panel--off')");
+		expect(html).not.toContain('panels[i].hidden');
+		expect(print).not.toContain('!important');
 	});
 
 	it('escapes panel text so a canvas can never break out of its pane', async () => {
