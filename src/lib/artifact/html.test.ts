@@ -8,10 +8,11 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stampIds } from '$lib/model/canvas';
+import { canvasDigest } from '$lib/model/digest';
 import { extractEmbeddedCanvas } from '$lib/model/embed';
 import { parseCanvasFile } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
-import { serializeCanvas } from '$lib/model/serialize';
+import { serializeCanvas, toCanvasFile } from '$lib/model/serialize';
 import { downloadBlob } from './download';
 import { buildHtmlArtifact, exportHtmlArtifact, STACK_BREAKPOINT } from './html';
 
@@ -21,6 +22,20 @@ function referenceDoc() {
 	const result = parseCanvasFile(REFERENCE_FILE);
 	if (!result.ok) throw new Error('reference fixture must parse');
 	return stampIds(result.file);
+}
+
+/** What a panel's text looks like once it is HTML rather than bytes. */
+function escapeText(text: string): string {
+	return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+/** The Sheet View's own markup, without the two text panels or the tab strip. */
+function sheetPanel(html: string): string {
+	const start = html.indexOf('<section class="views__panel" id="view-panel-sheet"');
+	const end = html.indexOf('<section class="views__panel" id="view-panel-json"');
+	expect(start).toBeGreaterThan(-1);
+	expect(end).toBeGreaterThan(start);
+	return html.slice(start, end);
 }
 
 const APP_CSS = '.quiet-sheet{color:#1a1e20}';
@@ -75,7 +90,10 @@ describe('buildHtmlArtifact', () => {
 		const html = await buildHtmlArtifact(referenceDoc());
 		expect(html).toMatch(/<h1[^>]*>[\s\S]*?Order Fulfillment/);
 		expect(html).toContain('CC BY 4.0');
-		expect(html).not.toMatch(/contenteditable|data-placeholder|<button|<input/);
+		// Scoped to the Sheet panel: the artifact now has buttons of its own —
+		// the View tabs — and they are exactly the affordance the sheet must
+		// still not grow (SPEC §9, the offscreen mount is shared with the PNG).
+		expect(sheetPanel(html)).not.toMatch(/contenteditable|data-placeholder|<button|<input/);
 		expect(document.querySelector('.paper-ground')).toBeNull();
 	});
 
@@ -121,8 +139,67 @@ describe('buildHtmlArtifact', () => {
 		const html = await buildHtmlArtifact(referenceDoc());
 		expect(html).not.toContain('cloudflareinsights');
 		expect(html).not.toContain('data-cf-beacon');
+		// Two scripts and no others: the embedded Canvas file, and the artifact's
+		// own inline enhancement. Neither one loads anything — an artifact that
+		// fetches is not self-contained (SPEC §9.1).
 		const scripts = html.match(/<script\b[^>]*/g) ?? [];
-		expect(scripts).toEqual(['<script type="application/json" data-canvas-file']);
+		expect(scripts).toEqual(['<script type="application/json" data-canvas-file', '<script']);
+		expect(html).not.toMatch(/<script[^>]*\ssrc=/);
+	});
+
+	it('pre-renders all three Views, visible and unhidden (SPEC §9.1)', async () => {
+		const doc = referenceDoc();
+		const html = await buildHtmlArtifact(doc);
+
+		for (const key of ['sheet', 'json', 'markdown']) {
+			expect(html).toContain(`<section class="views__panel" id="view-panel-${key}"`);
+			expect(html).toContain(`id="view-tab-${key}"`);
+		}
+		// The JSON panel is the export's own bytes, and the Markdown is the one
+		// renderer's — the same function the Markdown View and `.bcc.md` use.
+		expect(html).toContain(escapeText(serializeCanvas(doc)));
+		expect(html).toContain(escapeText(canvasDigest(toCanvasFile(doc))));
+
+		// Nothing about the panels waits on script: no panel ships hidden, and
+		// each carries a heading naming it in the stack.
+		expect(html).not.toMatch(/<section class="views__panel"[^>]*hidden/);
+		for (const label of ['Sheet', 'JSON', 'Markdown']) {
+			expect(html).toContain(`<p class="views__heading">${label}</p>`);
+		}
+	});
+
+	it('ships the tab strip hidden and lets the script alone reveal it', async () => {
+		const html = await buildHtmlArtifact(referenceDoc());
+		// The strip is dead without script, so a script-less viewer must never
+		// see it — and its bar goes with it, or an empty 14px band survives.
+		expect(html).toMatch(/<div class="views__strip" role="tablist" aria-label="Views" hidden>/);
+		expect(html).toContain('.views__strip[hidden] { display: none; }');
+		expect(html).toContain("strip.removeAttribute('hidden')");
+		// And it stands alone: a wrapper would keep its own gap once the strip
+		// inside it went hidden, leaving an empty band above the sheet.
+		expect(html).not.toContain('views__bar');
+	});
+
+	it('prints the Sheet alone, whichever View is on screen (SPEC §9.1)', async () => {
+		const html = await buildHtmlArtifact(referenceDoc());
+		const print = html.slice(html.indexOf('@media print'));
+		expect(print).toContain('#view-panel-json, #view-panel-markdown { display: none; }');
+		expect(print).toContain('#view-panel-sheet { display: block; }');
+		expect(print).toContain('.views__strip, .views__heading { display: none; }');
+	});
+
+	it('escapes panel text so a canvas can never break out of its pane', async () => {
+		const doc = referenceDoc();
+		doc.purpose = 'Closes </pre><script>alert(1)</script> & opens <b>';
+		const html = await buildHtmlArtifact(doc);
+		expect(html).not.toContain('<script>alert(1)</script>');
+		expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+		// The embedded Canvas file still round-trips out byte-identically: the
+		// serializer escapes every `<`, so the block's own close tag stays the
+		// first one after the marker (SPEC §9.1).
+		expect(extractEmbeddedCanvas(html)).toBe(serializeCanvas(doc));
+		const scripts = html.match(/<script\b[^>]*/g) ?? [];
+		expect(scripts).toHaveLength(2);
 	});
 
 	it('titles an unnamed canvas Untitled and escapes markup in the name', async () => {
