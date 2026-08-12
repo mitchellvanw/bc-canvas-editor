@@ -54,7 +54,8 @@ const STRIPS = {
 <p class="v-lip__eyebrow">Bounded&nbsp;Context&nbsp;Canvas&nbsp;·&nbsp;V5</p>
 <div class="v-strip" role="tablist" aria-label="Views" hidden>${tabs}</div>
 </div>`,
-	B: (tabs) => `<div class="v-strip v-strip--folder" role="tablist" aria-label="Views" hidden>${tabs}</div>`
+	B: (tabs) => `<div class="v-strip v-strip--folder" role="tablist" aria-label="Views" hidden>${tabs}</div>`,
+	C: (tabs) => `<div class="v-bar"><div class="v-strip v-strip--seg" role="tablist" aria-label="Views" hidden>${tabs}</div></div>`
 };
 
 const VIEWS = [
@@ -87,6 +88,15 @@ main { max-width: 1440px; margin: 0 auto; padding: 24px 40px 48px; }
 .v-lip ~ .v-panel .tb__eyebrow, .v-lip + .v-panel .tb__eyebrow { display:none; }
 .v-lip ~ .v-panel .tb { border-radius:0 0 6px 6px; }
 .v-strip--folder ~ .v-panel .tb { border-radius:0 0 6px 6px; }
+.v-bar { display:flex; padding-bottom:14px; }
+.v-strip--seg { display:flex; overflow:hidden; border:1px solid var(--color-line);
+  border-radius:4px; background:var(--color-sheet); }
+.v-strip--seg .v-tab { padding:.35rem .95rem; border:0; border-left:1px solid var(--color-line);
+  background:none; color:var(--color-ink-soft); font-family:var(--font-sans); font-size:.8rem;
+  font-weight:500; cursor:pointer; }
+.v-strip--seg .v-tab:first-child { border-left:0; }
+.v-strip--seg .v-tab[aria-selected="true"] { background:var(--color-ink); color:var(--color-sheet); font-weight:600; }
+.v-strip--seg .v-tab:focus-visible { outline:2px solid var(--color-ink); outline-offset:-2px; }
 .v-pane { border:1px solid var(--color-line); border-radius:5px; background:var(--color-sheet);
   padding:1.4rem 1.6rem; font-family:var(--font-mono); font-size:.8rem; line-height:1.65;
   white-space:pre-wrap; overflow-x:auto; }
@@ -141,7 +151,7 @@ const SCRIPT = `<script>
 })();
 <\/script>`;
 
-for (const variant of ['A', 'B']) {
+for (const variant of ['A', 'B', 'C']) {
 	for (const scripted of [true, false]) {
 		const tabs = VIEWS.map(
 			(v, i) =>
@@ -186,7 +196,7 @@ ${panels}
 
 // Shoot both: scripted (tabs) and script-less (the stack).
 const shot = await browser.newPage({ viewport: { width: 1440, height: 1100 }, deviceScaleFactor: 2 });
-for (const variant of ['A', 'B']) {
+for (const variant of ['A', 'B', 'C']) {
 	await shot.goto(`file://${OUT}artifact-${variant}.bcc.html`, { waitUntil: 'networkidle' });
 	await shot.evaluate(() => document.fonts.ready);
 	await shot.screenshot({ path: `${OUT}artifact-${variant}-sheet.png`, clip: { x: 0, y: 0, width: 1440, height: 400 } });
