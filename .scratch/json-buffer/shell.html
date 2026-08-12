@@ -162,6 +162,13 @@
 				font-weight: 600;
 				cursor: pointer;
 			}
+			#moved {
+				border-left: 3px solid var(--ink);
+				background: #f4f2ec;
+				padding: 0.6rem 0.8rem;
+				margin-top: 0.7rem;
+				font-size: 0.85rem;
+			}
 			#refusal {
 				border-left: 3px solid var(--pink);
 				background: #fff5f8;
@@ -332,6 +339,9 @@
 							<button id="apply">Apply</button>
 							<span class="hint">Replaces the whole canvas, as one undo step.</span>
 						</div>
+						<div id="moved" hidden>
+							The canvas has changed since you started typing this. Applying replaces it.
+						</div>
 						<div id="refusal" hidden>
 							<b>Refused:</b> <span id="refusal-reason"></span>
 							<span id="refusal-detail"></span>
@@ -347,6 +357,7 @@
 						<dt>Looking at</dt><dd id="state-view"></dd>
 						<dt>The box</dt><dd id="state-buffer"></dd>
 						<dt>Dot on the JSON tab</dt><dd id="state-marker" class="val"></dd>
+						<dt>Canvas moved since you typed</dt><dd id="state-moved"></dd>
 						<dt>Undo history</dt><dd id="state-undo"></dd>
 						<dt>Unexported changes</dt><dd id="state-unexported"></dd>
 						<dt>Other-tab notice</dt><dd id="state-notice"></dd>

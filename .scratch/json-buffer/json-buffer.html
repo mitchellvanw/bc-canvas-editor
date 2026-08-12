@@ -162,6 +162,13 @@
 				font-weight: 600;
 				cursor: pointer;
 			}
+			#moved {
+				border-left: 3px solid var(--ink);
+				background: #f4f2ec;
+				padding: 0.6rem 0.8rem;
+				margin-top: 0.7rem;
+				font-size: 0.85rem;
+			}
 			#refusal {
 				border-left: 3px solid var(--pink);
 				background: #fff5f8;
@@ -332,6 +339,9 @@
 							<button id="apply">Apply</button>
 							<span class="hint">Replaces the whole canvas, as one undo step.</span>
 						</div>
+						<div id="moved" hidden>
+							The canvas has changed since you started typing this. Applying replaces it.
+						</div>
 						<div id="refusal" hidden>
 							<b>Refused:</b> <span id="refusal-reason"></span>
 							<span id="refusal-detail"></span>
@@ -347,6 +357,7 @@
 						<dt>Looking at</dt><dd id="state-view"></dd>
 						<dt>The box</dt><dd id="state-buffer"></dd>
 						<dt>Dot on the JSON tab</dt><dd id="state-marker" class="val"></dd>
+						<dt>Canvas moved since you typed</dt><dd id="state-moved"></dd>
 						<dt>Undo history</dt><dd id="state-undo"></dd>
 						<dt>Unexported changes</dt><dd id="state-unexported"></dd>
 						<dt>Other-tab notice</dt><dd id="state-notice"></dd>
@@ -858,7 +869,7 @@
   }
 
   // .scratch/json-buffer/json-buffer.js
-  var TRACKING = { text: null, error: null };
+  var TRACKING = { text: null, basis: null, error: null };
   function shown(state2, docBytes2) {
     return state2.text ?? docBytes2;
   }
@@ -866,7 +877,11 @@
     return state2.text !== null;
   }
   function edit(state2, next, docBytes2) {
-    return { text: next === docBytes2 ? null : next, error: null };
+    if (next === docBytes2) return TRACKING;
+    return { text: next, basis: state2.text === null ? docBytes2 : state2.basis, error: null };
+  }
+  function moved(state2, docBytes2) {
+    return state2.text !== null && state2.basis !== docBytes2;
   }
   function apply(state2, docBytes2, parse2, serialize2) {
     if (state2.text === null) return { kind: "settled", state: TRACKING };
@@ -926,6 +941,7 @@
   var unexported = (world) => serialize(world.doc) !== world.exported;
   var boxText = (world) => shown(world.json, docBytes(world));
   var marker = (world) => unapplied(world.json);
+  var moved2 = (world) => moved(world.json, docBytes(world));
   var ACTIONS = {
     /** Look at a View. Pure chrome — it never touches the buffer. */
     view: (world, name) => say({ ...world, view: name }, `Switched to the ${name} view.`),
@@ -1106,6 +1122,8 @@
     $("state-unexported").textContent = unexported(state) ? "yes" : "no";
     $("state-notice").textContent = state.notice ? "showing" : "hidden";
     $("state-slot").textContent = `${state.slot.length} bytes \u2014 ${state.slot === bytes ? "this tab\u2019s canvas" : "NOT this tab\u2019s canvas"}`;
+    $("moved").hidden = !moved2(state);
+    $("state-moved").textContent = moved2(state) ? "yes" : "no";
     const refusal = state.json.error;
     $("refusal").hidden = !refusal;
     if (refusal) {
@@ -1178,17 +1196,19 @@
     {
       key: "moves",
       title: "The canvas moves under the box",
-      blurb: "You leave text in the box, then edit the sheet. Both are true at once: the canvas has moved, your text has not. Then you press Apply.",
+      blurb: "You leave text in the box, then edit the sheet. Both are true at once: the canvas has moved, your text has not \u2014 and Apply replaces the whole canvas, so pressing it drops the sheet edit. The box says so before you press it.",
       steps: [
         ["Go to the JSON view", () => act("view", "json")],
         ["Hand-edit the canvas name in the box", () => type("a valid hand-edit (renames the canvas)")],
         ["Switch to the Sheet", () => act("view", "sheet")],
         ["Add a term on the sheet", () => act("sheet", renameTerm)],
         ["Back to JSON", () => act("view", "json")],
-        ["Apply", () => act("apply")],
+        ["Undo the sheet edit", () => act("undo")],
+        ["Redo it", () => act("redo")],
+        ["Apply anyway", () => act("apply")],
         ["Undo", () => act("undo")]
       ],
-      watch: "Apply replaces the whole canvas, so the term you added on the sheet is gone \u2014 and one Undo brings it back, with the box following the canvas again. Nothing warned you first. That is the sharpest thing in this ticket: is one undo enough?"
+      watch: "The line above Apply appeared when the canvas moved out from under your text, went away when Undo put it back, and returned with Redo \u2014 it is a byte comparison against the canvas as it was when you started typing, not a flag someone sets. Applying anyway drops the sheet edit, as it always would, and one Undo brings it back."
     },
     {
       key: "apply-undo",

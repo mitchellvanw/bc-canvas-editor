@@ -25,6 +25,7 @@ const look = () =>
 		return {
 			view: document.getElementById('state-view').textContent,
 			dot: document.getElementById('marker').hidden ? 'off' : 'ON',
+			moved: document.getElementById('moved').hidden ? '—' : 'MOVED',
 			box: document.getElementById('state-buffer').textContent,
 			undo: document.getElementById('state-undo').textContent,
 			unexported: document.getElementById('state-unexported').textContent,
@@ -49,11 +50,11 @@ for (let i = 0; i < tabs.length; i++) {
 	await tabs[i].click();
 	say(`## ${title}`);
 	say();
-	say('| step | dot | the box | undo | slot |');
-	say('| --- | --- | --- | --- | --- |');
+	say('| step | dot | canvas moved | the box | undo | slot |');
+	say('| --- | --- | --- | --- | --- | --- |');
 
 	const start = await look();
-	say(`| _(reset)_ | ${start.dot} | ${start.box} | ${start.undo} | ${start.slot} |`);
+	say(`| _(reset)_ | ${start.dot} | ${start.moved} | ${start.box} | ${start.undo} | ${start.slot} |`);
 
 	for (let guard = 0; guard < 12; guard++) {
 		const step = await page.$('#scenario-body button.step:not([disabled])');
@@ -61,11 +62,9 @@ for (let i = 0; i < tabs.length; i++) {
 		const label = (await step.textContent()).trim();
 		await step.click();
 		const s = await look();
-		say(
-			`| ${label} | ${s.dot} | ${s.box} | ${s.undo} | ${s.slot} |`
-		);
+		say(`| ${label} | ${s.dot} | ${s.moved} | ${s.box} | ${s.undo} | ${s.slot} |`);
 		lines.push(
-			`| ↳ | | \`${s.boxHead}\` (${s.boxBytes} bytes)${
+			`| ↳ | | | \`${s.boxHead}\` (${s.boxBytes} bytes)${
 				s.refusal ? ` — refusal: _${s.refusal}_` : ''
 			} | canvas: “${s.name}” | terms: ${s.terms} |`
 		);
@@ -112,6 +111,13 @@ say(
 	'> Native undo took the text back and the dot went out with it, without the canvas or its history moving. Nothing had to be written for this.'
 );
 say();
+
+// One shot of the line itself, since it is the only thing on this page that
+// did not exist before the ticket was answered. Walkthrough 2 up to the step
+// where the canvas has moved and the box has not.
+await page.click('#scenario-tabs button:nth-child(2)');
+for (let i = 0; i < 5; i++) await page.click('#scenario-body button.step:not([disabled])');
+await page.locator('#panel-json').screenshot({ path: `${OUT}moved-notice.png` });
 
 writeFileSync(`${OUT}transcript.md`, lines.join('\n'));
 console.log(`wrote ${OUT}transcript.md and ${tabs.length} screenshots`);

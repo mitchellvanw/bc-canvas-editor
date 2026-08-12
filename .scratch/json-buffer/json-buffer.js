@@ -17,14 +17,19 @@
  * document's own bytes drops the buffer rather than holding a buffer that
  * agrees with the document.
  *
- * There is deliberately no *basis* — no memory of which document the text was
- * drafted against, no staleness. Apply replaces the whole document, so a
- * buffer is never a patch that can rot; it is always exactly "what the canvas
- * becomes if you press Apply", whatever the canvas is right now.
+ * The `basis` — the document's bytes at the moment the proposal was born — is
+ * the one thing here that does not pay for itself in the model, and it is
+ * carried for one reason only: applying is a whole-document replacement, so a
+ * proposal drafted before an edit on the sheet silently replaces that edit.
+ * The basis is never a *rebase* point (there is no merging here, and a
+ * proposal never goes stale — it is always exactly "what the canvas becomes if
+ * you press Apply"). It answers one question, `moved`, and the view says so
+ * before you press the button. It is fixed when the proposal is born and never
+ * refreshed, so the sentence it drives stays literally true.
  */
 
-/** Tracking: nothing proposed, no refusal on screen. */
-export const TRACKING = { text: null, error: null };
+/** Tracking: nothing proposed, no refusal on screen, nothing to be stale against. */
+export const TRACKING = { text: null, basis: null, error: null };
 
 /** What the box renders. */
 export function shown(state, docBytes) {
@@ -45,7 +50,21 @@ export function unapplied(state) {
  * so editing clears it.
  */
 export function edit(state, next, docBytes) {
-	return { text: next === docBytes ? null : next, error: null };
+	if (next === docBytes) return TRACKING;
+	// The basis is set once, when the proposal is born, and kept through every
+	// later keystroke: "the canvas changed since you started typing this" has
+	// to keep meaning what it says while you carry on typing.
+	return { text: next, basis: state.text === null ? docBytes : state.basis, error: null };
+}
+
+/**
+ * The canvas has changed since this proposal was written — so pressing Apply
+ * replaces work that is not in the box. Not an error and not a block: the
+ * commit is one undo step either way. It is the thing the view says out loud
+ * before the button is pressed, because nothing else on screen would.
+ */
+export function moved(state, docBytes) {
+	return state.text !== null && state.basis !== docBytes;
 }
 
 /**
@@ -70,6 +89,7 @@ export function apply(state, docBytes, parse, serialize) {
 
 	const result = parse(state.text);
 	if (!result.ok) return { kind: 'refused', reason: result, state: { ...state, error: result } };
+
 
 	// Success always returns to Tracking, whether or not it commits: the box
 	// re-renders from the document, which is how a migration shows itself

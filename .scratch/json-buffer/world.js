@@ -69,6 +69,7 @@ export const docBytes = (world) => serialize(world.doc);
 export const unexported = (world) => serialize(world.doc) !== world.exported;
 export const boxText = (world) => buffer.shown(world.json, docBytes(world));
 export const marker = (world) => buffer.unapplied(world.json);
+export const moved = (world) => buffer.moved(world.json, docBytes(world));
 
 export const ACTIONS = {
 	/** Look at a View. Pure chrome — it never touches the buffer. */

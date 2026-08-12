@@ -52,6 +52,11 @@ function render() {
 		state.slot === bytes ? 'this tab’s canvas' : 'NOT this tab’s canvas'
 	}`;
 
+	// Provisional wording — this string belongs to ticket 045's writing-copy pass
+	// with the rest of the View's §10 strings.
+	$('moved').hidden = !world.moved(state);
+	$('state-moved').textContent = world.moved(state) ? 'yes' : 'no';
+
 	const refusal = state.json.error;
 	$('refusal').hidden = !refusal;
 	if (refusal) {
@@ -144,18 +149,20 @@ const SCENARIOS = [
 		key: 'moves',
 		title: 'The canvas moves under the box',
 		blurb:
-			'You leave text in the box, then edit the sheet. Both are true at once: the canvas has moved, your text has not. Then you press Apply.',
+			'You leave text in the box, then edit the sheet. Both are true at once: the canvas has moved, your text has not — and Apply replaces the whole canvas, so pressing it drops the sheet edit. The box says so before you press it.',
 		steps: [
 			['Go to the JSON view', () => act('view', 'json')],
 			['Hand-edit the canvas name in the box', () => type('a valid hand-edit (renames the canvas)')],
 			['Switch to the Sheet', () => act('view', 'sheet')],
 			['Add a term on the sheet', () => act('sheet', renameTerm)],
 			['Back to JSON', () => act('view', 'json')],
-			['Apply', () => act('apply')],
+			['Undo the sheet edit', () => act('undo')],
+			['Redo it', () => act('redo')],
+			['Apply anyway', () => act('apply')],
 			['Undo', () => act('undo')]
 		],
 		watch:
-			'Apply replaces the whole canvas, so the term you added on the sheet is gone — and one Undo brings it back, with the box following the canvas again. Nothing warned you first. That is the sharpest thing in this ticket: is one undo enough?'
+			'The line above Apply appeared when the canvas moved out from under your text, went away when Undo put it back, and returned with Redo — it is a byte comparison against the canvas as it was when you started typing, not a flag someone sets. Applying anyway drops the sheet edit, as it always would, and one Undo brings it back.'
 	},
 	{
 		key: 'apply-undo',
