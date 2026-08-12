@@ -3,7 +3,7 @@ name: artifact-views
 title: "Task: the artifact carries all three views — and its first script tag"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [shared-digest-seam, view-switcher-prototype]
 ---
 
