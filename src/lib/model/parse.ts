@@ -45,8 +45,16 @@ function notCanvas(detail: string): ParseResult {
 	return { ok: false, reason: 'not-canvas', detail: /[.!?]$/.test(detail) ? detail : `${detail}.` };
 }
 
-/** Recognized so `parseCanvasImport` can tell "not JSON" from "not a Canvas". */
-const NOT_JSON = 'the file is not valid JSON';
+/**
+ * Recognized so `parseCanvasImport` can tell "not JSON" from "not a Canvas".
+ *
+ * Written in the same `expected …` idiom as every field clause below, and
+ * naming neither "the file" nor "this text": the JSON View shows this line to
+ * someone looking at a textarea (SPEC §3.3, §10), while an MCP caller reading
+ * the same clause is genuinely holding a file. The idiom is the one wording
+ * true for both.
+ */
+const NOT_JSON = 'expected valid JSON';
 
 /**
  * A v1 lane carried `collaborator` and `relationship` as plain strings; v2
@@ -363,6 +371,6 @@ export function parseCanvasImport(text: string): ParseResult {
 	const embedded = extractEmbeddedCanvas(text);
 	if (embedded !== null) return parseCanvasFile(embedded);
 	// A text that is not JSON at all has now failed both doors, and saying only
-	// "not valid JSON" misdiagnoses the HTML file it most often is.
+	// "expected valid JSON" misdiagnoses the HTML file it most often is.
 	return direct.detail?.startsWith(NOT_JSON) ? notCanvas(NEITHER_FORM) : direct;
 }

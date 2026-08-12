@@ -98,7 +98,7 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
 - **v1 → v2** (the first migration ever run): `description` → `purpose`, `collaborator` string → `{ name }`, and a v1 `relationship` string lands on **`ours`, uniformly, with no interpretation**. The rule is deliberately not "that is what people meant" — the nine teaching one-liners are written from mixed perspectives, so no single side ever was. It carries because both ends are optional free text: a wrong guess renders visibly on the lane and is one pick to correct, with nothing lost. The migration never rewrites free text (an off-vocabulary domain role survives as typed), and a migrated import lands **clean, not dirty** — the file on disk still opens, and nothing the user typed is unsaved.
 - Files with a version **newer** than the app knows are **refused** with a clear message (§10) and never mutated — no best-effort parsing.
 - A missing/unparsable structure is refused as "not a Canvas file" (§10).
-- **One validator, two levels of disclosure.** A "not a Canvas file" refusal also carries an optional `detail`: one line naming the offending field and what was expected there — `inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification".` — with paths written the way a developer would type them to reach the value (the v2 fields included: `inboundCommunication[0].collaborator.kind`, `outboundCommunication[0].relationship.theirs`), and a full stop on the end so a caller can join it with sentences of its own. The editor ignores it; the user sees the §10 sentence and nothing more. It exists so a non-interactive caller of the same parser can teach rather than merely refuse, from the same walk, so the two levels cannot describe different schemas.
+- **One validator, two levels of disclosure.** A "not a Canvas file" refusal also carries an optional `detail`: one line naming the offending field and what was expected there — `inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification".` — with paths written the way a developer would type them to reach the value (the v2 fields included: `inboundCommunication[0].collaborator.kind`, `outboundCommunication[0].relationship.theirs`), and a full stop on the end so a caller can join it with sentences of its own. The editor ignores it; the user sees the §10 sentence and nothing more. It exists so a non-interactive caller of the same parser can teach rather than merely refuse, from the same walk, so the two levels cannot describe different schemas. **The detail is shown where the offending bytes are on screen** — the boundary in one sentence. The import dialog withholds it because someone who picked the wrong file has no text in front of them; the JSON View (§6) shows it because the path names a location in the buffer they are looking at. The clause is worded for both readers at once, naming neither "the file" nor "this text" (`expected valid JSON (…)`).
 
 ### 3.4 File naming
 
@@ -288,7 +288,7 @@ Non-text targets get a 2px ink-colored ring with small offset on `:focus-visible
 - Every free-text field is `role="textbox"` (`aria-multiline` for prose); its accessible name is the field's **identity** ("Name", "Purpose", "Term"), never its content. Placeholder questions ride along as `aria-placeholder`/description.
 - The lane pick-slots are named "Collaborator kind for ‹name›", "Their relationship for ‹name›", "Our relationship for ‹name›" — always "relationship", never "role", which belongs to Domain Roles and would teach the wrong thing two inches from that panel.
 - Repeating structures are native lists (lanes are lists of messages; sections are lists of lanes; traits a list of chips). Accessible names lead with the type where color/glyph carries meaning: "Command, Place Order".
-- **One polite live region**; announces only structural commits and non-local effects (strings in §10), including the multi-tab notice when it appears. Field-blur commits announce nothing. No assertive interruptions.
+- **One polite live region**; announces only structural commits and non-local effects (strings in §10), including the multi-tab notice when it appears, **and a refused explicit commit — the JSON View's failed Apply, which announces its lead sentence in full because it is the one announcement not confirming something the user can see.** Field-blur commits announce nothing. No assertive interruptions.
 
 ### 8.6 Artifact AA, concretely
 
@@ -360,6 +360,16 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
 > **This file couldn't be read as a Canvas file.**
 > It isn't a Canvas file export, or it's been modified. Nothing was imported.
 
+**JSON View notices** — the same refusals one surface further in, where the detail §3.3 withholds from the dialog above is the point. Inline `role="note"` beneath the textarea, above **Apply**, in the multi-tab notice's box; held on the buffer, so it survives a view switch and is cleared by the next keystroke or the next Apply. The bold lead is the app's; the mono second line is the parser's `detail` verbatim.
+
+> **This text couldn't be read as a Canvas file.**
+> `inboundCommunication[1].messages[0].type: expected one of "command", "query", "event", got "notification".`
+
+> **This text is from a newer version of BC Canvas.**
+> It was exported with format version 3; this app reads up to version 2. Copy this text, reload the page to pick up the latest app, then paste it back.
+
+Both classes of `not-canvas` — malformed JSON and wrong shape — share the one lead; the detail line is what distinguishes them, and inventing two leads would assert a difference the parser doesn't make. The newer-version notice drops the dialog's "The file hasn't been touched" (there is no file) and leads its remedy with **Copy this text**, because a reload discards the buffer. No "nothing was applied" line: the notice only exists on failure, the tab marker is still on, and the box still holds the text.
+
 **Multi-tab notice** (persistent, both tabs):
 
 > **This canvas is open in another tab.** Whichever tab edits last overwrites the other — close one of them.
@@ -387,7 +397,9 @@ Terse row-field placeholders once a section has content: `Collaborator`, `Messag
 
 **Popover microcopy:** escape hatch **custom…** (lowercase, ellipsis signals it opens a field; absent from the closed kind picker); clear/unset entry **— none —** in the classification pickers, **— no kind —** in the kind picker, **— no relationship —** in each relationship picker. No hint lines in any picker — the descriptions are the teaching.
 
-**Live-region announcements** (terse, type-led): `Collaborator removed` · `Trait added` · `Moved up` / `Moved down` · `Undone: <section name>` / `Redone: <section name>` · `Canvas imported` · `New canvas` · `Example opened`.
+**Live-region announcements** (terse, type-led): `Collaborator removed` · `Trait added` · `Moved up` / `Moved down` · `Undone: <section name>` / `Redone: <section name>` · `Canvas imported` · `New canvas` · `Example opened` · `Canvas replaced` · `Canvas replaced, migrated from format version 1`.
+
+The two Apply announcements: a successful Apply says `Canvas replaced`, and one that migrated on the way in says so, because the bytes in the box change under the user. Nothing visible marks the migration — `version` is the first key `serialize.ts` writes, so a v1 paste comes back showing `"version": 2` on line 2. An Apply pressed while the box already follows the canvas commits nothing and announces nothing. A **failed** Apply announces its lead sentence in full (§8.5) — the one full sentence in this list, and the only announcement carrying information that isn't confirming something visible.
 
 ## 11. License & attribution
 

@@ -29697,7 +29697,7 @@ var CANVAS_VERSION = 2;
 function notCanvas(detail) {
   return { ok: false, reason: "not-canvas", detail: /[.!?]$/.test(detail) ? detail : `${detail}.` };
 }
-var NOT_JSON = "the file is not valid JSON";
+var NOT_JSON = "expected valid JSON";
 function migrateLaneV1(item) {
   if (!isRecord(item)) return item;
   const { collaborator, relationship, ...rest } = item;

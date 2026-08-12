@@ -91,7 +91,7 @@ describe('parseCanvasFile', () => {
 
 	it('refuses text that is not JSON at all, quoting the syntax failure', () => {
 		const detail = refusalDetail(parseCanvasFile('not json {'));
-		expect(detail).toMatch(/^the file is not valid JSON \(.+\)\.$/);
+		expect(detail).toMatch(/^expected valid JSON \(.+\)\.$/);
 	});
 
 	// Every table below holds the *clause* the walk produces; the parser puts
@@ -428,7 +428,7 @@ describe('parseCanvasImport — one path for .bcc.json and .bcc.html', () => {
 	it('refuses an HTML file with a missing embedded block as not a Canvas file', () => {
 		const result = parseCanvasImport('<!doctype html><html><body>plain page</body></html>');
 		expect(result).toMatchObject({ ok: false, reason: 'not-canvas' });
-		// Both doors were tried, so the detail names both — "not valid JSON"
+		// Both doors were tried, so the detail names both — "expected valid JSON"
 		// alone would misdiagnose the HTML file this most often is.
 		expect(refusalDetail(result)).toBe(
 			'expected a Canvas file (JSON) or an HTML artifact carrying an embedded Canvas file; this text is neither.'
@@ -439,7 +439,7 @@ describe('parseCanvasImport — one path for .bcc.json and .bcc.html', () => {
 		const corrupt = artifactAround(embeddedCanvasBlock(exported.slice(0, 40)));
 		const result = parseCanvasImport(corrupt);
 		expect(result).toMatchObject({ ok: false, reason: 'not-canvas' });
-		expect(refusalDetail(result)).toMatch(/^the file is not valid JSON \(.+\)\.$/);
+		expect(refusalDetail(result)).toMatch(/^expected valid JSON \(.+\)\.$/);
 	});
 
 	it('reports the shape failure of a JSON text that is no artifact either', () => {
