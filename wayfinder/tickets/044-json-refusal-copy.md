@@ -3,7 +3,7 @@ name: json-refusal-copy
 title: "Grilling: what the JSON view says when Apply fails"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [json-buffer-prototype]
 ---
 
