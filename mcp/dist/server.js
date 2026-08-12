@@ -29923,7 +29923,11 @@ function parseCanvasFile(text) {
     migrated = migrate(migrated);
   }
   try {
-    return { ok: true, file: asCanvasFile(migrated) };
+    return {
+      ok: true,
+      file: asCanvasFile(migrated),
+      ...version2 < CANVAS_VERSION && { migratedFrom: version2 }
+    };
   } catch (error51) {
     if (error51 instanceof Refusal) return notCanvas(error51.message);
     throw error51;

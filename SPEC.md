@@ -11,6 +11,7 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 **In scope (v1):**
 
 - WYSIWYG inline editing of one Bounded Context Canvas, V5 canonical layout.
+- **Three Views of that one canvas** (§6): the Sheet, the Canvas file's JSON — editable, applied explicitly — and a read-only Markdown rendering.
 - Import/export of the versioned Canvas file (`.bcc.json`).
 - Export of a self-contained, re-importable HTML artifact (`.bcc.html`) and a 2x PNG (`.bcc.png`).
 - Autosave to localStorage as a safety net; single linear undo/redo.
@@ -190,6 +191,7 @@ Winner of three prototype rounds; primary source `prototype/canvas-visual-langua
 
 - **Ground:** warm cream paper `#EAE7DE` with a faint 32px drafting grid; sections as near-white sheets `#FDFDFB`, 1px `#D8D4C8` border, 5px radius, whisper of shadow. V5 canonical layout on a 12-column grid, ten panels matching the printed canvas: purpose ×5 / classification ×4 / roles ×3 on top; inbound left; ubiquitous language + business decisions centre; outbound right; assumptions/metrics/open questions bottom.
 - **Responsive tiers:** the editor reflows by the sheet container's width — never the viewport — through three tiers below the canonical grid: a trim tier (≤1060px) that tightens `--gap` and panel padding so the twelve columns survive narrow windows; a two-column tier (≤880px) — purpose full-width, classification beside roles, inbound beside outbound (the lanes keep their in/out reading), the centre pair side by side in its full-width box, questions full-width; and a one-column stack (≤620px) in the artifact's reading order (§9.1). Only the editor's `<main>` declares the container, so the offscreen mount and exported HTML have no container ancestor and the tier rules are inert there — artifacts keep the fixed desktop grid (§9.2). Chrome shares the editor's responsive gutters (`px-4/6/10`). Mobile/tablet *editing* stays a non-goal (§1).
+- **View switcher:** a segmented pill in the gutter band above the sheet, at the sheet's own left edge — the chrome's button idiom (4px radius, 1px line border, 1px dividers, Archivo 500 at 0.8rem) with the active segment filled ink at weight 600, and the focus ring **inset** (`outline-offset: -2px`, inverted to sheet on the filled segment, where an ink ring would vanish). It rests **unfilled** on the paper and fills sheet on hover — the inverse of a chrome button, which rests sheet and darkens to paper — which is the softening the §6 known risk asks for. The strip is a **sibling** of the sheet, never part of it: `CanvasSheet` is shared with the offscreen mount and grows no switcher seam, and the switcher renders in the editor only (like the tiers above, it is inert in an artifact — §9). The unapplied marker is a hotspot-pink dot inside the JSON segment, dimmed by colour and never by opacity.
 - **Title block:** near-black ink block (`#1A1E20`, 6px radius) carrying the spaced-caps eyebrow "Bounded Context Canvas · V5" and the context name in Archivo 700 — nothing else. (Strategic classification lived here through canvas-file v1; it is now the tenth panel, below.)
 - **Strategic classification panel:** the three axes as `Domain` / `Business model` / `Evolution` sub-columns, keeping the title block's idiom — spaced-caps label, mono value, no fill and no box. Unset axes render "—".
 - **Centre plate:** the canonical template draws Ubiquitous Language and Business Decisions inside one outer rectangle; the sheet renders that region as a tinted plate — a translucent ink wash (`rgb(26 30 32 / 0.045)`, 6px radius) on the paper with the drafting grid showing through — rather than a drawn border. Layout, not nesting; they stay two sections with their own headings.
@@ -224,8 +226,11 @@ Winner of the inline-editing prototype; primary source `prototype/inline-editing
 - **Curated vocabularies are popovers on the value itself.** Classification axes, the collaborator kind and both relationship ends are clickable where they render → popover with the curated list, ✓ on the current value, **custom…** input as escape hatch on the open vocabularies (the kind is closed, §4.2); classification axes offer **— none —**, the kind **— no kind —**, each relationship end **— no relationship —**. Custom values render identically to curated ones. A lane header carries three pick-slots — kind, their relationship, our relationship — never a bespoke paired control.
 - **Domain roles:** ghost "+ trait" chip → multi-select popover checklist of the worksheet traits with inline one-line descriptions, plus a custom-trait input; chips removed via hover ×. The prototype's "Why these roles?" free-text note is **dropped** (ui-copy decision) — domain roles are chips only; do not rebuild that field even though it appears in the primary-source prototype.
 - **Messages:** ghost "+" per lane → mini type popover (▶ command / ? query / ◆ event), then the new chip's name field is focused for immediate typing. Chips drag-reorder within their lane; lanes drag-reorder by grip; lane × removes the collaborator.
+- **Three Views of one canvas.** Peer tabs above the sheet (§5), not file verbs in the chrome: **Sheet · JSON · Markdown**. The title block belongs to the Sheet — switching replaces everything below the pill. Sheet is the default and the app always opens on it; the autosave slot is the Canvas file byte-for-byte and does not grow app-UI state. No `⌘1/2/3` at v1.
+- **The JSON View is editable, with an explicit Apply.** The box shows the exact export bytes (§3.2) and re-renders from the document. **Apply** parses that text and replaces the whole document as **one commit, one undo step** — not live-on-keystroke (half-typed JSON is invalid for most keystrokes, and every valid intermediate would pollute undo) and not commit-on-blur (that hides a whole-document replacement behind an accidental click). Apply runs `parseCanvasFile` — the importer's own version check, ordered migrations and strict validation, minus only the HTML-embed wrapper, which discards the JSON engine's message; so a v1 paste comes back as migrated v2 bytes in the box, and a `.bcc.html` pasted here is not accepted (that is a file picker's affordance). A plain textarea, no code editor: the View exists to inspect and hand-fix, not to author. Refusal copy and placement in §10.
+- **The Markdown View is source, not a rendered document** — the raw `.md` text in a mono block, from the one renderer the MCP server also uses. Read and copy only; Markdown never comes back in (§1). Both text Views carry copy-to-clipboard; neither clears Unexported changes (§6.1).
 - **Commit granularity:** one field blur = one commit; one structural action (add / remove / reorder / pick) = one commit. Commits are the unit of undo and autosave (§6.1).
-- **Known accepted risks** (soften in build, don't change the model): discoverability of hover-only affordances, stray-click carets in prose.
+- **Known accepted risks** (soften in build, don't change the model): discoverability of hover-only affordances, stray-click carets in prose, and the **View switcher's resemblance to the chrome** — held beside Import…/Examples/Export the pill is plainly the same family. It is softened in §5 (unfilled at rest, hover inverted, a step further down) rather than escaped; it bites hardest where the chrome wraps, and it does not exist in an artifact at all, which has no chrome band.
 
 ### 6.1 Document state, undo/redo & autosave
 
@@ -237,6 +242,13 @@ Full decision record: `wayfinder/tickets/006-state-undo-autosave.md`.
 - Single linear history of **full-document snapshots**, one per commit; undo/redo swaps the document. Uncapped within the session; session-scoped (cleared on import/new, not persisted across reloads).
 - **Cmd+Z intercepted globally.** If the focused field has uncommitted edits, Cmd+Z reverts the field (synonym of Esc); otherwise it pops app history. Native contenteditable undo is never in play.
 - Undo/redo **scrolls the affected region into view with a brief highlight** but never moves focus.
+
+**The JSON buffer.** The one piece of state allowed to disagree with the document. Two states and one invariant: the box either **follows** the canvas (it shows the export bytes, live) or **disagrees** with it (it shows the user's text, which by the invariant is not those bytes). The unapplied marker on the JSON tab (§5) *is* that disagreement — not a flag anyone maintains — so typing an edit back out drops the buffer rather than holding one that agrees with the document.
+- **Apply's no-op test is on the parse result**, not the raw text: `serialize(parse(text)) === serialize(doc)`. Text differing only in whitespace or key order parses to the document already open, and landing that in history would be an undo step that undoes nothing (the pickers' rule, applied to a whole document). Every successful Apply returns the box to following — which is how a migration shows itself.
+- **The document moving underneath never overwrites the buffer.** Because Apply is a whole-document replacement, a proposal written before a sheet edit silently replaces that edit, so the View says so first (§10) against a **basis** — the document's bytes when the proposal was born, fixed once. It blocks nothing.
+- **The session boundary (import, new, example) discards the buffer**, with no dialog, and is the only thing that does. The app spends its one confirmation on unexported *canvas* changes; losing a proposal costs a re-paste. The buffer is never persisted, and the unload flush cannot reach it (a plain textarea registers nothing).
+- **⌘Z inside the box is the browser's own text undo** — the global interception already exempts `textarea` — and **Esc does nothing** there: its sheet meaning is "revert this field to its last committed value", and a buffer has none.
+- An undo/redo landing while a text View is showing announces as always and reveals nothing: there is no affected region on screen, and it never switches the View out from under the reader. While following, the box holds its scroll position across such a re-render.
 
 **Autosave.**
 - Serialize and write the Canvas file JSON to localStorage on **every commit** (no debounce); a `beforeunload`/`visibilitychange` flush commits any mid-edit field first.
@@ -266,6 +278,8 @@ Full decision record: `wayfinder/tickets/010-keyboard-a11y.md`.
 ### 8.1 Tab order
 
 One linear sequence in reading order — every editable field, chip, and pickable value is a tab stop. No grid-navigation ceremony. (A section-skip accelerator is a build-time nice-to-have, not a commitment.)
+
+The View switcher is a real `role="tablist"` with **one tab stop for the set**: arrows move and select (Home/End included), focus follows selection, and the panels are associated both ways (`aria-controls` / `aria-labelledby`). The keydown handler rides each tab rather than the tablist, which would want a `tabindex` of its own.
 
 ### 8.2 Affordances & structure
 
@@ -360,6 +374,16 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
 > **This file couldn't be read as a Canvas file.**
 > It isn't a Canvas file export, or it's been modified. Nothing was imported.
 
+**The View switcher and the two text Views** (§5, §6):
+
+- Tabs **Sheet** · **JSON** · **Markdown**, the strip named `Views`. `Canvas` is ruled out (it is the document) and `Digest` is ruled out (MCP jargon, `CONTEXT.md`); `Canvas file` was the live alternative for the middle tab and is ruled out too — it is the Export menu's name for a *download*, and a tab names what you are looking at, not a file it hands you. While the buffer disagrees with the canvas the JSON tab carries a hotspot-pink dot and a visually-hidden **, unapplied changes** on its accessible name.
+- **JSON View.** The box is named `Canvas file JSON`; beneath it the line **This is the Canvas file, exactly as Export writes it.** and the controls **Copy** and **Apply**. Apply stays a bare verb, matching the chrome's Import/Export register; the weight of a whole-document replacement is carried by the line above it, which only parses if the button says Apply:
+
+  > The canvas has changed since you started editing this text. Applying replaces it.
+
+  It appears only while the canvas has moved since the proposal was written, and blocks nothing. "Editing" rather than "typing" because a paste is the commoner way text arrives here.
+- **Markdown View.** One line beneath the source, carrying the gotcha and the one remedy that matters: **Markdown is a one-way rendering — it can't be imported back. Export the Canvas file to keep your work.** One control, **Copy**.
+
 **JSON View notices** — the same refusals one surface further in, where the detail §3.3 withholds from the dialog above is the point. Inline `role="note"` beneath the textarea, above **Apply**, in the multi-tab notice's box; held on the buffer, so it survives a view switch and is cleared by the next keystroke or the next Apply. The bold lead is the app's; the mono second line is the parser's `detail` verbatim.
 
 > **This text couldn't be read as a Canvas file.**
@@ -397,7 +421,7 @@ Terse row-field placeholders once a section has content: `Collaborator`, `Messag
 
 **Popover microcopy:** escape hatch **custom…** (lowercase, ellipsis signals it opens a field; absent from the closed kind picker); clear/unset entry **— none —** in the classification pickers, **— no kind —** in the kind picker, **— no relationship —** in each relationship picker. No hint lines in any picker — the descriptions are the teaching.
 
-**Live-region announcements** (terse, type-led): `Collaborator removed` · `Trait added` · `Moved up` / `Moved down` · `Undone: <section name>` / `Redone: <section name>` · `Canvas imported` · `New canvas` · `Example opened` · `Canvas replaced` · `Canvas replaced, migrated from format version 1`.
+**Live-region announcements** (terse, type-led): `Collaborator removed` · `Trait added` · `Moved up` / `Moved down` · `Undone: <section name>` / `Redone: <section name>` · `Canvas imported` · `New canvas` · `Example opened` · `Canvas replaced` · `Canvas replaced, migrated from format version 1` · `JSON copied` / `Markdown copied`.
 
 The two Apply announcements: a successful Apply says `Canvas replaced`, and one that migrated on the way in says so, because the bytes in the box change under the user. Nothing visible marks the migration — `version` is the first key `serialize.ts` writes, so a v1 paste comes back showing `"version": 2` on line 2. An Apply pressed while the box already follows the canvas commits nothing and announces nothing. A **failed** Apply announces its lead sentence in full (§8.5) — the one full sentence in this list, and the only announcement carrying information that isn't confirming something visible.
 

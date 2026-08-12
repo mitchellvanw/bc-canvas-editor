@@ -10,6 +10,7 @@
 import { loadAutosave, saveAutosave } from '$lib/model/autosave';
 import { blankCanvas, type CanvasDoc } from '$lib/model/canvas';
 import { serializeCanvas } from '$lib/model/serialize';
+import { jsonBuffer } from './json-buffer.svelte';
 import { changedRegion, type Region } from './regions';
 
 class CanvasEditor {
@@ -55,6 +56,18 @@ class CanvasEditor {
 		this.#past = [...this.#past, this.#snapshot()];
 		this.#future = [];
 		mutate(this.doc);
+		this.#settle();
+	}
+
+	/**
+	 * Replace the whole document as one commit — the JSON View's Apply (SPEC
+	 * §6). Unlike the session boundary this is an ordinary edit: one history
+	 * entry, undone in one step, autosaved like any other.
+	 */
+	commitReplace(doc: CanvasDoc): void {
+		this.#past = [...this.#past, this.#snapshot()];
+		this.#future = [];
+		this.doc = doc;
 		this.#settle();
 	}
 
@@ -112,9 +125,13 @@ class CanvasEditor {
 
 	/**
 	 * The session boundary (SPEC §6.1): import or new replaces the document and
-	 * clears undo history — not an undoable edit.
+	 * clears undo history — not an undoable edit. It is also the one thing that
+	 * discards an unapplied JSON proposal: text written against a canvas that is
+	 * no longer open goes the way of that canvas's history. The document moving
+	 * *under* a proposal never touches it — only crossing the boundary does.
 	 */
 	replace(doc: CanvasDoc): void {
+		jsonBuffer.reset();
 		this.doc = doc;
 		this.#past = [];
 		this.#future = [];

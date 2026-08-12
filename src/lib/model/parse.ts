@@ -29,8 +29,14 @@ import {
 	type UbiquitousTerm
 } from '$lib/model/canvas';
 
+/**
+ * `migratedFrom` is the version the text was written at, present only when
+ * migrations ran on the way in. The parser is the only thing that knows it, and
+ * the JSON View says it out loud (SPEC §10) because a migration rewrites the
+ * bytes in the box under the user.
+ */
 export type ParseResult =
-	| { ok: true; file: CanvasFile }
+	| { ok: true; file: CanvasFile; migratedFrom?: number }
 	| { ok: false; reason: 'newer-version'; version: number }
 	| { ok: false; reason: 'not-canvas'; detail?: string };
 
@@ -346,7 +352,11 @@ export function parseCanvasFile(text: string): ParseResult {
 	}
 
 	try {
-		return { ok: true, file: asCanvasFile(migrated) };
+		return {
+			ok: true,
+			file: asCanvasFile(migrated),
+			...(version < CANVAS_VERSION && { migratedFrom: version })
+		};
 	} catch (error) {
 		if (error instanceof Refusal) return notCanvas(error.message);
 		throw error;

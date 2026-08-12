@@ -305,6 +305,17 @@ describe('the v1 → v2 migration', () => {
 		expect(result.file.outboundCommunication[0].collaborator).toEqual({ name: 'Notifications' });
 	});
 
+	it('reports the version it came from, so a caller can say a migration happened', () => {
+		const migrated = parseCanvasFile(V1_REFERENCE_FILE);
+		expect(migrated).toMatchObject({ ok: true, migratedFrom: 1 });
+		// The JSON View announces this (SPEC §10) because the bytes in the box
+		// change under the user; a file already at the current version has
+		// nothing to say, so the key is absent rather than equal to the version.
+		const current = parseCanvasFile(REFERENCE_FILE);
+		if (!current.ok) throw new Error('expected ok');
+		expect(current).not.toHaveProperty('migratedFrom');
+	});
+
 	it('puts a v1 relationship string on ours, uniformly, and invents no theirs', () => {
 		const result = parseCanvasFile(V1_REFERENCE_FILE);
 		if (!result.ok) throw new Error('expected ok');
