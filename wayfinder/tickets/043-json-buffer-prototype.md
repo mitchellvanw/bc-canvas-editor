@@ -3,7 +3,7 @@ name: json-buffer-prototype
 title: "Prototype: the JSON buffer — Apply, divergence, and the document moving underneath"
 labels: [wayfinder:prototype]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [view-switcher-prototype]
 ---
 
