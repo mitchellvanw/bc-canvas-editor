@@ -17,7 +17,13 @@ The HTML artifact grows from one rendering to three, read-only, and takes its fi
 
 **AA is a written commitment (§8.6)** and the tabs are new interactive elements inside it: focus visible, contrast on the tab strip against cream, the active tab distinguishable by more than colour, and the panels' heading hierarchy still coherent when two of them are hidden. The JSON and Markdown panels are mono text blocks — check their contrast and their behaviour at 200% zoom, where the single-breakpoint stack is what reflows the Sheet and the text panels need to not introduce horizontal scroll of their own.
 
-**The visual idiom is [view-switcher-prototype](wayfinder/tickets/042-view-switcher-prototype.md)'s**, drawn for the artifact as well as the editor. One idiom across both surfaces; if it only works with an editor around it, that prototype was wrong and this ticket says so rather than inventing a second one.
+**The visual idiom is [view-switcher-prototype](wayfinder/tickets/042-view-switcher-prototype.md)'s** — closed: a left-aligned segmented pill in the gutter above the sheet, 4px radius, 1px `--color-line` border, sheet fill, 1px dividers, active segment filled ink, focus ring **inset** (`outline-offset: -2px`). It was drawn for the artifact as well as the editor, from a real export, and the artifact is where it does *better*: with no chrome band in the file, the control has nothing to be confused with. The prototype's artifact build is on branch `prototype/view-switcher` at `.scratch/view-switcher/artifact.mjs` — a working reference for the graft, not a design to redecide.
+
+**Three things that prototype learned the hard way, so this ticket doesn't:**
+
+- **The strip ships `hidden` and the script unhides it.** The first draft hid only the *panels* by default, which left a script-less viewer looking at three dead buttons. Ship the control hidden; the script removes the attribute as its first act. Then the no-JS state has no live-looking control in it at all.
+- **Hide the strip's wrapper too, not just the strip.** C's outer bar kept its `padding-bottom` and survived as a 14px empty band above the sheet once the strip inside it went hidden.
+- **A `:global` style leaks across everything that imports it.** Not artifact-specific, but it cost a debugging round in the editor prototype.
 
 **Two edges, both settled and both easy to get backwards:**
 
