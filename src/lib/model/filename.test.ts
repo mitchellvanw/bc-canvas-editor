@@ -9,6 +9,7 @@ describe('exportFileName', () => {
 	it('builds the whole family of extensions', () => {
 		expect(exportFileName('Order Fulfillment', 'html')).toBe('order-fulfillment.bcc.html');
 		expect(exportFileName('Order Fulfillment', 'png')).toBe('order-fulfillment.bcc.png');
+		expect(exportFileName('Order Fulfillment', 'md')).toBe('order-fulfillment.bcc.md');
 	});
 
 	it('collapses punctuation and runs of spaces into single hyphens', () => {

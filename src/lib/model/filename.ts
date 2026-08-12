@@ -2,9 +2,12 @@
  * Export file naming (SPEC §3.4): slugified context name as stem, the
  * family-signaling `.bcc.<ext>` extensions, `bounded-context-canvas` fallback
  * when unnamed. No date stamps.
+ *
+ * The kind is a union so that adding one — `md` did — makes the compiler point
+ * at every place that switches over the set.
  */
 
-export type ExportKind = 'json' | 'html' | 'png';
+export type ExportKind = 'json' | 'html' | 'png' | 'md';
 
 function slugify(name: string): string {
 	return name

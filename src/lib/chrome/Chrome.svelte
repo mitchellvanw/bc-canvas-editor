@@ -20,8 +20,10 @@
 	import { MULTI_TAB_NOTICE, multiTab } from '$lib/editor/multi-tab.svelte';
 	import { performRedo, performUndo } from '$lib/editor/undo';
 	import { blankCanvas, stampIds, CANVAS_VERSION, type CanvasFile } from '$lib/model/canvas';
+	import { canvasDigest } from '$lib/model/digest';
 	import { exportFileName } from '$lib/model/filename';
 	import { parseCanvasImport } from '$lib/model/parse';
+	import { toCanvasFile } from '$lib/model/serialize';
 
 	type Dialog =
 		| { kind: 'confirm-replace'; file: CanvasFile }
@@ -135,6 +137,20 @@
 			// SPEC §10 defines no export-failure notice; don't let it vanish silently.
 			console.error('HTML export failed', error);
 		}
+	}
+
+	/**
+	 * Markdown is the one-way export (SPEC §1): the Markdown View's own bytes,
+	 * from the one renderer, through the same normalization the View uses so the
+	 * downloaded file and the pane on screen cannot say different things.
+	 * Like PNG it never clears Unexported changes — it can't be imported back,
+	 * and a user who exported Markdown and then closed the tab on a clean
+	 * indicator would have lost the canvas (SPEC §6.1).
+	 */
+	function exportMarkdown() {
+		exportMenuOpen = false;
+		const blob = new Blob([canvasDigest(toCanvasFile(canvas.doc))], { type: 'text/markdown' });
+		downloadBlob(blob, exportFileName(canvas.doc.name, 'md'));
 	}
 
 	// PNG export is pixels-only: it never clears Unexported changes (SPEC §6.1).
@@ -328,6 +344,17 @@
 					onkeydown={closeExportMenuOnEscape}
 				>
 					PNG image (2x)
+				</button>
+				<!-- Last, beside PNG: the two entries above leave in a form Import…
+				     takes back, and these two don't (SPEC §10). -->
+				<button
+					type="button"
+					role="menuitem"
+					class={menuItem}
+					onclick={exportMarkdown}
+					onkeydown={closeExportMenuOnEscape}
+				>
+					Markdown (.bcc.md)
 				</button>
 			</div>
 		{/if}

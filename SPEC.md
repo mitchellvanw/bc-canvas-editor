@@ -13,7 +13,7 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 - WYSIWYG inline editing of one Bounded Context Canvas, V5 canonical layout.
 - **Three Views of that one canvas** (§6): the Sheet, the Canvas file's JSON — editable, applied explicitly — and a read-only Markdown rendering.
 - Import/export of the versioned Canvas file (`.bcc.json`).
-- Export of a self-contained, re-importable HTML artifact (`.bcc.html`) and a 2x PNG (`.bcc.png`).
+- Export of a self-contained, re-importable HTML artifact (`.bcc.html`), a 2x PNG (`.bcc.png`), and the Markdown rendering (`.bcc.md`) — one-way, never an import.
 - Autosave to localStorage as a safety net; single linear undo/redo.
 - Full keyboard operability of the editor; WCAG AA for the HTML artifact.
 - Four bundled example canvases, opened from the chrome through the import path (§3.5, §10).
@@ -103,7 +103,7 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
 
 ### 3.4 File naming
 
-Slugified context name as stem, family-signaling extensions: `<slug>.bcc.json` / `<slug>.bcc.html` / `<slug>.bcc.png` (e.g. `order-fulfillment.bcc.json`). Unnamed canvas falls back to `bounded-context-canvas`. No date stamps.
+Slugified context name as stem, family-signaling extensions: `<slug>.bcc.json` / `<slug>.bcc.html` / `<slug>.bcc.png` / `<slug>.bcc.md` (e.g. `order-fulfillment.bcc.json`). Unnamed canvas falls back to `bounded-context-canvas`. No date stamps. The `.bcc.md` file is the Markdown View's bytes exactly (§6), from the one renderer, delivered as a Blob download like the others — and it is the one member of the family that never comes back in (§1).
 
 ### 3.5 Bundled examples
 
@@ -228,7 +228,7 @@ Winner of the inline-editing prototype; primary source `prototype/inline-editing
 - **Messages:** ghost "+" per lane → mini type popover (▶ command / ? query / ◆ event), then the new chip's name field is focused for immediate typing. Chips drag-reorder within their lane; lanes drag-reorder by grip; lane × removes the collaborator.
 - **Three Views of one canvas.** Peer tabs above the sheet (§5), not file verbs in the chrome: **Sheet · JSON · Markdown**. The title block belongs to the Sheet — switching replaces everything below the pill. Sheet is the default and the app always opens on it; the autosave slot is the Canvas file byte-for-byte and does not grow app-UI state. No `⌘1/2/3` at v1.
 - **The JSON View is editable, with an explicit Apply.** The box shows the exact export bytes (§3.2) and re-renders from the document. **Apply** parses that text and replaces the whole document as **one commit, one undo step** — not live-on-keystroke (half-typed JSON is invalid for most keystrokes, and every valid intermediate would pollute undo) and not commit-on-blur (that hides a whole-document replacement behind an accidental click). Apply runs `parseCanvasFile` — the importer's own version check, ordered migrations and strict validation, minus only the HTML-embed wrapper, which discards the JSON engine's message; so a v1 paste comes back as migrated v2 bytes in the box, and a `.bcc.html` pasted here is not accepted (that is a file picker's affordance). A plain textarea, no code editor: the View exists to inspect and hand-fix, not to author. Refusal copy and placement in §10.
-- **The Markdown View is source, not a rendered document** — the raw `.md` text in a mono block, from the one renderer the MCP server also uses. Read and copy only; Markdown never comes back in (§1). Both text Views carry copy-to-clipboard; neither clears Unexported changes (§6.1).
+- **The Markdown View is source, not a rendered document** — the raw `.md` text in a mono block, from the one renderer the MCP server also uses — and the bytes the Export menu's `.bcc.md` writes (§3.4). Read and copy only; Markdown never comes back in (§1). Both text Views carry copy-to-clipboard; neither clears Unexported changes (§6.1).
 - **Commit granularity:** one field blur = one commit; one structural action (add / remove / reorder / pick) = one commit. Commits are the unit of undo and autosave (§6.1).
 - **Known accepted risks** (soften in build, don't change the model): discoverability of hover-only affordances, stray-click carets in prose, and the **View switcher's resemblance to the chrome** — held beside Import…/Examples/Export the pill is plainly the same family. It is softened in §5 (unfilled at rest, hover inverted, a step further down) rather than escaped; it bites hardest where the chrome wraps, and it does not exist in an artifact at all, which has no chrome band.
 
@@ -255,7 +255,7 @@ Full decision record: `wayfinder/tickets/006-state-undo-autosave.md`.
 - Single fixed key `bcc.autosave`; history is not persisted. On app load: restore the slot if present, else a blank canvas.
 - **Multi-tab:** last write wins, softened by a persistent notice in both tabs (via the `storage` event) — no locking. Wording in §10.
 
-**Unexported changes (the dirty state).** The Canvas has changed since it last left the browser in a re-importable form. Cleared by Canvas-file export/import **and HTML-artifact export/import**; never by PNG export. Drives the quiet indicator (§10) and the confirmation gate:
+**Unexported changes (the dirty state).** The Canvas has changed since it last left the browser in a re-importable form. Cleared by Canvas-file export/import **and HTML-artifact export/import**; never by the lossy pair — PNG export and Markdown export — nor by either text View's Copy. Being wrong here costs a user their canvas: a Markdown export that cleared the indicator would tell someone they were safe to close the tab. Drives the quiet indicator (§10) and the confirmation gate:
 - **Import, New, or opening an example over unexported changes:** confirmation dialog first (§10); on proceed the document is replaced and history cleared — a session boundary, not an undoable edit. With nothing unexported, import/new/example proceeds without ceremony.
 - **An opened example lands clean:** its bytes exist as a published re-importable file (§3.5), so nothing is unexported until the first edit dirties as usual.
 
@@ -345,7 +345,7 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
   - **Notifications** — *Delivers order updates to customers on their preferred channel.*
   - **Appointment Scheduling** — *Books patients into clinic slots and keeps no-shows down.*
   - **Royalty Distribution** — *Splits streaming revenue among rights holders. Captured mid-workshop.* (the trailing flag marks the deliberately half-finished canvas)
-- **Export** menu: **Canvas file (.bcc.json)** · **HTML artifact (.bcc.html)** · **PNG image (2x)**.
+- **Export** menu: **Canvas file (.bcc.json)** · **HTML artifact (.bcc.html)** · **PNG image (2x)** · **Markdown (.bcc.md)**. Markdown is last, beside PNG rather than beside the Canvas file: the first two leave in a form Import… takes back and these two don't, and this menu is the only place a reader sees all four together. The entry names the format and nothing else — the format's own name, the same word the View's tab carries, promises no round trip; a noun of its own ("summary", "rendering") would either be untrue or explain the design.
 - **New canvas**.
 - Undo/Redo with shortcut in tooltip: `Undo (⌘Z)` / `Redo (⇧⌘Z)`.
 - **Reference** at the far end of the chrome, tooltip `Reference (⌘/)` (§12).
