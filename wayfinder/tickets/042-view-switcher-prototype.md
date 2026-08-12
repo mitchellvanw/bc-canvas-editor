@@ -3,7 +3,7 @@ name: view-switcher-prototype
 title: "Prototype: the view switcher on the sheet's top edge"
 labels: [wayfinder:prototype]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
