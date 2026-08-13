@@ -11,6 +11,16 @@ blocked-by: [github-svg-probe, renderer-shape]
 
 GitHub has no fence route for anyone, so a committed image file is the whole surface. [github-svg-probe](wayfinder/tickets/049-github-svg-probe.md) says whether that file can be an SVG carrying the real sheet or has to be a screenshot; this decides its form and, harder, what keeps it from going stale.
 
+### Inputs from [github-svg-probe](wayfinder/tickets/049-github-svg-probe.md), settled before this ticket opens
+
+**The font question is green** — measured against three in-the-wild specimens carrying `foreignObject` plus a base64 `@font-face` on github.com today, at 300+ KB, plus our own 204,714-byte artifact under GitHub's live CSP in three engines. GitHub does not sanitize committed SVG files: `<script>` payloads come back byte-identical. So SVG is the form, PNG does not have to be, and Playwright stays out of the chain. Three constraints ride along:
+
+1. **A nested `<svg>` inside `<foreignObject>` does not render through `<img>`** — in any engine. The bytes survive; nothing is drawn. That costs the four collaborator-kind glyphs and the footer legend's key icons, and because `CanvasSheet.svelte:166-168` marks the icon `aria-hidden` with the label in an `sr-only` span, **the glyph is the only visual carrier of collaborator kind** (SPEC §4.2's closed set). A sighted reader of the committed SVG loses that axis entirely. This is the first real decision of this ticket, not an implementation detail: convert the icons to something that survives (a `data:` background-image, a `mask-image`, an inline glyph font), promote the `sr-only` label to visible text in this rendering only, or accept the loss and say so. Note that anything which makes the SVG's sheet differ from the editor's sheet has to answer to the map's identity gate.
+2. **Keep `xmlns="http://www.w3.org/2000/svg"`** — the `https://` spelling drops the file into the blob view's re-serialization path.
+3. **The raw URL is a different surface** — opened directly the SVG is a top-level document, `default-src 'none'` is enforced, and the embedded fonts *are* blocked. README and blob view use `<img>` and are fine. Document it, or a future reader will file a bug against the fonts.
+
+And one input about scale rather than size: an `<img>`-loaded SVG scales geometrically instead of re-laying out, so at 1440px it renders in GitHub's ~896px README column at 0.622 — body text at 10.0 CSS px, the classification sub-labels at 5.7. Authoring nearer 1100px lifts the smallest label back over 7px. Decide the width deliberately rather than inheriting SPEC §9.2's 1440, which was chosen for a full-window document.
+
 ### The form
 
 - **SVG or PNG**, on 049's evidence. SVG wraps the same HTML the renderer already emits, so it needs no browser; PNG needs real layout and therefore Playwright, putting a browser back into a chain built to avoid one. Measured during charting: ~200 KB per sheet as SVG against 377–891 KB as 2× PNG, and in git the SVG's font payload is byte-identical across canvases so delta compression collapses it — 152 KB for four sheets against 1,472 KB. If 049 came back with fonts stripped, this reverses and the ticket is about PNG instead.
