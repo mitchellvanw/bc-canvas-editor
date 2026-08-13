@@ -19,21 +19,25 @@ Four curated example canvases ship in the app's **Examples** menu. The same file
 
 ## Command line
 
-`bcc` (`cli/`) is the same canvases from a terminal, in a checkout that need not be this one:
+`bcc` (`cli/`) is the same canvases from a terminal. **In this checkout it runs through npm**, because npm does not link a package's own bin:
 
 ```sh
-alias bcc='npx --yes github:mitchellvanw/bc-canvas-editor'
-
-bcc ls                        # what canvases are here, and how full each one is
-bcc check                     # do they all still read, and are the images beside them current
-bcc fmt                       # canonical bytes, in place
-bcc render orders.bcc.json    # the HTML artifact, beside the canvas
-bcc render --svg orders.bcc.json
+npm run bcc -- ls                        # what canvases are here, and how full each one is
+npm run bcc -- check                     # do they all still read, and are the images beside them current
+npm run bcc -- fmt                       # canonical bytes, in place
+npm run bcc -- render orders.bcc.json    # the HTML artifact, beside the canvas
+npm run bcc -- render --svg orders.bcc.json
 ```
 
 `check` and `fmt` are what make a canvas behave like source code rather than an attachment: `check` reads through the parser **Import…** uses, so a canvas that passes opens in the editor, and `fmt` writes the bytes an export would have written. `render` calls the same function the Export menu calls, so its `.bcc.html` is byte-identical to the downloaded one. Everything runs in plain Node; only `render --svg` needs a browser, and only to measure a height that `--height` can supply instead.
 
-Unpublished, so there is no registry package: `npx` resolves this repo's `main` at the moment it runs, and `…bc-canvas-editor#<sha>` pins it. In this checkout it is `npm run bcc -- ls`, because npm does not link a package's own bin.
+**In another repo** — a project with canvases committed beside its code — there is nothing to install:
+
+```sh
+npx --yes github:mitchellvanw/bc-canvas-editor ls
+```
+
+It is unpublished, so there is no registry package and no version contract: `npx` resolves this repo's `main` at the moment it runs, and `…bc-canvas-editor#<sha>` pins it if you need reproducibility. Aliasing that to `bcc` is convenient there and a trap here — inside this checkout it would fetch a copy of the repo rather than run the bundle you just built.
 
 ## Developing
 

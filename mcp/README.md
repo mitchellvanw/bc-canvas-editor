@@ -84,7 +84,7 @@ A directory the walk cannot open stops that branch and nothing else, and the lis
 The same canvases have a command line, and it is worth knowing about before you reach for a tool: some of what an agent might ask the server to do is a command a developer can run.
 
 ```sh
-alias bcc='npx --yes github:mitchellvanw/bc-canvas-editor'
+alias bcc='npx --yes github:mitchellvanw/bc-canvas-editor'   # in your project, not in a bc-canvas-editor checkout
 
 bcc ls                        # what canvases are here, and how full each one is
 bcc check                     # do they all still read
