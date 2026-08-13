@@ -25,6 +25,17 @@ The pointer is the map's expectation and the argument for it is structural rathe
 
 Settle it, and settle its edges: does the fence accept *both* a pointer and inline JSON (a machine-written fence is a real case — the MCP server or an agent emitting one into a doc)? If both, what disambiguates them, and does accepting inline JSON quietly reintroduce the sync problem the pointer was chosen to avoid?
 
+### Inputs from [vscode-preview-spike](wayfinder/tickets/053-vscode-preview-spike.md), settled before this ticket opens
+
+**The pointer fence stands** — a synchronous disk read inside a markdown-it *renderer* rule works, because `extendMarkdownIt` runs in the extension-host process with full Node rather than in the webview. This ticket does not need to redesign around a read it cannot do. Four items to absorb into the contract:
+
+1. **Resolution must happen in a renderer rule, not a parse rule.** `env.currentDocument` is populated at render and hard-coded `undefined` at parse, and parse output is cached against document text — so a `core`/`block`/`inline` rule can neither see the document nor re-run when a *referenced* file changes.
+2. **The read must be synchronous.** Renderer rules return a string; there is no async escape. Whatever this ticket specifies has to be satisfiable by `readFileSync`.
+3. **There is a no-document case that needs defined behaviour.** `env.currentDocument` is `undefined` when a caller passes a string rather than a document — which the public `markdown.api.render` command does. A readable refusal, not a throw.
+4. **Containment has a natural ceiling worth matching deliberately.** `localResourceRoots` already stops at the workspace folders, so a pointer escaping the repo is refused by the platform for *assets* — but the extension host would happily read the JSON. The fence should refuse it itself, at the same seam `root.ts` uses, rather than relying on a platform behaviour that only covers half the case.
+
+And one limit that is a fact about the fence rather than about VS Code: **a `bcc` fence in a notebook cell will not resolve a pointer.** The notebook markdown renderer is a separate contribution with no Node and no `env.currentDocument`. If notebooks matter, that is an argument for accepting inline JSON as well — and if they do not, say so here so nobody rediscovers it.
+
 ### 2. Path resolution
 
 `ctx.sourcePath` in Obsidian, the VFile path in remark, the document URI in VS Code — every adapter can resolve a path relative to the markdown file. Decide the rule once: relative to the markdown file, or to a repo root? What about `../`, absolute paths, and a path escaping the repo — the MCP server answers exactly this with `root.ts`'s containment seam, and the fence should not answer it differently.

@@ -11,11 +11,14 @@ blocked-by: [fence-shape, vscode-preview-spike, headless-renderer]
 
 The surface where the canvases actually are — a developer with the repo open, writing the doc that points at the canvas sitting beside the code.
 
-Build to what [vscode-preview-spike](wayfinder/tickets/053-vscode-preview-spike.md) found, which decides more of this ticket than the code does: whether preview output is sanitized, whether the CSP admits fonts, where the CSS has to be contributed, whether `previewScripts` is needed at all, and — the one that can invalidate the plan — whether a markdown-it rule can read a `.bcc.json` off disk at render time.
+[vscode-preview-spike](wayfinder/tickets/053-vscode-preview-spike.md) came back green and settled the shape — the disk read works, the sheet arrives whole, and its `@container` tiers and `subgrid` all compute in the preview. It also left a working `extendMarkdownIt` skeleton and a minimal contributions block in `.scratch/vscode-preview-spike/`, which is where this ticket starts. Read that resolution before writing anything; what follows is only what the spike says the build must not get wrong.
 
-If the spike says it cannot read from disk, **stop and hand back to [fence-shape](wayfinder/tickets/052-fence-shape.md)** rather than working around it. A pointer fence that cannot resolve its pointer in the surface this ticket exists to serve is a fact about the fence's design, not an obstacle for this ticket to route past.
-
-Otherwise: `contributes."markdown.markdownItPlugins"`, an `extendMarkdownIt` that registers the `bcc` fence rule, CSS wherever the spike said it has to go, and the renderer called per fence.
+- **Never emit `<script>`.** It is parsed into the DOM, never runs (nonce CSP), *and* raises the yellow "Some content has been disabled in this document" banner over the whole preview. If the sheet ever needs runtime behaviour, `previewScripts` is the only route — not an alternative.
+- **Contribute `markdown.previewStyles` even if it is nearly empty.** `previewResourceRoots` is empty unless styles or scripts are contributed, so an extension contributing only `markdownItPlugins` **cannot serve one file from its own directory**. The sheet CSS itself belongs in the plugin's emitted inline `<style>` — it wins the cascade and it is the same string the renderer already injects into the artifact head, so one code path serves both surfaces.
+- **Fonts as `data:` URIs need nothing.** All three routes were measured working; the `data:` one is what the renderer already does.
+- **Wrap the sheet in its own `container-type: inline-size`.** The preview provides no container, and the tiers do fire in practice — a narrower preview pane returned the stacked single-column tier.
+- **Reset element defaults inside the wrapper.** `media/markdown.css` carries unscoped `h1…h6`, `p, ol, ul, pre`, `a`, `table`, `li p` selectors that inherit into fence output.
+- **Resolve in the renderer rule, synchronously**, and handle `env.currentDocument === undefined` with a readable refusal.
 
 Points to get right:
 

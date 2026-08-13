@@ -23,7 +23,7 @@ The keystone. Every build ticket on this map calls this thing, so its shape deci
 
 4. **How do the tokens cross?** The `@theme` block is Tailwind syntax compiled by Tailwind. A Node renderer needs them as a plain `:root{}`. Re-emit by parsing `app.css` (a third reader beside the two tests that already do it — idiomatic here), or extract them into a shared module both Tailwind and the renderer read. The second is cleaner and is the larger change.
 
-5. **Fonts: inlined, optional, or never?** 204 KB with, 31.8 KB without. A fence's SVG wants them (no external font loads survive an `<img>` sandbox); a local HTML preview may not. If this is a flag, what is the default?
+5. **Fonts: inlined, optional, or never?** 204 KB with, 31.8 KB without. ([vscode-preview-spike](wayfinder/tickets/053-vscode-preview-spike.md) reports no bad news here: VS Code's preview does not force a system stack, and the `data:`-URI embedding the artifact already does works unchanged — which argues for one CSS-plus-font payload serving every surface rather than a per-surface variant.) A fence's SVG wants them (no external font loads survive an `<img>` sandbox); a local HTML preview may not. If this is a flag, what is the default?
 
 6. **Where does it live, and what is its API?** It is called by the CLI, the remark plugin and the VS Code extension. `src/lib/render/`? A sibling of `artifact/`? And does it take a `CanvasFile`, a `CanvasDoc`, or the bytes?
 
