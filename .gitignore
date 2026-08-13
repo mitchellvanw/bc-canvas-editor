@@ -25,13 +25,8 @@ vite.config.ts.timestamp-*
 # Claude worktrees
 .claude/worktrees/
 
-# Scratch: the checkpoint drivers and build-issue notes are tracked (closed
-# tickets cite these paths); what they *produced* is not — screenshots and
-# exported artifacts proved a point that now lives in the ticket resolutions.
-.scratch/**/node_modules/
-.scratch/**/evidence/
-.scratch/**/*.png
-.scratch/**/*.bcc.html
-.scratch/**/*.bcc.json
-.scratch/**/plain.html
-.scratch/**/run.log
+# Scratch: nothing new here enters git. The drivers and issue notes already
+# committed stay tracked — closed tickets cite those paths — because an ignore
+# rule has no say over a file git is already following. Anything added from
+# here on needs `git add -f` to make the case for itself.
+.scratch/
