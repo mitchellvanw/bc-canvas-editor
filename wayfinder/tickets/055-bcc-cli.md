@@ -4,7 +4,7 @@ title: "Task: bcc — render, check, fmt, ls"
 labels: [wayfinder:task]
 status: open
 assignee:
-blocked-by: [cli-home, headless-renderer]
+blocked-by: [fs-seam, headless-renderer]
 ---
 
 ## Question
@@ -22,6 +22,15 @@ Deliberately **not** here: `bcc write`. It arrives with [mcp-diet](wayfinder/tic
 
 Copy is real work, not an afterthought: `writing-copy`, with a developer at a terminal as the reader. Help text, refusals and the `check` output are the whole interface. `errors.ts` is the register to match — name what went wrong, say what would have been legal, name the command that gets there — one step less deferential, because the reader chose to run this.
 
-Watch the containment seam. `root.ts` refuses a path that resolves outside its root, symlinks included, and refuses `/` at launch on the grounds that listing it would walk the whole disk. A CLI invoked in a checkout has a legitimately different relationship to the filesystem than a server handed a root by a host — decide deliberately (in [cli-home](wayfinder/tickets/051-cli-home.md) or here) whether `bcc` keeps that rule, and do not let it lapse by accident.
+Containment is settled and does not get relitigated here: [cli-home](wayfinder/tickets/051-cli-home.md) decision 8 keeps `root.ts`'s rule with a different justification — not a security seam against an untrusted proposer, but a bound on the walk that `ls` and `fmt` need and that `discover.ts` is typed against — and gives `bcc` the server's own `--root <dir>` defaulting to cwd. [fs-seam](wayfinder/tickets/061-fs-seam.md) has already moved the code and rewritten `OutsideRoot`'s copy.
 
-Done when the four subcommands work from a checkout as [cli-home](wayfinder/tickets/051-cli-home.md) specified, `bcc fmt` reproduces every committed `examples/*.bcc.json` byte for byte, `bcc check` refuses a v1 file and a corrupt one with the parser's own detail, both suites and `svelte-check` are green, and `mcp/README.md` says what the CLI is so the two surfaces are not discovered separately.
+**The packaging, which is as much of this ticket as the subcommands:**
+
+- `cli/` at the repo root — a directory of the root package, not a third package. Its own `tsconfig.json` declaring the `$lib/*` path directly (mirroring `mcp/tsconfig.json`), its own `build.js`.
+- `cli/build.js` **inlines the committed `src/lib/render/` module** and never re-derives it from `CanvasSheet.svelte` — the map's byte-identity property is structural only while that holds ([renderer-shape](wayfinder/tickets/050-renderer-shape.md) decision 8, [cli-home](wayfinder/tickets/051-cli-home.md) decision 5). `cli/dist/bcc.js` is committed and self-contained, with a staleness test that rebuilds to a scratch path and byte-diffs — and the rebuild order `render` → `cli` must fail loudly rather than be assumed.
+- Root `package.json` gains `"bin": { "bcc": "./cli/dist/bcc.js" }`, `"files": ["cli/dist"]`, a `"bcc"` script, and moves `@fontsource/*` and `@zumer/snapdom` to `devDependencies` — nothing at runtime of an installed package imports them.
+- Root `vitest.config.ts`'s `include` broadens to cover `cli/**/*.test.ts`.
+
+Locally it runs as `npm run bcc -- render …` (npm does not link a package's own bin). From a foreign checkout it runs as `npx --yes github:mitchellvanw/bc-canvas-editor render …`, unpinned — which is what [committed-images](wayfinder/tickets/056-committed-images.md) calls.
+
+Done when the four subcommands work as above, a `npx` install from a scratch directory carries `cli/dist` and zero dependencies and renders an example, `bcc fmt` reproduces every committed `examples/*.bcc.json` byte for byte, `bcc check` refuses a v1 file and a corrupt one with the parser's own detail, all three committed bundles are byte-diffed green, both suites and `svelte-check` pass, and `mcp/README.md` says what the CLI is so the two surfaces are not discovered separately.
