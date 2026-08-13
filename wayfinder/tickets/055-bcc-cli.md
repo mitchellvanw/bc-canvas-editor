@@ -3,7 +3,7 @@ name: bcc-cli
 title: "Task: bcc — render, check, fmt, ls"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [fs-seam, headless-renderer]
 ---
 
