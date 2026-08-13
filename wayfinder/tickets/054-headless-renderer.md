@@ -76,3 +76,9 @@ The staleness, determinism and token-crossing tests are all in `src/lib/render/r
 §9's render source now describes two compiles of one component and names the headless one as the artifact's source. §9.1's **CSS** bullet no longer describes inlining Tailwind, its **Fonts** bullet records the WOFF2-only authoring, its **Views** bullet points the Sheet at the renderer, its **print** bullet keeps the class-over-`hidden` rule while recording that the preflight hazard which forced it left with the stylesheet, and **Size** is ~225 KB. §13 risk 3 is **retired**: the question was which of two ways to get the compiled stylesheet into an artifact, and the renderer needs neither.
 
 No `CONTEXT.md` entry, holding 050's line — nothing user-facing gained a name here.
+
+---
+
+**Correction (from [committed-images](wayfinder/tickets/056-committed-images.md), 2026-08-13).** This resolution's closing line — *"the four collaborator-kind glyphs are missing, which is [github-svg-probe](wayfinder/tickets/049-github-svg-probe.md)'s nested-`<svg>` finding reproduced first-hand on our own output"* — reproduced the symptom correctly and inherited the wrong cause from 049. The glyphs are missing because the sheet's one `<svg>` carries no `xmlns` and `foreignObject` content is XHTML, not because a nested `<svg>` cannot draw. See 049's correction note.
+
+A second finding lands on this ticket's own output rather than 049's: `FRAME_CSS` is documented here as *"the page frame both file containers draw the sheet in"*, and `sheetSvg` does not use it — so the SVG lays the sheet out 80px wider than `sheetDocument` and the PNG mount. Fixed under [committed-images](wayfinder/tickets/056-committed-images.md) decision 3.

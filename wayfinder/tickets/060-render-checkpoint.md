@@ -4,7 +4,7 @@ title: "Task: the gate — one renderer, two surfaces, and the sheet that cannot
 labels: [wayfinder:task]
 status: open
 assignee:
-blocked-by: [bcc-cli, committed-images, remark-plugin, vscode-extension, mcp-diet]
+blocked-by: [bcc-cli, committed-images, committed-images-build, remark-plugin, vscode-extension, mcp-diet]
 ---
 
 ## Question
