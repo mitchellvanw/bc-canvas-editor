@@ -3,35 +3,45 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"bin": {
+		"bcc": "./cli/dist/bcc.js"
+	},
+	"files": [
+		"cli/dist"
+	],
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
 		"build:render": "node src/lib/render/build.js",
+		"build:cli": "node cli/build.js",
+		"build:bundles": "npm run build:render && npm run build:cli",
+		"bcc": "node cli/dist/bcc.js",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"test": "vitest run",
 		"test:mcp": "npm test --prefix mcp",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:cli": "tsc --noEmit -p cli/tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
+		"@fontsource/archivo": "^5.3.0",
+		"@fontsource/ibm-plex-mono": "^5.3.0",
+		"@fontsource/source-serif-4": "^5.3.0",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^26.2.0",
+		"@zumer/snapdom": "^2.23.2",
+		"esbuild": "^0.27.7",
 		"jsdom": "^30.0.1",
+		"playwright-core": "^1.58.0",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3",
 		"vite": "^8.0.16",
 		"vitest": "^4.1.10"
-	},
-	"dependencies": {
-		"@fontsource/archivo": "^5.3.0",
-		"@fontsource/ibm-plex-mono": "^5.3.0",
-		"@fontsource/source-serif-4": "^5.3.0",
-		"@zumer/snapdom": "^2.23.2"
 	}
 }

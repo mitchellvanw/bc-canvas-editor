@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { blankCanvas, stampIds } from '$lib/model/canvas';
 import { embeddedCanvasBlock, extractEmbeddedCanvas } from '$lib/model/embed';
 import { parseCanvasFile, parseCanvasImport, type ParseResult } from '$lib/model/parse';
-import { REFERENCE_FILE } from '$lib/model/reference.fixture';
+import { REFERENCE_FILE, V1_REFERENCE_FILE } from '$lib/model/reference.fixture';
 import { serializeCanvas } from '$lib/model/serialize';
 
 function referenceJson(mutate: (raw: Record<string, unknown>) => void = () => {}): string {
@@ -243,48 +243,6 @@ describe('parseCanvasFile', () => {
 		expect(refusalDetail(result)).toBe(`${clause}.`);
 	});
 });
-
-/**
- * The SPEC §3.1 reference example as version 1 wrote it — `description` where
- * v2 says `purpose`, both lane fields as plain strings. The v1 → v2 migration's
- * own fixture.
- */
-const V1_REFERENCE_FILE = `{
-  "version": 1,
-  "name": "Order Fulfillment",
-  "description": "Coordinates picking, packing and shipping once an order is paid.",
-  "strategicClassification": {
-    "domain": "core",
-    "businessModel": "revenue",
-    "evolution": "custom-built"
-  },
-  "domainRoles": [
-    { "name": "execution context" },
-    { "name": "octopus coordinator" }
-  ],
-  "inboundCommunication": [
-    {
-      "collaborator": "Checkout",
-      "relationship": "customer-supplier",
-      "messages": [
-        { "type": "command", "name": "Place Order" },
-        { "type": "event", "name": "Payment Confirmed", "description": "Triggers fulfillment." }
-      ]
-    }
-  ],
-  "ubiquitousLanguage": [
-    { "term": "Shipment", "definition": "A physical parcel dispatched against an order." }
-  ],
-  "businessDecisions": [
-    { "name": "No partial shipments", "description": "An order ships complete or not at all." }
-  ],
-  "outboundCommunication": [
-    { "collaborator": "Notifications", "messages": [{ "type": "event", "name": "Order Shipped" }] }
-  ],
-  "assumptions": ["Warehouse stock counts are accurate within the hour."],
-  "verificationMetrics": ["Time from payment to dispatch under 4 hours."],
-  "openQuestions": ["Who owns returns — this context or a new one?"]
-}`;
 
 describe('the v1 → v2 migration', () => {
 	function v1Json(mutate: (raw: Record<string, unknown>) => void = () => {}): string {

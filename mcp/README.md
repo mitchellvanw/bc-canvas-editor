@@ -73,11 +73,29 @@ Beside the server, the plugin carries the facilitation layer — findable by typ
 
 ## What counts as a canvas
 
-`*.bcc.json` and `*.bcc.html`, found by walking the root and skipping every hidden directory — any name starting with a dot — plus `node_modules`, `dist` and `build`. A canvas you mean to keep lives in neither, and scratch fixtures under a `.scratch/` or a cache should not turn up in a listing. An HTML artifact is read through the Canvas file embedded in it. The server never writes one — that would mean rendering the sheet, which needs a browser.
+`*.bcc.json` and `*.bcc.html`, found by walking the root and skipping every hidden directory — any name starting with a dot — plus `node_modules`, `dist` and `build`. A canvas you mean to keep lives in neither, and scratch fixtures under a `.scratch/` or a cache should not turn up in a listing. An HTML artifact is read through the Canvas file embedded in it. The server never writes one — writing artifacts is `bcc`'s job, below, and a tool that both drafted canvases and rendered them would make every write a question about which.
 
 A directory the walk cannot open stops that branch and nothing else, and the listing names it at the end — a wide root usually has one or two, and losing every canvas already found to a directory the OS keeps to itself would be a poor trade.
 
 `bcc_write_canvas` refuses any other extension. `.bcc.json` is the key the listing globs on and the extension the editor's **Import…** accepts, so a canvas written as `shipping.json` is invisible to both. The directory and the filename are otherwise yours.
+
+## `bcc`, the command line
+
+The same canvases have a command line, and it is worth knowing about before you reach for a tool: some of what an agent might ask the server to do is a command a developer can run.
+
+```sh
+alias bcc='npx --yes github:mitchellvanw/bc-canvas-editor'
+
+bcc ls                        # what canvases are here, and how full each one is
+bcc check                     # do they all still read
+bcc fmt                       # canonical bytes, in place
+bcc render orders.bcc.json    # the HTML artifact, beside the canvas
+bcc render --svg orders.bcc.json
+```
+
+`check` and `fmt` are what make a canvas behave like source code rather than an attachment: `check` reads every canvas through the parser the editor's **Import…** uses, so a canvas that passes opens there, and `fmt` rewrites one in the bytes an export would have written. `render` writes the `.bcc.html` artifact — the same function the editor's Export HTML calls, so the two files are byte-identical — or a `.bcc.svg` image with `--svg`, which is what lets a README show a canvas.
+
+It takes the same `--root <directory>` this server does, defaulting to the working directory, and reads canvases through the same parser. It is unpublished: there is no registry package, and `npx` resolves this repo's `main` at the moment it runs. Pin a commit if you need reproducibility (`…bc-canvas-editor#<sha>`).
 
 ## Conflicts, and the tab you left open
 

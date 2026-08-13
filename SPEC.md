@@ -17,6 +17,7 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 - Autosave to localStorage as a safety net; single linear undo/redo.
 - Full keyboard operability of the editor; WCAG AA for the HTML artifact.
 - Four bundled example canvases, opened from the chrome through the import path (§3.5, §10).
+- A command line over the canvases committed in a project, `bcc` (`cli/`): `render`, `check`, `fmt`, `ls`. It writes the same artifact families the editor exports, through the same parser, serializer and headless renderer (§9) — the artifact `bcc render` writes and the artifact the Export menu downloads are byte-identical, because one function writes both. Full decision record: `wayfinder/tickets/051-cli-home.md`, `wayfinder/tickets/055-bcc-cli.md`.
 
 **Out of scope (v1):**
 

@@ -1,0 +1,34 @@
+{
+	"compilerOptions": {
+		"target": "es2023",
+		// `dom` is here for the app modules this reaches, not for this one.
+		// `bcc render` writes the artifact through `$lib/artifact/html.ts`, whose
+		// neighbours — the download helper, the tablist keyboard handler — are
+		// typed against a browser they legitimately have. Dropping it would mean
+		// splitting those files to suit a consumer that only wants one function.
+		// What it costs is a type-level guarantee that the CLI touches no DOM,
+		// and that is replaced by a stronger one: every command in `bcc.test.ts`
+		// runs the built bundle in plain Node, where a DOM reference throws.
+		"lib": ["es2023", "dom"],
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"types": ["node"],
+		// `$lib/render/index.ts` imports the committed `dist/render.js`, which is
+		// build output carrying `@ts-nocheck`: this lets the import resolve
+		// without asking tsc to grade a bundle. The root config does the same.
+		"allowJs": true,
+		"strict": true,
+		"noUnusedLocals": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"verbatimModuleSyntax": true,
+		"forceConsistentCasingInFileNames": true,
+		// The same one seam `mcp/tsconfig.json` declares, for the same reason:
+		// `src/lib/*` stays exactly where it is and is pulled in through this
+		// alias, which esbuild resolves at build time from this same file.
+		"paths": {
+			"$lib/*": ["../src/lib/*"]
+		}
+	},
+	"include": ["src/**/*.ts", "build.js"]
+}
