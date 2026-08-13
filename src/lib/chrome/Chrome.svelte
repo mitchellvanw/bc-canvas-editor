@@ -11,7 +11,6 @@
 	 */
 	import { announce } from '$lib/a11y/announce';
 	import { downloadBlob } from '$lib/artifact/download';
-	import { exportHtmlArtifact } from '$lib/artifact/html';
 	import { exportPngArtifact } from '$lib/artifact/png';
 	import { EXAMPLES, type ExampleEntry } from '$lib/chrome/examples';
 	import { REFERENCE_CLUSTERS, REFERENCE_URL, renderKeys } from '$lib/chrome/reference';
@@ -131,7 +130,12 @@
 	async function exportHtml() {
 		exportMenuOpen = false;
 		try {
-			await exportHtmlArtifact(canvas.doc);
+			// Loaded on demand. Since wayfinder ticket 050 the artifact is built by
+			// the headless renderer, which carries the eight WOFF2 faces and the
+			// design tokens as bytes rather than fetching them at export time —
+			// ~170 KB an editor session that never exports has no use for.
+			const { exportHtmlArtifact } = await import('$lib/artifact/html');
+			exportHtmlArtifact(canvas.doc);
 			canvas.markExported();
 		} catch (error) {
 			// SPEC §10 defines no export-failure notice; don't let it vanish silently.

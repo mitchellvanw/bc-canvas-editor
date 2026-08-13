@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { setAnnouncer } from '$lib/a11y/announce';
-import { buildHtmlArtifact } from '$lib/artifact/html';
+import { artifactDocument } from '$lib/artifact/html';
 import Chrome from '$lib/chrome/Chrome.svelte';
 import { EXAMPLES } from '$lib/chrome/examples';
 import { canvas } from '$lib/editor/document.svelte';
@@ -254,7 +254,7 @@ describe('the ticket-016 rider: chooser copy never reaches artifact bytes', () =
 		const royalty = EXAMPLES.find((entry) => entry.name === 'Royalty Distribution');
 		if (!royalty) throw new Error('Royalty Distribution missing from the roster');
 
-		const html = await buildHtmlArtifact(stampIds(royalty.file));
+		const html = artifactDocument(stampIds(royalty.file));
 		expect(extractEmbeddedCanvas(html)).toBe(committedBytes(royalty.name).trimEnd());
 		expect(html).not.toContain('Captured mid-workshop.');
 	});

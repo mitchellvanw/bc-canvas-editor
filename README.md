@@ -32,6 +32,8 @@ npm run build
 
 Preview the production build with `npm run preview`. Pushes to `main` deploy to Cloudflare Pages.
 
+`src/lib/render/dist/render.js` is a committed build artifact: the quiet sheet compiled for the server, plus the design tokens and fonts read off disk, so that a canvas can be drawn in plain Node with no browser. The editor's HTML export imports it, and so will every surface outside the browser. Rebuild it with `npm run build:render` after changing `CanvasSheet.svelte` or `src/app.css` — `npm test` fails if you forget.
+
 ## License & attribution
 
 The Bounded Context Canvas is by the [ddd-crew](https://github.com/ddd-crew/bounded-context-canvas), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The example canvases are invented domains, published under the same attribution.

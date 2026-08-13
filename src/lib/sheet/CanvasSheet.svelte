@@ -570,6 +570,26 @@
 </article>
 
 <style>
+	/* The sheet's own screen-reader utility, and the last thing it depended on
+	   something outside itself for. Tailwind has an identical `sr-only`, but
+	   the headless renderer (wayfinder ticket 050) never runs Tailwind, and a
+	   copy in the renderer's preamble would be two definitions of one rule that
+	   drift silently and only for screen-reader users. Here, Svelte scopes it
+	   to the sheet and returns it on SSR's `head` with everything else, so the
+	   sheet is self-contained by construction rather than by a rule someone
+	   remembered to copy. */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
+	}
+
 	.quiet-sheet {
 		--gap: 18px;
 		font-family: var(--font-serif);

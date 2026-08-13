@@ -1,20 +1,23 @@
-// @vitest-environment jsdom
 /**
- * HTML artifact export (SPEC §9.1): a single self-contained document —
- * offscreen-mount serialization of the read-only sheet, app CSS fetched
- * same-origin and inlined with base64 WOFF2 fonts, ddd-crew credit comment,
- * byte-identical embedded Canvas file, one-column responsive stack, print
- * pass — downloaded as <slug>.bcc.html.
+ * HTML artifact export (SPEC §9.1): a single self-contained document — the
+ * headless renderer's read-only sheet, its CSS and base64 WOFF2 fonts, the
+ * ddd-crew credit comment, a byte-identical embedded Canvas file, a one-column
+ * responsive stack and a print pass — downloaded as <slug>.bcc.html.
+ *
+ * No jsdom and no fetch mock since wayfinder ticket 050: the export reaches
+ * neither the DOM nor the network, so the environment this ran in was the last
+ * thing standing between the file and plain Node.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { stampIds } from '$lib/model/canvas';
 import { canvasDigest } from '$lib/model/digest';
 import { extractEmbeddedCanvas } from '$lib/model/embed';
 import { parseCanvasFile } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
+import { fontFaceCss, renderSheetParts, SCOPE_CLASS } from '$lib/render';
 import { serializeCanvas, toCanvasFile } from '$lib/model/serialize';
 import { downloadBlob } from './download';
-import { buildHtmlArtifact, exportHtmlArtifact, STACK_BREAKPOINT } from './html';
+import { artifactDocument, exportHtmlArtifact, STACK_BREAKPOINT } from './html';
 
 vi.mock('./download', () => ({ downloadBlob: vi.fn() }));
 
@@ -38,44 +41,9 @@ function sheetPanel(html: string): string {
 	return html.slice(start, end);
 }
 
-const APP_CSS = '.quiet-sheet{color:#1a1e20}';
-const LINKED_CSS =
-	"@font-face{font-family:'Archivo';src:url(./files/archivo-latin-500-normal.woff2) format('woff2')}";
-const WOFF2_BYTES = new Uint8Array([0x77, 0x4f, 0x46, 0x32]);
-
-const fetchMock = vi.fn(async (url: string) => {
-	if (url.endsWith('.css')) return { ok: true, text: async () => LINKED_CSS };
-	if (url.endsWith('.woff2')) {
-		return { ok: true, arrayBuffer: async () => WOFF2_BYTES.buffer.slice(0) };
-	}
-	throw new Error(`unexpected fetch ${url}`);
-});
-
-beforeEach(() => {
-	vi.stubGlobal('fetch', fetchMock);
-	const style = document.createElement('style');
-	style.textContent = APP_CSS;
-	document.head.append(style);
-	const link = document.createElement('link');
-	link.rel = 'stylesheet';
-	link.href = '/assets/app.css';
-	document.head.append(link);
-	const foreign = document.createElement('link');
-	foreign.rel = 'stylesheet';
-	foreign.href = 'https://fonts.example/foreign.css';
-	document.head.append(foreign);
-});
-
-afterEach(() => {
-	vi.unstubAllGlobals();
-	vi.clearAllMocks();
-	document.head.innerHTML = '';
-	document.body.innerHTML = '';
-});
-
-describe('buildHtmlArtifact', () => {
-	it('is a standalone English document titled like the app, credited to the ddd-crew', async () => {
-		const html = await buildHtmlArtifact(referenceDoc());
+describe('artifactDocument', () => {
+	it('is a standalone English document titled like the app, credited to the ddd-crew', () => {
+		const html = artifactDocument(referenceDoc());
 		expect(html.startsWith('<!doctype html>')).toBe(true);
 		expect(html).toContain('<html lang="en">');
 		expect(html).toContain('<title>Order Fulfillment — BC Canvas</title>');
@@ -86,70 +54,71 @@ describe('buildHtmlArtifact', () => {
 		expect(comment).toContain('https://creativecommons.org/licenses/by/4.0/');
 	});
 
-	it('serializes the offscreen read-only sheet and tears the mount down', async () => {
-		const html = await buildHtmlArtifact(referenceDoc());
+	it('draws the sheet the renderer draws — the same one bcc render writes', () => {
+		const doc = referenceDoc();
+		const html = artifactDocument(doc);
 		expect(html).toMatch(/<h1[^>]*>[\s\S]*?Order Fulfillment/);
 		expect(html).toContain('CC BY 4.0');
-		// Scoped to the Sheet panel: the artifact now has buttons of its own —
-		// the View tabs — and they are exactly the affordance the sheet must
-		// still not grow (SPEC §9, the offscreen mount is shared with the PNG).
+		// Not "agrees with", which was the test this replaced: the same function,
+		// called twice (wayfinder ticket 050 decision 1).
+		expect(sheetPanel(html)).toContain(renderSheetParts(doc).markup);
+		// Scoped to the Sheet panel: the artifact has buttons of its own — the
+		// View tabs — and they are exactly the affordance the sheet must still
+		// not grow (SPEC §9, the sheet is shared with the PNG mount).
 		expect(sheetPanel(html)).not.toMatch(/contenteditable|data-placeholder|<button|<input/);
-		expect(document.querySelector('.paper-ground')).toBeNull();
 	});
 
-	it('embeds the Canvas file byte-identically to the .bcc.json export (SPEC §9.1)', async () => {
+	it('embeds the Canvas file byte-identically to the .bcc.json export (SPEC §9.1)', () => {
 		const doc = referenceDoc();
-		const html = await buildHtmlArtifact(doc);
-		expect(extractEmbeddedCanvas(html)).toBe(serializeCanvas(doc));
+		expect(extractEmbeddedCanvas(artifactDocument(doc))).toBe(serializeCanvas(doc));
 	});
 
-	it('inlines every same-origin stylesheet, fonts as base64 WOFF2 data URIs', async () => {
-		const html = await buildHtmlArtifact(referenceDoc());
-		expect(html).toContain(APP_CSS);
-		expect(html).toContain("font-family:'Archivo'");
-		expect(html).toContain(`url(data:font/woff2;base64,${btoa('wOF2')})`);
-		expect(html).not.toContain('archivo-latin-500-normal.woff2');
-		const fetched = fetchMock.mock.calls.map(([url]) => url);
-		expect(fetched).toContain('http://localhost:3000/assets/app.css');
-		// Relative font URLs resolve against the stylesheet that referenced them.
-		expect(fetched).toContain('http://localhost:3000/assets/files/archivo-latin-500-normal.woff2');
-		expect(fetched.some((url) => url.includes('fonts.example'))).toBe(false);
+	it("carries the renderer's CSS and fonts, and nothing to fetch them with", () => {
+		const doc = referenceDoc();
+		const html = artifactDocument(doc);
+		expect(html).toContain(renderSheetParts(doc).css);
+		expect(html).toContain(fontFaceCss());
+		// The whole compiled app stylesheet used to be in here — Tailwind's
+		// preflight, every utility, and the scoped CSS of Chrome, EditableSheet,
+		// Picker and JsonView, to draw a read-only sheet.
+		expect(html).not.toContain('--tw-');
+		expect(html).not.toMatch(/\.woff\b/);
 	});
 
-	it('carries the one-column stack below the breakpoint and the print pass (SPEC §9.1)', async () => {
-		const html = await buildHtmlArtifact(referenceDoc());
+	it('paints the ground once, on the body the renderer scopes its tokens to', () => {
+		const html = artifactDocument(referenceDoc());
+		expect(html).toContain(`<body class="${SCOPE_CLASS}">`);
+		// The wrapper carries its own ground so a fence is self-contained; a
+		// second painting inside the document would restart the 32px drafting
+		// grid at the wrapper's origin, seaming the Sheet panel's edges.
+		expect(html).toContain(`.views__panel .${SCOPE_CLASS} { background: none; }`);
+	});
+
+	it('carries the one-column stack below the breakpoint and the print pass (SPEC §9.1)', () => {
+		const html = artifactDocument(referenceDoc());
 		expect(html).toContain(`@media (max-width: ${STACK_BREAKPOINT}px)`);
 		expect(html).toContain('grid-template-columns: 1fr');
 		expect(html).toContain('@media print');
 		expect(html).toContain('break-inside: avoid');
 	});
 
-	it('never carries the analytics beacon injected into the served page', async () => {
-		// Cloudflare Web Analytics injects its beacon at serve time, so the
-		// script exists in the live DOM the exporter runs in — never in the
-		// repo. Plant it where the edge would and prove the artifact stays
-		// script-free apart from the embedded Canvas file.
-		const beacon = document.createElement('script');
-		beacon.type = 'module';
-		beacon.src = 'https://static.cloudflareinsights.com/beacon.min.js';
-		beacon.setAttribute('data-cf-beacon', '{"token": "site-token"}');
-		document.head.append(beacon);
-		document.body.append(beacon.cloneNode(true));
-
-		const html = await buildHtmlArtifact(referenceDoc());
-		expect(html).not.toContain('cloudflareinsights');
-		expect(html).not.toContain('data-cf-beacon');
-		// Two scripts and no others: the embedded Canvas file, and the artifact's
-		// own inline enhancement. Neither one loads anything — an artifact that
-		// fetches is not self-contained (SPEC §9.1).
+	it('carries two scripts and nothing else from anywhere', () => {
+		// The export used to read the live document — every stylesheet and style
+		// tag on the served page — which is how Cloudflare's serve-time analytics
+		// beacon got a test of its own. Nothing is read from a page now; there is
+		// no page. Two scripts, both inert: the embedded Canvas file, and the
+		// artifact's own enhancement. An artifact that fetches is not
+		// self-contained (SPEC §9.1).
+		const html = artifactDocument(referenceDoc());
 		const scripts = html.match(/<script\b[^>]*/g) ?? [];
 		expect(scripts).toEqual(['<script type="application/json" data-canvas-file', '<script']);
 		expect(html).not.toMatch(/<script[^>]*\ssrc=/);
+		expect(html).not.toMatch(/<link\b/);
 	});
 
-	it('pre-renders all three Views, visible and unhidden (SPEC §9.1)', async () => {
+	it('pre-renders all three Views, visible and unhidden (SPEC §9.1)', () => {
 		const doc = referenceDoc();
-		const html = await buildHtmlArtifact(doc);
+		const html = artifactDocument(doc);
 
 		for (const key of ['sheet', 'json', 'markdown']) {
 			expect(html).toContain(`<section class="views__panel" id="view-panel-${key}"`);
@@ -168,8 +137,8 @@ describe('buildHtmlArtifact', () => {
 		}
 	});
 
-	it('ships the tab strip hidden and lets the script alone reveal it', async () => {
-		const html = await buildHtmlArtifact(referenceDoc());
+	it('ships the tab strip hidden and lets the script alone reveal it', () => {
+		const html = artifactDocument(referenceDoc());
 		// The strip is dead without script, so a script-less viewer must never
 		// see it — and its bar goes with it, or an empty 14px band survives.
 		expect(html).toMatch(/<div class="views__strip" role="tablist" aria-label="Views" hidden>/);
@@ -180,29 +149,32 @@ describe('buildHtmlArtifact', () => {
 		expect(html).not.toContain('views__bar');
 	});
 
-	it('prints the Sheet alone, whichever View is on screen (SPEC §9.1)', async () => {
-		const html = await buildHtmlArtifact(referenceDoc());
+	it('prints the Sheet alone, whichever View is on screen (SPEC §9.1)', () => {
+		const html = artifactDocument(referenceDoc());
 		const print = html.slice(html.indexOf('@media print'));
 		expect(print).toContain('#view-panel-json, #view-panel-markdown { display: none; }');
 		expect(print).toContain('.views__strip, .views__heading { display: none; }');
 		expect(print).toContain('#view-panel-sheet { display: block; }');
 		// And the reason that rule can win: the script hides panels with a class
-		// of the artifact's own. The `hidden` attribute is unreachable from here
-		// — Tailwind's preflight hides it with `!important` inside `@layer base`,
-		// and layers reverse for important declarations, so no unlayered rule of
-		// ours outranks it. Printing from a text tab produced a blank page until
-		// this changed. The bytes are what a unit test can read; the cascade is
-		// checked in a browser by `wayfinder/tickets/048-views-checkpoint.md`.
+		// of the artifact's own, which the print pass outranks on specificity
+		// with no !important anywhere. That began as a workaround — the artifact
+		// then inlined Tailwind's preflight, which hides [hidden] with an
+		// !important inside @layer base, and layers reverse for important
+		// declarations, so nothing unlayered could raise the Sheet back up.
+		// Printing from a text tab produced a blank page until this changed. The
+		// stylesheet left with the headless renderer; the class stays because it
+		// is the simpler mechanism. The bytes are what a unit test can read; the
+		// cascade is checked in a browser by ticket 048.
 		expect(html).toContain('.views__panel--off { display: none; }');
 		expect(html).toContain("panels[i].classList.add('views__panel--off')");
 		expect(html).not.toContain('panels[i].hidden');
 		expect(print).not.toContain('!important');
 	});
 
-	it('escapes panel text so a canvas can never break out of its pane', async () => {
+	it('escapes panel text so a canvas can never break out of its pane', () => {
 		const doc = referenceDoc();
 		doc.purpose = 'Closes </pre><script>alert(1)</script> & opens <b>';
-		const html = await buildHtmlArtifact(doc);
+		const html = artifactDocument(doc);
 		expect(html).not.toContain('<script>alert(1)</script>');
 		expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
 		// The embedded Canvas file still round-trips out byte-identically: the
@@ -213,18 +185,18 @@ describe('buildHtmlArtifact', () => {
 		expect(scripts).toHaveLength(2);
 	});
 
-	it('titles an unnamed canvas Untitled and escapes markup in the name', async () => {
+	it('titles an unnamed canvas Untitled and escapes markup in the name', () => {
 		const doc = referenceDoc();
 		doc.name = '';
-		expect(await buildHtmlArtifact(doc)).toContain('<title>Untitled — BC Canvas</title>');
+		expect(artifactDocument(doc)).toContain('<title>Untitled — BC Canvas</title>');
 		doc.name = 'A <b> & co';
-		expect(await buildHtmlArtifact(doc)).toContain('<title>A &lt;b&gt; &amp; co — BC Canvas</title>');
+		expect(artifactDocument(doc)).toContain('<title>A &lt;b&gt; &amp; co — BC Canvas</title>');
 	});
 });
 
 describe('exportHtmlArtifact', () => {
 	it('downloads under the slug filename as text/html', async () => {
-		await exportHtmlArtifact(referenceDoc());
+		exportHtmlArtifact(referenceDoc());
 		expect(downloadBlob).toHaveBeenCalledOnce();
 		const [blob, name] = vi.mocked(downloadBlob).mock.calls[0];
 		expect(name).toBe('order-fulfillment.bcc.html');

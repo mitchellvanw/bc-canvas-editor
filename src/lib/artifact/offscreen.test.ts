@@ -1,14 +1,17 @@
 // @vitest-environment jsdom
 /**
- * The offscreen artifact mount (SPEC §9): both artifacts render from a hidden
+ * The offscreen artifact mount (SPEC §9): the PNG artifact rasterizes a hidden
  * mount of the read-only CanvasSheet at the fixed desktop layout width — never
- * the live editor DOM. Ticket 04 establishes the mechanism; ticket 09 reuses it.
+ * the live editor DOM. Ticket 04 establishes the mechanism; wayfinder ticket
+ * 050 moved the HTML artifact off it onto the headless renderer, leaving PNG
+ * as the one export that needs a live subtree.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { stampIds } from '$lib/model/canvas';
 import { parseCanvasFile } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
-import { ARTIFACT_MARGIN, ARTIFACT_WIDTH, mountArtifactSheet } from './offscreen';
+import { SHEET_MARGIN, SHEET_WIDTH } from '$lib/render/metrics';
+import { mountArtifactSheet } from './offscreen';
 
 function referenceDoc() {
 	const result = parseCanvasFile(REFERENCE_FILE);
@@ -40,8 +43,8 @@ describe('mountArtifactSheet', () => {
 
 	it('is the fixed desktop layout width with the cream margin, independent of window size', () => {
 		const el = mountReference();
-		expect(el.style.width).toBe(`${ARTIFACT_WIDTH}px`);
-		expect(el.style.padding).toBe(`${ARTIFACT_MARGIN}px`);
+		expect(el.style.width).toBe(`${SHEET_WIDTH}px`);
+		expect(el.style.padding).toBe(`${SHEET_MARGIN}px`);
 		expect(el.classList.contains('paper-ground')).toBe(true);
 	});
 

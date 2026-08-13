@@ -1,13 +1,18 @@
 /**
  * HTML artifact (SPEC §9.1): one self-contained `.bcc.html` that opens
  * anywhere — offline — as the pixel-identical quiet sheet, carrying all three
- * Views. It serializes the offscreen artifact mount (never the live editor
- * DOM), renders the Markdown through the one digest renderer, inlines the
- * app's compiled stylesheet fetched same-origin at export time (runtime fetch
- * by design — Vite `?inline` is the unverified path, SPEC §13) with fonts as
- * base64 WOFF2 data URIs, and embeds the Canvas file byte-identically for
- * re-import. Clearing Unexported changes on success is the caller's move —
- * the flag must survive a failed build.
+ * Views. It draws the sheet through the headless renderer (wayfinder ticket
+ * 050) — the same function `bcc render` calls, so the two cannot drift —
+ * renders the Markdown through the one digest renderer, and embeds the Canvas
+ * file byte-identically for re-import. Clearing Unexported changes on success
+ * is the caller's move: the flag must survive a failed build.
+ *
+ * The fourth container, in other words, and the reason it lives here rather
+ * than in `$lib/render/`: the View panels, their CSS and the print pass that
+ * governs them are already this file's, and none of them belong to a fence.
+ * The sheet, the tokens and the fonts all come from the renderer, which is
+ * what retired the export's same-origin `fetch` (SPEC §13's noted risk) along
+ * with `collectAppCss`, `inlineFonts` and `fetchAsset`.
  *
  * The markup, the View CSS and the enhancement script live here together
  * rather than in an `artifact/views.ts`: one file already owns "what bytes the
@@ -25,8 +30,9 @@ import { embeddedCanvasBlock } from '$lib/model/embed';
 import { exportFileName } from '$lib/model/filename';
 import { serializeCanvas, toCanvasFile } from '$lib/model/serialize';
 import { windowTitle } from '$lib/model/title';
+import { fontFaceCss, renderSheetParts, SCOPE_CLASS } from '$lib/render';
+import { SHEET_MARGIN, SHEET_WIDTH } from '$lib/render/metrics';
 import { downloadBlob } from './download';
-import { ARTIFACT_MARGIN, ARTIFACT_WIDTH, mountArtifactSheet } from './offscreen';
 
 const REPO_URL = 'https://github.com/ddd-crew/bounded-context-canvas';
 const LICENSE_URL = 'https://creativecommons.org/licenses/by/4.0/';
@@ -45,7 +51,13 @@ export const STACK_BREAKPOINT = 760;
 const ARTIFACT_CSS = `
 /* The sheet at the editor's fixed desktop metrics, centered on the paper ground. */
 body { margin: 0; }
-main { max-width: ${ARTIFACT_WIDTH}px; margin: 0 auto; padding: ${ARTIFACT_MARGIN}px; }
+main { max-width: ${SHEET_WIDTH}px; margin: 0 auto; padding: ${SHEET_MARGIN}px; }
+
+/* The renderer's wrapper paints the paper ground so that a fence carries its
+   own; in a document the body already paints it, and a second painting would
+   restart the 32px drafting grid at the wrapper's origin — a visible seam
+   around the Sheet panel. */
+.views__panel .${SCOPE_CLASS} { background: none; }
 
 /* One-column stack in reading order below the single breakpoint (SPEC §9.1).
    The centre box is one stacked cell holding its two sections in order. */
@@ -286,87 +298,18 @@ ${panel('json', jsonLabel, `<pre class="views__source">${escapeHtml(json)}</pre>
 ${panel('markdown', markdownLabel, `<pre class="views__source">${escapeHtml(markdown)}</pre>`)}`;
 }
 
-/**
- * A failed asset must fail the whole export — inlining a 404 body as CSS
- * would "succeed" into a broken artifact and wrongly clear Unexported changes.
- */
-async function fetchAsset(url: string): Promise<Response> {
-	const response = await fetch(url);
-	if (!response.ok) throw new Error(`Artifact asset ${url} fetched ${response.status}`);
-	return response;
-}
-
 function escapeHtml(text: string): string {
 	return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-function toBase64(buffer: ArrayBuffer): string {
-	const bytes = new Uint8Array(buffer);
-	let binary = '';
-	// Chunked: String.fromCharCode(...allBytes) blows the argument limit on
-	// real font files.
-	for (let i = 0; i < bytes.length; i += 0x8000) {
-		binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-	}
-	return btoa(binary);
-}
-
 /**
- * Rewrite a stylesheet's font references to data URIs. Only WOFF2 ever
- * appears (the fontsource latin-subset imports in app.css are the used
- * weights, nothing else), but match .woff too rather than silently keeping a
- * dead relative URL.
+ * The `.bcc.html` container: the renderer's sheet, its two text panels, and
+ * everything the file needs to open with nothing else on the machine. Nothing
+ * here reaches the network or the DOM, which is why it is no longer async.
  */
-async function inlineFonts(css: string, base: string): Promise<string> {
-	// Keyed by the whole url(...) token — replacing bare paths would let one
-	// font's path corrupt another's that contains it as a prefix.
-	const refs = new Map<string, string>();
-	for (const match of css.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)'"]+))\s*\)/g)) {
-		const raw = (match[1] ?? match[2] ?? match[3])?.trim();
-		if (!raw || !/\.woff2?$/.test(raw) || refs.has(match[0])) continue;
-		const url = new URL(raw, base);
-		if (url.origin !== location.origin) continue;
-		const data = await (await fetchAsset(url.href)).arrayBuffer();
-		refs.set(match[0], `url(data:font/woff2;base64,${toBase64(data)})`);
-	}
-	let inlined = css;
-	for (const [token, dataUri] of refs) {
-		inlined = inlined.replaceAll(token, dataUri);
-	}
-	return inlined;
-}
-
-/**
- * The app's entire stylesheet as one inline block: every same-origin
- * stylesheet link fetched at export time, plus any injected style tags (the
- * dev server's form of the same CSS), fonts inlined along the way.
- */
-async function collectAppCss(): Promise<string> {
-	const parts: string[] = [];
-	for (const node of document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>(
-		'link[rel="stylesheet"], style'
-	)) {
-		if (node instanceof HTMLLinkElement) {
-			if (new URL(node.href).origin !== location.origin) continue;
-			const css = await (await fetchAsset(node.href)).text();
-			parts.push(await inlineFonts(css, node.href));
-		} else {
-			parts.push(await inlineFonts(node.textContent ?? '', document.baseURI));
-		}
-	}
-	return parts.join('\n');
-}
-
-export async function buildHtmlArtifact(doc: CanvasDoc): Promise<string> {
+export function artifactDocument(doc: CanvasDoc): string {
 	const json = serializeCanvas(doc);
-	const mount = mountArtifactSheet(doc);
-	let sheet: string;
-	try {
-		sheet = mount.element.innerHTML;
-	} finally {
-		mount.dispose();
-	}
-	const css = await collectAppCss();
+	const { markup, css } = renderSheetParts(doc);
 	const title = windowTitle(doc.name);
 	// The JSON panel is the embedded block's own bytes, and the Markdown is the
 	// one renderer's — the same function the Markdown View shows, the `.bcc.md`
@@ -381,14 +324,15 @@ export async function buildHtmlArtifact(doc: CanvasDoc): Promise<string> {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${escapeHtml(title)}</title>
+<style>${fontFaceCss()}</style>
 <style>
 ${css}
 </style>
 <style>${ARTIFACT_CSS}</style>
 </head>
-<body class="paper-ground">
+<body class="${SCOPE_CLASS}">
 <main data-canvas-views>
-${viewPanels(sheet, json, markdown)}
+${viewPanels(markup, json, markdown)}
 </main>
 ${embeddedCanvasBlock(json)}
 ${VIEWS_SCRIPT}
@@ -397,7 +341,7 @@ ${VIEWS_SCRIPT}
 `;
 }
 
-export async function exportHtmlArtifact(doc: CanvasDoc): Promise<void> {
-	const html = await buildHtmlArtifact(doc);
-	downloadBlob(new Blob([html], { type: 'text/html' }), exportFileName(doc.name, 'html'));
+export function exportHtmlArtifact(doc: CanvasDoc): void {
+	const blob = new Blob([artifactDocument(doc)], { type: 'text/html' });
+	downloadBlob(blob, exportFileName(doc.name, 'html'));
 }
