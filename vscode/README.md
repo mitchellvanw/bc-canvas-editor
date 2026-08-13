@@ -24,6 +24,8 @@ code --install-extension bc-canvas-fence-0.0.1.vsix
 
 `--no-dependencies` is accurate rather than a shortcut: the bundle has none. The renderer, the fonts and the parser are inlined into `dist/extension.js`, and the only thing the extension asks the host for is `vscode` itself.
 
+**Reload any window that was already open** — *Developer: Reload Window* from the command palette. A window builds its markdown engine at startup and keeps it, so an extension installed from the command line does not reach one that is already running.
+
 ## When a fence cannot be drawn
 
 The preview gets **a visible placeholder saying why** — never a blank, and never silence. The full detail behind it, which names paths on this machine, goes to an output channel instead: **BC Canvas**, reachable from the command palette as **BC Canvas: Show fence log**. A problem is reported once, not once per keystroke.
