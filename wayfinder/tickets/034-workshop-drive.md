@@ -3,7 +3,7 @@ name: workshop-drive
 title: "Task: the workshop gate — a real facilitated session, both hosts, fidelity checked on disk"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [bcc-plugin]
 ---
 
