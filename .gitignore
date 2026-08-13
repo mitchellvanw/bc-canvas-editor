@@ -22,6 +22,12 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+# The packed extension. `vscode/dist/extension.js` is committed and is what a
+# .vsix carries; the archive around it is built on demand at install time and
+# carries the version in its name, so a committed one is stale the moment the
+# manifest moves.
+vscode/*.vsix
+
 # Claude worktrees
 .claude/worktrees/
 
