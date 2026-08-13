@@ -114,13 +114,17 @@ export default function remarkBcc(options: Options = {}) {
 		// A pipeline handed a bare string has no location to resolve against, and
 		// guessing at the working directory would resolve a pointer to a file the
 		// author never named. `fence.ts` refuses it with a sentence.
-		const document = file.path ? (isAbsolute(file.path) ? file.path : resolve(file.cwd, file.path)) : null;
+		const document = file.path
+			? isAbsolute(file.path)
+				? file.path
+				: resolve(file.cwd, file.path)
+			: null;
+		const location = document === null ? null : { root, document };
 
 		let preamble: string | null = null;
 		for (const { parent, index, node } of found) {
 			const result = renderFence({
-				root,
-				document,
+				location,
 				info: infoString(node),
 				body: node.value ?? ''
 			});

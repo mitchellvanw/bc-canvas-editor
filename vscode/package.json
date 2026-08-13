@@ -1,0 +1,42 @@
+{
+	"name": "bc-canvas-fence",
+	"displayName": "BC Canvas — bcc fence",
+	"description": "Draws a bcc fence in the markdown preview as the Bounded Context Canvas it points at.",
+	"version": "0.0.1",
+	"private": true,
+	"publisher": "mitchellvanw",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/mitchellvanw/bc-canvas-editor"
+	},
+	"engines": {
+		"vscode": "^1.90.0"
+	},
+	"categories": [
+		"Visualization"
+	],
+	"main": "./dist/extension.js",
+	"capabilities": {
+		"untrustedWorkspaces": {
+			"supported": true,
+			"description": "A fence reads a Canvas file inside the workspace and draws it. Nothing in the file is executed, and every value it carries is escaped by the renderer."
+		},
+		"virtualWorkspaces": {
+			"supported": false,
+			"description": "A fence resolves a path on disk during a synchronous render, which a virtual filesystem cannot answer."
+		}
+	},
+	"contributes": {
+		"markdown.markdownItPlugins": true,
+		"commands": [
+			{
+				"command": "bcc.showFenceLog",
+				"title": "Show fence log",
+				"category": "BC Canvas"
+			}
+		]
+	},
+	"scripts": {
+		"build": "node build.js"
+	}
+}

@@ -1,65 +1,47 @@
-// ../src/lib/fs/root.ts
-import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
-import { realpathSync, statSync } from "node:fs";
-var OutsideRoot = class extends Error {
-  constructor(input, root) {
-    super(
-      `${input}: outside the canvas root. Paths are relative to ${root}, and a path out of it is not followed.`
-    );
-    this.input = input;
-    this.root = root;
-  }
-  input;
-  root;
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
 };
-function realAncestor(path) {
-  const below = [];
-  let at = path;
-  for (; ; ) {
-    try {
-      return join(realpathSync(at), ...below);
-    } catch {
-      const up = dirname(at);
-      if (up === at) return path;
-      below.unshift(basename(at));
-      at = up;
-    }
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
   }
-}
-function boundary(root) {
-  return root.endsWith(sep) ? root : root + sep;
-}
-function inside(path, root) {
-  return path === root || path.startsWith(boundary(root));
-}
-function openRoot(input) {
-  const absolute = resolve(input);
-  let path;
-  try {
-    path = realpathSync(absolute);
-  } catch {
-    throw new Error(`no such directory: ${absolute}`);
-  }
-  if (!statSync(path).isDirectory()) throw new Error(`not a directory: ${absolute}`);
-  return {
-    path,
-    resolve(candidate) {
-      const target = realAncestor(isAbsolute(candidate) ? candidate : resolve(path, candidate));
-      if (!inside(target, path)) throw new OutsideRoot(candidate, path);
-      return target;
-    },
-    relative(absolutePath) {
-      if (!inside(absolutePath, path)) throw new OutsideRoot(absolutePath, path);
-      return absolutePath.slice(boundary(path).length).split(sep).join("/");
-    }
-  };
-}
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/extension.ts
+var extension_exports = {};
+__export(extension_exports, {
+  activate: () => activate,
+  deactivate: () => deactivate
+});
+module.exports = __toCommonJS(extension_exports);
+var import_node_path3 = require("node:path");
+var vscode = __toESM(require("vscode"));
 
 // ../src/lib/fence/fence.ts
-import { relative, resolve as resolve2 } from "node:path";
+var import_node_path2 = require("node:path");
 
 // ../src/lib/fs/read.ts
-import { readFileSync } from "node:fs";
+var import_node_fs2 = require("node:fs");
 
 // ../src/lib/model/canvas.ts
 var CANVAS_VERSION = 2;
@@ -71,7 +53,7 @@ function stampLane(lane) {
     id: newId(),
     collaborator: { ...lane.collaborator },
     ...lane.relationship !== void 0 && { relationship: { ...lane.relationship } },
-    messages: lane.messages.map((message) => ({ ...message, id: newId() }))
+    messages: lane.messages.map((message2) => ({ ...message2, id: newId() }))
   };
 }
 function stampIds(file) {
@@ -352,6 +334,63 @@ function parseCanvasImport(text) {
   return direct.detail?.startsWith(NOT_JSON) ? notCanvas(NEITHER_FORM) : direct;
 }
 
+// ../src/lib/fs/root.ts
+var import_node_path = require("node:path");
+var import_node_fs = require("node:fs");
+var OutsideRoot = class extends Error {
+  constructor(input, root) {
+    super(
+      `${input}: outside the canvas root. Paths are relative to ${root}, and a path out of it is not followed.`
+    );
+    this.input = input;
+    this.root = root;
+  }
+  input;
+  root;
+};
+function realAncestor(path) {
+  const below = [];
+  let at = path;
+  for (; ; ) {
+    try {
+      return (0, import_node_path.join)((0, import_node_fs.realpathSync)(at), ...below);
+    } catch {
+      const up = (0, import_node_path.dirname)(at);
+      if (up === at) return path;
+      below.unshift((0, import_node_path.basename)(at));
+      at = up;
+    }
+  }
+}
+function boundary(root) {
+  return root.endsWith(import_node_path.sep) ? root : root + import_node_path.sep;
+}
+function inside(path, root) {
+  return path === root || path.startsWith(boundary(root));
+}
+function openRoot(input) {
+  const absolute = (0, import_node_path.resolve)(input);
+  let path;
+  try {
+    path = (0, import_node_fs.realpathSync)(absolute);
+  } catch {
+    throw new Error(`no such directory: ${absolute}`);
+  }
+  if (!(0, import_node_fs.statSync)(path).isDirectory()) throw new Error(`not a directory: ${absolute}`);
+  return {
+    path,
+    resolve(candidate) {
+      const target = realAncestor((0, import_node_path.isAbsolute)(candidate) ? candidate : (0, import_node_path.resolve)(path, candidate));
+      if (!inside(target, path)) throw new OutsideRoot(candidate, path);
+      return target;
+    },
+    relative(absolutePath) {
+      if (!inside(absolutePath, path)) throw new OutsideRoot(absolutePath, path);
+      return absolutePath.slice(boundary(path).length).split(import_node_path.sep).join("/");
+    }
+  };
+}
+
 // ../src/lib/fs/read.ts
 function readCanvas(root, input) {
   let absolute;
@@ -366,7 +405,7 @@ function readCanvas(root, input) {
   const path = root.relative(absolute);
   let raw;
   try {
-    raw = readFileSync(absolute, "utf8");
+    raw = (0, import_node_fs2.readFileSync)(absolute, "utf8");
   } catch (error) {
     return {
       ok: false,
@@ -434,14 +473,14 @@ var has_own_property = Object.prototype.hasOwnProperty;
 var noop = () => {
 };
 function deferred() {
-  var resolve4;
+  var resolve3;
   var reject;
   return {
     promise: new Promise((res, rej) => {
-      resolve4 = res;
+      resolve3 = res;
       reject = rej;
     }),
-    resolve: resolve4,
+    resolve: resolve3,
     reject
   };
 }
@@ -668,11 +707,11 @@ async function with_render_context(fn) {
     unresolved_promises: /* @__PURE__ */ new Map()
   } };
   if (in_webcontainer()) {
-    const { promise, resolve: resolve4 } = deferred();
+    const { promise, resolve: resolve3 } = deferred();
     const previous_render = current_render;
     current_render = promise;
     await previous_render;
-    return fn().finally(resolve4);
+    return fn().finally(resolve3);
   }
   try {
     if (als === null) async_local_storage_unavailable();
@@ -728,8 +767,8 @@ var DevalueError = class extends Error {
   * @param {any} [value] - The value that failed to be serialized
   * @param {any} [root] - The root value being serialized
   */
-  constructor(message, keys, value, root) {
-    super(message);
+  constructor(message2, keys, value, root) {
+    super(message2);
     this.name = "DevalueError";
     this.path = keys.join("");
     this.value = value;
@@ -2151,31 +2190,31 @@ function CanvasSheet($$renderer, $$props) {
             $$renderer3.push(`<ul class="msgs svelte-18zyimi"><!--[-->`);
             const each_array_1 = ensure_array_like(lane.messages);
             for (let messageIndex = 0, $$length2 = each_array_1.length; messageIndex < $$length2; messageIndex++) {
-              let message = each_array_1[messageIndex];
-              $$renderer3.push(`<li class="msg svelte-18zyimi"${attr("data-meaning", message.type)}><span class="msg__glyph svelte-18zyimi" aria-hidden="true">${escape_html(GLYPHS[message.type])}</span><span class="sr-only svelte-18zyimi">${escape_html(message.type)},</span>`);
+              let message2 = each_array_1[messageIndex];
+              $$renderer3.push(`<li class="msg svelte-18zyimi"${attr("data-meaning", message2.type)}><span class="msg__glyph svelte-18zyimi" aria-hidden="true">${escape_html(GLYPHS[message2.type])}</span><span class="sr-only svelte-18zyimi">${escape_html(message2.type)},</span>`);
               text($$renderer3, {
-                value: message.name,
+                value: message2.name,
                 label: "Message name",
                 placeholder: "Message name",
-                set: (value) => message.name = value
+                set: (value) => message2.name = value
               });
               $$renderer3.push(`<!----> `);
-              if (field2 || message.description) {
+              if (field2 || message2.description) {
                 $$renderer3.push("<!--[0-->");
                 $$renderer3.push(`<span class="msg__desc svelte-18zyimi">`);
                 text($$renderer3, {
-                  value: message.description ?? "",
+                  value: message2.description ?? "",
                   label: "Message description",
                   placeholder: "detail",
                   multiline: true,
-                  set: (value) => message.description = value
+                  set: (value) => message2.description = value
                 });
                 $$renderer3.push(`<!----></span>`);
               } else $$renderer3.push("<!--[-1-->");
               $$renderer3.push(`<!--]--> `);
               removeItem?.($$renderer3, {
-                label: `Remove ${message.type} ${message.name}`.trim(),
-                type: message.type.charAt(0).toUpperCase() + message.type.slice(1),
+                label: `Remove ${message2.type} ${message2.name}`.trim(),
+                type: message2.type.charAt(0).toUpperCase() + message2.type.slice(1),
                 remove: () => lane.messages.splice(messageIndex, 1)
               });
               $$renderer3.push(`<!----></li>`);
@@ -2525,6 +2564,7 @@ var FRAME_CSS = `body { margin: 0; }
 main { max-width: ${SHEET_WIDTH}px; margin: 0 auto; padding: 40px; }`;
 
 // ../src/lib/render/index.ts
+var SCOPE_CLASS2 = SCOPE_CLASS;
 var renderSheetParts2 = renderSheetParts;
 var fontFaceCss2 = fontFaceCss;
 
@@ -2572,8 +2612,8 @@ function renderFence(request) {
     );
   }
   const { root, document } = request.location;
-  const absolute = resolve2(document, "..", pointer);
-  const result = readCanvas(root, relative(root.path, absolute));
+  const absolute = (0, import_node_path2.resolve)(document, "..", pointer);
+  const result = readCanvas(root, (0, import_node_path2.relative)(root.path, absolute));
   if (!result.ok) {
     return {
       html: fencePlaceholder(readProblem(result, { detail: false })),
@@ -2588,54 +2628,162 @@ function renderFence(request) {
   return { html: markup, css, problem: null, path: absolute };
 }
 
-// src/plugin.ts
-import { isAbsolute as isAbsolute2, resolve as resolve3 } from "node:path";
-function infoString(node) {
-  return node.meta ? `${node.lang} ${node.meta}` : node.lang ?? "";
+// src/extension.ts
+var HOST_CSS = `.${SCOPE_CLASS2} {
+	container-type: inline-size;
+	line-height: normal;
+	overflow-wrap: normal;
 }
-function fences(tree, found = []) {
-  const children = tree.children;
-  if (!children) return found;
-  for (let index = 0; index < children.length; index += 1) {
-    const node = children[index];
-    if (node.type === "code" && node.lang === FENCE_LANG) found.push({ parent: tree, index, node });
-    else fences(node, found);
+.${SCOPE_CLASS2} :where(h1, h2, h3, h4, h5, h6) {
+	font-weight: revert;
+	font-size: revert;
+	line-height: revert;
+	padding-bottom: revert;
+	border-bottom: revert;
+}
+.${SCOPE_CLASS2} :where(a) {
+	text-decoration: revert;
+}`;
+var PREAMBLE_EMITTED = "bccPreambleEmitted";
+var DrawnCanvases = class {
+  #watchers = /* @__PURE__ */ new Map();
+  #pending;
+  /** Watch a canvas a fence resolved to, whether or not it could be read. */
+  add(path) {
+    if (this.#watchers.has(path)) return;
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.file((0, import_node_path3.dirname)(path)), (0, import_node_path3.basename)(path))
+    );
+    const refresh = () => this.#refresh();
+    this.#watchers.set(
+      path,
+      vscode.Disposable.from(
+        watcher.onDidChange(refresh),
+        watcher.onDidCreate(refresh),
+        watcher.onDidDelete(refresh),
+        watcher
+      )
+    );
   }
-  return found;
+  dispose() {
+    for (const watcher of this.#watchers.values()) watcher.dispose();
+    this.#watchers.clear();
+    if (this.#pending !== void 0) clearTimeout(this.#pending);
+  }
+  /**
+   * Coalesced, because a write is rarely one filesystem event — an atomic
+   * write is a create and a rename, and a formatter is a whole directory's
+   * worth at once.
+   */
+  #refresh() {
+    if (this.#pending !== void 0) clearTimeout(this.#pending);
+    this.#pending = setTimeout(() => {
+      this.#pending = void 0;
+      void vscode.commands.executeCommand("markdown.preview.refresh");
+    }, 120);
+  }
+};
+var FenceLog = class {
+  #channel;
+  #renders = /* @__PURE__ */ new WeakSet();
+  #previous = /* @__PURE__ */ new Map();
+  #current = /* @__PURE__ */ new Map();
+  constructor(channel) {
+    this.#channel = channel;
+  }
+  /**
+   * Called for every fence, drawn or not. `env` is a fresh object per render,
+   * which is what makes "the previous render of this document" observable from
+   * inside a rule that is only ever handed one fence at a time.
+   */
+  rendering(env, document) {
+    if (env === void 0 || this.#renders.has(env)) return;
+    this.#renders.add(env);
+    this.#previous.set(document, this.#current.get(document) ?? /* @__PURE__ */ new Set());
+    this.#current.set(document, /* @__PURE__ */ new Set());
+  }
+  problem(document, sentence) {
+    const current = this.#current.get(document);
+    if (current === void 0) {
+      this.#channel.warn(`${document}: ${sentence}`);
+      return;
+    }
+    current.add(sentence);
+    if (!this.#previous.get(document)?.has(sentence)) {
+      this.#channel.warn(`${document}: ${sentence}`);
+    }
+  }
+  show() {
+    this.#channel.show(true);
+  }
+};
+var roots = /* @__PURE__ */ new Map();
+function rootAt(path) {
+  let root = roots.get(path);
+  if (root === void 0) {
+    root = openRoot(path);
+    roots.set(path, root);
+  }
+  return root;
 }
-function remarkBcc(options = {}) {
-  const roots = /* @__PURE__ */ new Map();
-  return function transformer(tree, file) {
-    const found = fences(tree);
-    if (!found.length) return;
-    const rootPath = resolve3(file.cwd, options.root ?? ".");
-    let root = roots.get(rootPath);
-    if (!root) {
-      root = openRoot(rootPath);
-      roots.set(rootPath, root);
+function locate(uri) {
+  if (uri === void 0 || uri.scheme !== "file") return null;
+  const document = uri.fsPath;
+  return { root: rootAt(vscode.workspace.getWorkspaceFolder(uri)?.uri.fsPath ?? (0, import_node_path3.dirname)(document)), document };
+}
+function activate(context2) {
+  const log = new FenceLog(vscode.window.createOutputChannel("BC Canvas", { log: true }));
+  const drawn = new DrawnCanvases();
+  context2.subscriptions.push(
+    drawn,
+    vscode.commands.registerCommand("bcc.showFenceLog", () => log.show())
+  );
+  function draw(token, env) {
+    const uri = env?.currentDocument;
+    let location;
+    try {
+      location = locate(uri);
+    } catch (error) {
+      const folder = uri === void 0 ? "" : uri.fsPath;
+      return fencePlaceholder(
+        `${folder}: this folder could not be opened as a canvas root (${message(error)}).`
+      );
     }
-    const document = file.path ? isAbsolute2(file.path) ? file.path : resolve3(file.cwd, file.path) : null;
-    const location = document === null ? null : { root, document };
-    let preamble = null;
-    for (const { parent, index, node } of found) {
-      const result = renderFence({
-        location,
-        info: infoString(node),
-        body: node.value ?? ""
-      });
-      if (result.problem !== null) {
-        const message = file.message(result.problem, node);
-        message.source = "remark-bcc";
-        message.ruleId = "fence";
-      }
-      if (result.css !== null && options.css !== "imported") {
-        preamble ??= fencePreamble(result.css);
-      }
-      parent.children[index] = { type: "html", value: result.html };
+    const result = renderFence({ location, info: token.info, body: token.content });
+    const named = location?.document ?? "(no document)";
+    log.rendering(env, named);
+    if (result.problem !== null) log.problem(named, result.problem);
+    if (result.path !== null) drawn.add(result.path);
+    if (result.css === null) return result.html;
+    if (env !== void 0 && env[PREAMBLE_EMITTED] === true) return result.html;
+    if (env !== void 0) env[PREAMBLE_EMITTED] = true;
+    return `${fencePreamble(result.css)}
+<style>
+${HOST_CSS}
+</style>
+${result.html}`;
+  }
+  return {
+    extendMarkdownIt(md) {
+      const original = md.renderer.rules.fence;
+      md.renderer.rules.fence = (tokens, index, options, env, self) => {
+        const token = tokens[index];
+        if (token.info.trim().split(/\s+/)[0] !== FENCE_LANG) {
+          return original ? original(tokens, index, options, env, self) : self.renderToken(tokens, index, options);
+        }
+        return draw(token, env);
+      };
+      return md;
     }
-    if (preamble !== null) tree.children.unshift({ type: "html", value: preamble });
   };
 }
-export {
-  remarkBcc as default
-};
+function message(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+function deactivate() {
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  activate,
+  deactivate
+});

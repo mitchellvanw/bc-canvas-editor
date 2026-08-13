@@ -1,0 +1,33 @@
+{
+	"compilerOptions": {
+		"target": "es2023",
+		// No `dom`, for `remark/tsconfig.json`'s reason: a fence draws through
+		// `$lib/render` and `$lib/fence`, which touch nothing of the sort. What
+		// this extension talks to is a webview it never enters — only the HTML
+		// string crosses — so a DOM type here would be a type for a document
+		// this process does not have.
+		"lib": ["es2023"],
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		// `vscode` is an ambient module declaration rather than a package, and
+		// the host supplies the implementation at runtime — `build.js` marks it
+		// external for exactly that reason.
+		"types": ["node", "vscode"],
+		// `$lib/render/index.ts` imports the committed `dist/render.js`, which is
+		// build output carrying `@ts-nocheck`. Every other config here does the same.
+		"allowJs": true,
+		"strict": true,
+		"noUnusedLocals": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"verbatimModuleSyntax": true,
+		"forceConsistentCasingInFileNames": true,
+		// The one seam `mcp/`, `cli/` and `remark/` also declare: `src/lib/*`
+		// stays where it is and is pulled in through this alias, which esbuild
+		// resolves at build time from this same file.
+		"paths": {
+			"$lib/*": ["../src/lib/*"]
+		}
+	},
+	"include": ["src/**/*.ts", "build.mjs"]
+}

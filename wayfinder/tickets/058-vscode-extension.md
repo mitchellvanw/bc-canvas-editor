@@ -2,7 +2,7 @@
 name: vscode-extension
 title: "Task: the bcc fence in VS Code's markdown preview"
 labels: [wayfinder:task]
-status: open
+status: closed
 assignee: mitchell
 blocked-by: [fence-shape, vscode-preview-spike, headless-renderer, fs-seam]
 ---
@@ -32,3 +32,42 @@ Points to get right:
 - **Installation.** Repo-local and unpublished, per the map: a `.vsix` built from the repo and installed by hand, not a marketplace listing. Say so in the README so the two adapters' install stories sit together.
 
 Done when a `bcc` fence renders the sheet in VS Code's markdown preview on a real repo, the canvas-changed case behaves as decided, and the install path is written down. Screenshots in `.scratch/vscode-extension/`.
+
+## Resolution
+
+**Built, and the second adapter is 250 lines with the fence in none of them.** A `bcc` fence draws the sheet in the preview of a real project — fonts loaded, `@container` tiers reflowing with the pane, the placeholder legible, the canvas-changed case behaving as decided — driven over the devtools protocol against **VS Code 1.133.0** and written up with the harness in `.scratch/vscode-extension/`.
+
+`vscode/` is the repo's second standalone package after `mcp/`, and for the same reason: a `.vsix` is packed from a directory whose `package.json` *is* the extension manifest, so it cannot be a directory of the root package the way `cli/` and `remark/` are. Everything else copies them — the renderer inlined from `src/lib/render/dist/render.js`, the bundle committed, a staleness test diffing it against a fresh build, and `build:vscode` fourth in `npm run build:bundles`. It is CommonJS where the other three are ESM, because VS Code loads an extension with `require`; that is also why `build.mjs` carries the extension its siblings' `build.js` do not, since the manifest beside it cannot say `"type": "module"` without telling Node the CommonJS bundle is ESM too.
+
+### The cascade was measured, not read
+
+The ticket's second bullet said to reset element defaults inside the wrapper. Rather than read `markdown.css` and guess, `dump.js` records 37 computed properties per element and `control.mjs` reproduces the same markup on a bare Chrome page at the same width and root font size, so **"what does the preview's stylesheet do to the sheet" is a diff**. Unmitigated: **51 differences**, and they are three real faults — all 44 headings on the preview's `line-height: 1.25` instead of the sheet's inherited 1.5, **a line drawn under the canvas name** by `h1 { border-bottom }`, and both footer links stripped of their underline. With the host rules in place: **zero**, plus four that are provably inert (a border colour on a border of width 0, and three grid tracks differing by 0.008px).
+
+Three calls came out of that. The rollback is `revert` rather than a value, because it rolls the cascade back to the **UA origin, which is the origin the sheet was drawn against** — so the fix cannot disagree with the artifact about what a heading is. `margin` is deliberately not in the list: the renderer's scoped preflight already zeroes it at the same specificity, and reverting would undo [headless-renderer](wayfinder/tickets/054-headless-renderer.md)'s work. And the two *inherited* leaks take initial values instead, since reverting an inherited property just inherits the preview's again — including `word-wrap: break-word`, which reaches all 229 elements and was turned off rather than kept: it would have left a long unbroken word wrapping here while it overflows in the editor and the artifact, which is a defect that hides on one surface instead of being had everywhere or nowhere.
+
+### Two changes to the shared contract, both surfaced by being the second caller
+
+1. **`root` and `document` became one `location`.** `renderFence` needed a root it never reads when there is no document, which remark could satisfy from `cwd` and VS Code could not — an untitled buffer and `markdown.api.render` have neither. Pairing them removes a state that was never legal: a root with no document has nothing to resolve, a document with no root has nowhere to stop. It cost four call sites in the tests and two lines in `plugin.ts`.
+2. **`FenceResult` reports the path the fence pointed at**, absolute, whether or not it read. A watcher has to know what a document depends on, and the only alternative was the adapter re-implementing the grammar this module exists to hold. Reported for the *failing* case too, which is what makes a fence pointing at a file you have not written yet **heal when you write it** — verified live, and pinned in `fence.test.ts`.
+
+A third change came out of the preview and belongs to every surface: the placeholder's `<code>` now turns off background, colour, padding and radius inline, because the webview's default stylesheet gives a bare `<code>` a dark chip and a grey foreground, which on the placeholder's cream card read as a second broken thing rather than as the path.
+
+### Seven calls the ticket left open
+
+1. **No `markdown.previewStyles` contribution**, against the ticket's first bullet. That bullet's own justification is the case where a file has to be served from the extension directory, and none is: the fonts are `data:` URIs and six of the eight faces report `loaded` from the plugin's inline `<style>` alone. Contributing a near-empty stylesheet to hold open a door this extension does not walk through would be shipping a claim about the extension that is not true. `previewScripts` remains the route if the sheet ever grows runtime behaviour, and it opens `localResourceRoots` at the same time.
+2. **No `activationEvents`.** `markdown-language-features` activates a contributor when it builds the engine, so the fence draws on a fresh window with the field absent — confirmed rather than assumed. Declaring `onStartupFinished` would have created an output channel and a file watcher in every window that never opens a preview.
+3. **`untrustedWorkspaces: { supported: true }`**, because nothing in a canvas is executed and every value it carries is escaped by the renderer — the sheet's one `{@html}` is `KIND_META`'s own icon constant, not file content — and containment already refuses a pointer out of the folder. **Restricted Mode end to end is still not exercised**, exactly as [vscode-preview-spike](wayfinder/tickets/053-vscode-preview-spike.md) recorded: no trust prompt could be produced on a clean profile even with `startupPrompt` forced to `always`.
+4. **One watcher per canvas, not a glob.** A fence may name anything `readCanvas` accepts (ticket 052), so `**/*.bcc.json` would quietly miss the rest; the count is bounded by the canvases actually drawn. Refresh is `markdown.preview.refresh`, coalesced at 120ms because a write is rarely one filesystem event.
+5. **A problem is logged once, not once per keystroke.** A preview re-renders on every character typed in the markdown, and the naive channel repeats the same sentence sixty times while somebody writes a paragraph. `env` is a fresh object per render, which is what makes "the previous render of this document" observable from inside a rule that only ever sees one fence at a time — so a problem that is still there stays quiet and a new one arrives on its own line. Verified live across the break/heal/break cycle.
+6. **The root is the workspace folder holding the document, falling back to the document's own directory.** A markdown file opened outside any workspace therefore reads a pointer beside it and refuses `../`. That is a real difference rather than a technicality, and it is in the README.
+7. **The extension writes one refusal of its own** — a workspace folder that will not open as a root, which is unreachable in practice and shaped like every other failure rather than like an exception, because a fence that throws takes the whole preview render with it. `fencePlaceholder` is exported for it. The other five sentences are `fence.ts`'s, which is [remark-plugin](wayfinder/tickets/057-remark-plugin.md)'s split doing what it was written for: the two adapters cannot disagree about failure because neither of them phrases it.
+
+### The output channel, re-tested as the ticket asked
+
+052 put `detail` on the adapter's warning channel rather than in the preview, and asked for that to be re-tested against a real broken canvas before accepting it — *"if the output channel turns out to be somewhere nobody looks, that is evidence 052 did not have."* It holds, but only just, and the honest version is narrower than 052's: the channel is not deaf the way a VFile message on a static-site build is deaf — VS Code has a real place to put it, and the log carries the ENOENT and the field the parser tripped on — but nobody finds it by accident. So a **BC Canvas: Show fence log** command exists to make it reachable from the palette, and the README says where it is. Diagnostics on the markdown document would be the better channel — the Problems panel is somewhere people do look — and are declined here rather than dismissed: they would be computed on preview refresh and stale whenever the preview is closed, which is a different mechanism than this ticket's.
+
+### One difference that is not a defect
+
+The preview's root font size is **14px**, against 16px in the artifact and the editor, and it follows the reader's `markdown.preview.fontSize`. The sheet's typography and padding are `rem` and scale with it; its gaps, icons and borders are `px` and do not. Measured across 10–26px, nothing overflows until 26px, where three panels do. Left alone deliberately: a live reading surface honouring the reader's font size is right, and the only fix would be a rule against `:root`, which is precisely what [renderer-shape](wayfinder/tickets/050-renderer-shape.md) decision 5 exists to forbid.
+
+SPEC §1's fence entry gains the second adapter. `CONTEXT.md` gains nothing — its **Fence** entry already named *"a remark plugin, a markdown-it rule"* as the two adapters, written by 057 before either existed. §10 gains nothing either, for the CLI's reason: the extension's strings are read by a developer in their editor, and their register is deliberately not §10's.

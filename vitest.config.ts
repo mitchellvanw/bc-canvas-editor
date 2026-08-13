@@ -10,6 +10,11 @@ export default defineConfig({
 		conditions: ['browser']
 	},
 	test: {
-		include: ['src/**/*.test.ts', 'cli/**/*.test.ts', 'remark/**/*.test.ts']
+		include: [
+			'src/**/*.test.ts',
+			'cli/**/*.test.ts',
+			'remark/**/*.test.ts',
+			'vscode/**/*.test.ts'
+		]
 	}
 });

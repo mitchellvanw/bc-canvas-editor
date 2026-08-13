@@ -20,7 +20,8 @@
 		"build:render": "node src/lib/render/build.js",
 		"build:cli": "node cli/build.js",
 		"build:remark": "node remark/build.js",
-		"build:bundles": "npm run build:render && npm run build:cli && npm run build:remark",
+		"build:vscode": "node vscode/build.mjs",
+		"build:bundles": "npm run build:render && npm run build:cli && npm run build:remark && npm run build:vscode",
 		"bcc": "node cli/dist/bcc.js",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -29,6 +30,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:cli": "tsc --noEmit -p cli/tsconfig.json",
 		"check:remark": "tsc --noEmit -p remark/tsconfig.json",
+		"check:vscode": "tsc --noEmit -p vscode/tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
@@ -40,6 +42,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^26.2.0",
+		"@types/vscode": "~1.90.0",
 		"@zumer/snapdom": "^2.23.2",
 		"esbuild": "^0.27.7",
 		"jsdom": "^30.0.1",

@@ -21,8 +21,7 @@ function project() {
 /** A fence in `<root>/docs/guide.md`, pointing wherever the test says. */
 function fence(root: ReturnType<typeof openRoot>, pointer: string, info = 'bcc') {
 	return renderFence({
-		root,
-		document: join(root.path, 'docs/guide.md'),
+		location: { root, document: join(root.path, 'docs/guide.md') },
 		info,
 		body: pointer
 	});
@@ -42,8 +41,7 @@ describe('the sheet a fence draws', () => {
 	it('trims the pointer, and reads a path with no directory in it', () => {
 		const root = project();
 		const result = renderFence({
-			root,
-			document: join(root.path, 'guide.md'),
+			location: { root, document: join(root.path, 'guide.md') },
 			info: 'bcc',
 			body: '\n  order-fulfillment.bcc.json  \n'
 		});
@@ -65,6 +63,24 @@ describe('the sheet a fence draws', () => {
 			renderSheetParts(JSON.parse(readFileSync(`examples/${name}.bcc.json`, 'utf8')))
 		);
 		for (const sheet of sheets) expect(sheet.css).toBe(sheets[0].css);
+	});
+
+	/**
+	 * What an adapter that re-renders depends on, and it cannot work it out for
+	 * itself without re-implementing the grammar this module holds. Reported for
+	 * a fence that failed to read, too: a pointer at a file that is not there
+	 * yet should heal when it appears, rather than staying broken until somebody
+	 * touches the markdown.
+	 */
+	it('reports the file it pointed at, drawn or not', () => {
+		const root = project();
+
+		expect(fence(root, '../order-fulfillment.bcc.json').path).toBe(
+			join(root.path, 'order-fulfillment.bcc.json')
+		);
+		expect(fence(root, 'nowhere.bcc.json').path).toBe(join(root.path, 'docs/nowhere.bcc.json'));
+		// Nothing was pointed at: the grammar refused before there was a path.
+		expect(fence(root, '/order-fulfillment.bcc.json').path).toBeNull();
 	});
 
 	it('hoists the fonts into the preamble and nowhere else', () => {
@@ -108,8 +124,7 @@ describe('a fence that cannot draw', () => {
 	it('refuses when there is no document to resolve against', () => {
 		const root = project();
 		const result = renderFence({
-			root,
-			document: null,
+			location: null,
 			info: 'bcc',
 			body: 'order-fulfillment.bcc.json'
 		});
@@ -159,8 +174,7 @@ describe('the placeholder', () => {
 		const root = project();
 		writeFileSync(join(root.path, 'broken.bcc.json'), '{"version": 2, "name": 4}');
 		const result = renderFence({
-			root,
-			document: join(root.path, 'guide.md'),
+			location: { root, document: join(root.path, 'guide.md') },
 			info: 'bcc',
 			body: 'broken.bcc.json'
 		});

@@ -1,0 +1,6 @@
+# A .vsix carries what the host loads and what a reader opens: the bundle, the
+# manifest, the README. The source is in the repo the manifest points at.
+src/**
+build.mjs
+tsconfig.json
+.vscodeignore

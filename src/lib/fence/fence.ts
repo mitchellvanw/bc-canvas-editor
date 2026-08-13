@@ -31,17 +31,29 @@ import { fontFaceCss, renderSheetParts } from '$lib/render';
 /** The info string, exactly. Claimed by neither Linguist nor highlight.js. */
 export const FENCE_LANG = 'bcc';
 
-export interface FenceRequest {
+/**
+ * Where a fence is: the document it sits in, and the root the pointer it holds
+ * may not leave. The two travel together because neither is any use alone — a
+ * root with no document has nothing to resolve, and a document with no root has
+ * nowhere to stop — and pairing them is what keeps an adapter from having to
+ * invent one to satisfy the other.
+ */
+export interface FenceLocation {
 	/** Where the walk stops, and what paths are named against in messages. */
 	root: CanvasRoot;
+	/** The absolute path of the markdown file holding this fence. */
+	document: string;
+}
+
+export interface FenceRequest {
 	/**
-	 * The absolute path of the markdown file holding this fence, or null when
-	 * the adapter is rendering a string with no location (VS Code's
-	 * `markdown.api.render`, a unified pipeline handed a bare string). A
-	 * pointer has nothing to resolve against then, which is a refusal rather
-	 * than a guess at the working directory.
+	 * Where this fence is, or null when the adapter is rendering a string with
+	 * no location — VS Code's `markdown.api.render`, an untitled buffer, a
+	 * unified pipeline handed a bare string. A pointer has nothing to resolve
+	 * against then, which is a refusal rather than a guess at the working
+	 * directory.
 	 */
-	document: string | null;
+	location: FenceLocation | null;
 	/** The whole info string — `bcc` and any tail the author typed after it. */
 	info: string;
 	/** The fence body, as written. */
@@ -58,6 +70,17 @@ export interface FenceResult {
 	css: string | null;
 	/** The sentence for the adapter's warning channel. Null when it drew. */
 	problem: string | null;
+	/**
+	 * The Canvas file this fence points at, absolute — reported whether or not
+	 * it could be read, and null only when the pointer never got that far
+	 * (a grammar refusal, a fence with no location).
+	 *
+	 * An adapter that re-renders needs to know what a fence depends on, and it
+	 * cannot work that out without re-implementing the grammar this module
+	 * exists to hold. The failing case is reported for the same reason: a fence
+	 * naming a file that is not there yet should heal when it appears.
+	 */
+	path: string | null;
 }
 
 /**
@@ -90,20 +113,31 @@ function escapeHtml(text: string): string {
  * The lead is this project's; the sentence below it is the one every surface
  * shows. `detail` is not here — it names bytes in another file, and on a built
  * site it would publish the author's absolute paths to strangers.
+ *
+ * Exported because an adapter occasionally has a problem of its own to show —
+ * VS Code's, a workspace folder that will not open as a root — and a second
+ * shape of failure invented at a call site is the drift this module exists to
+ * prevent.
  */
-function placeholder(problem: string): string {
+export function fencePlaceholder(problem: string): string {
 	return (
 		`<div style="border: 1px solid #d8d2c4; border-radius: 6px; padding: 0.75rem 1rem; ` +
 		`background: #faf7f0; color: #33312c; font-family: ui-sans-serif, system-ui, sans-serif; ` +
 		`font-size: 0.9375rem; line-height: 1.5;">` +
 		`<strong>This bcc fence didn&#39;t render.</strong><br />` +
-		`<code style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em;">` +
+		// Everything a host might paint a bare `<code>` with is turned off rather
+		// than inherited: VS Code's webview gives one a dark chip and a grey
+		// foreground, which on this cream card reads as a second, broken thing
+		// rather than as the path. Measured in the preview, and the same defence
+		// as the rest of this element — it depends on nothing.
+		`<code style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em; ` +
+		`background: none; color: inherit; padding: 0; border-radius: 0;">` +
 		`${escapeHtml(problem)}</code></div>`
 	);
 }
 
 function refuse(problem: string): FenceResult {
-	return { html: placeholder(problem), css: null, problem };
+	return { html: fencePlaceholder(problem), css: null, problem, path: null };
 }
 
 /**
@@ -159,25 +193,27 @@ export function renderFence(request: FenceRequest): FenceResult {
 	if (!('ok' in parsed)) return parsed;
 	const { pointer } = parsed;
 
-	if (request.document === null) {
+	if (request.location === null) {
 		return refuse(
 			`${pointer}: no document to resolve against; ` +
 				`a bcc fence needs the location of the file that holds it.`
 		);
 	}
 
-	const absolute = resolve(request.document, '..', pointer);
-	const result = readCanvas(request.root, relative(request.root.path, absolute));
+	const { root, document } = request.location;
+	const absolute = resolve(document, '..', pointer);
+	const result = readCanvas(root, relative(root.path, absolute));
 	if (!result.ok) {
 		return {
-			html: placeholder(readProblem(result, { detail: false })),
+			html: fencePlaceholder(readProblem(result, { detail: false })),
 			css: null,
 			// The warning channel is a developer's, and the whole sentence is for
 			// them: which field the parser tripped on, what the filesystem said.
-			problem: readProblem(result)
+			problem: readProblem(result),
+			path: absolute
 		};
 	}
 
 	const { markup, css } = renderSheetParts(stampIds(result.file));
-	return { html: markup, css, problem: null };
+	return { html: markup, css, problem: null, path: absolute };
 }
