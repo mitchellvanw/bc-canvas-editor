@@ -3,7 +3,7 @@ name: remark-plugin
 title: "Task: one remark plugin, every unified-based site"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [fence-shape, headless-renderer, fs-seam]
 ---
 
