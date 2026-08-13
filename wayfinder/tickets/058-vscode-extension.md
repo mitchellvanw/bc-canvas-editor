@@ -3,7 +3,7 @@ name: vscode-extension
 title: "Task: the bcc fence in VS Code's markdown preview"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [fence-shape, vscode-preview-spike, headless-renderer, fs-seam]
 ---
 
