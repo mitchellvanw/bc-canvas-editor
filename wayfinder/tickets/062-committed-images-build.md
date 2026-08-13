@@ -3,7 +3,7 @@ name: committed-images-build
 title: "Task: the committed .bcc.svg — the sheet's namespace, the editor's fifth export, four files and the README"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [committed-images, bcc-cli]
 ---
 
