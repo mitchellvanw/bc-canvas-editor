@@ -1,13 +1,18 @@
 /**
  * The canvas root, and the containment rule around it.
  *
- * The server is launched with `--root` (defaulting to the working directory)
- * and every path a tool accepts is turned into an absolute one through
- * `resolve()` before anything touches the filesystem. That check is the
- * security seam of the whole package: the model proposes a path, the server
- * decides whether it is inside the root, and the directory-traversal rule the
- * transport spec puts on servers is honoured here rather than assumed of the
- * caller.
+ * A root is opened once — from the server's `--root`, from a CLI invocation's
+ * working directory, from the workspace folder holding the markdown file a
+ * fence sits in — and every path any caller accepts is turned into an absolute
+ * one through `resolve()` before anything touches the filesystem.
+ *
+ * This is the bound on the walk, not a security seam. It was written as one,
+ * when the server was the only caller and the paths came from a model; the
+ * honest reading is narrower and survives every caller. `findCanvases` needs to
+ * know where to stop, `relative()` needs a base to name paths against, and both
+ * are meaningless without a root. Containment is what makes the root a root.
+ * A caller that wanted the whole disk would open `/` and get it (which is why
+ * that case is tested rather than assumed away).
  *
  * Symlinks are resolved first, so a link that sits inside the root but points
  * out of it is refused like any other escape. Paths that do not exist yet are
@@ -15,14 +20,15 @@
  * to the deepest ancestor that does exist, resolves that, and re-attaches the
  * rest.
  *
- * Filesystem calls are synchronous throughout the server: one canvas file per
- * call, one caller at a time, and the alternative buys nothing but colour.
+ * Filesystem calls are synchronous throughout: one canvas file per call, one
+ * caller at a time, and a fence resolves during a markdown-it renderer rule
+ * that cannot await. The alternative buys nothing but colour.
  */
 
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { realpathSync, statSync } from 'node:fs';
 
-/** A path that resolved outside the root. Never a retry; the model needs a different path. */
+/** A path that resolved outside the root. Never a retry; it takes a different path. */
 export class OutsideRoot extends Error {
 	constructor(
 		readonly input: string,
@@ -30,7 +36,7 @@ export class OutsideRoot extends Error {
 	) {
 		super(
 			`${input}: outside the canvas root. Paths are relative to ${root}, ` +
-				`and the server will not follow one out of it.`
+				`and a path out of it is not followed.`
 		);
 	}
 }
@@ -76,15 +82,21 @@ function inside(path: string, root: string): boolean {
 }
 
 /**
- * Why an otherwise valid root will not be served, or null.
+ * Why an otherwise valid root will not be opened, or null.
  *
- * Only one rule, and it is policy rather than containment — the seam above
+ * Only one rule, and it is policy rather than containment — the rule above
  * holds for `/` like any other directory, and is tested there. Claude Desktop
- * starts a stdio server at the filesystem root, so the default lands on `/`
- * whenever `--root` is left off; serving it is legal and useless, because the
- * first listing would try to walk the whole disk. Refusing costs nothing —
- * nobody keeps a project at `/` — and it fails at launch, where a reader can
- * still act on it, rather than as a listing that never comes back.
+ * starts a stdio server at the filesystem root, so the server's default lands
+ * on `/` whenever `--root` is left off; opening it is legal and useless,
+ * because the first listing would try to walk the whole disk. Refusing costs
+ * nothing — nobody keeps a project at `/` — and it fails at the point of
+ * opening, where a reader can still act on it, rather than as a listing that
+ * never comes back.
+ *
+ * The sentence names `--root` because every caller that can land here spells
+ * the flag that way. A surface with no flag to offer — a fence, which takes
+ * its root from the document rather than an argument — cannot reach `/` in the
+ * first place, since there is no workspace folder at the filesystem root.
  */
 export function whyUnservable(path: string): string | null {
 	if (dirname(path) !== path) return null;

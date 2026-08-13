@@ -14,7 +14,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import { registerReviewPrompt } from './prompt';
 import { registerCanvasResource } from './resource';
-import type { CanvasRoot } from './root';
+import type { CanvasRoot } from '$lib/fs/root';
 import { registerTools } from './tools';
 
 export const SERVER_INFO = { name: 'bc-canvas', version: '0.0.1' } as const;

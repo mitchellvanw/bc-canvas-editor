@@ -3,17 +3,26 @@
  *
  * Both importable forms arrive here — a `.bcc.json` and a `.bcc.html` artifact
  * carrying one embedded — and `parseCanvasImport` is what tells them apart,
- * the same function and the same version gate the editor's Import… uses. The
- * server adds no second opinion about what a Canvas file is; it only adds the
- * two things a filesystem brings with it, a path that might sit outside the
- * root and a file that might not be there.
+ * the same function and the same version gate the editor's Import… uses.
+ * Nothing here holds a second opinion about what a Canvas file is; this module
+ * only adds the two things a filesystem brings with it, a path that might sit
+ * outside the root and a file that might not be there.
+ *
+ * That is the whole of what a caller with a path does: the MCP tools, the
+ * resource, the prompt, `bcc`, and both fence adapters call `readCanvas` and
+ * write no resolution logic of their own.
  *
  * The refusals are a closed set so every caller has to say what it does with
- * each one, and `errors.ts` turns them into the sentences a model reads.
+ * each one. `readProblem` below turns one into the sentence to show — the same
+ * sentence on every surface, because the reader is looking at the same missing
+ * file whether they are a model, a developer at a terminal, or an author with
+ * a broken fence in a preview. What differs is what each surface does *with*
+ * it: `mcp/src/errors.ts` wraps it in an error result that names the tool to
+ * call next; a fence puts it in a placeholder.
  */
 
 import { readFileSync } from 'node:fs';
-import type { CanvasFile } from '$lib/model/canvas';
+import { CANVAS_VERSION, type CanvasFile } from '$lib/model/canvas';
 import { extractEmbeddedCanvas } from '$lib/model/embed';
 import { parseCanvasFile, parseCanvasImport } from '$lib/model/parse';
 import { OutsideRoot, type CanvasRoot } from './root';
@@ -78,4 +87,31 @@ export function readCanvas(root: CanvasRoot, input: string): CanvasRead {
 	// the embed marker is still itself, not whatever that marker precedes.
 	const text = parseCanvasFile(raw).ok ? raw : (extractEmbeddedCanvas(raw) ?? raw);
 	return { ok: true, path, file: parsed.file, text };
+}
+
+/**
+ * Why a read came back empty, in one sentence.
+ *
+ * Every surface needs this sentence somewhere it cannot put a tool result: a
+ * `resources/read` miss and a `prompts/get` miss are JSON-RPC errors rather
+ * than conversation, and a fence has only a placeholder to write into. It is
+ * one sentence rather than four call sites' worth because the four reasons are
+ * a closed set and the reader is looking at the same file either way.
+ *
+ * Path first, always — it is the one thing that identifies which file failed
+ * when several are on screen, and on the fence surfaces it is the only thing
+ * the reader can act on.
+ */
+export function readProblem(result: Extract<CanvasRead, { ok: false }>): string {
+	switch (result.reason) {
+		case 'outside-root':
+			// `OutsideRoot` already names the path and the root it left.
+			return result.detail;
+		case 'unreadable':
+			return `${result.path}: could not be read (${result.detail}).`;
+		case 'newer-version':
+			return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); version ${CANVAS_VERSION} is the newest that can be read here.`;
+		case 'not-canvas':
+			return `${result.path}: ${result.detail ?? 'not a Canvas file.'}`;
+	}
 }

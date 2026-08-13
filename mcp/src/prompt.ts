@@ -25,11 +25,10 @@ import {
 	type McpServer
 } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { readCanvas, readProblem } from '$lib/fs/read';
+import type { CanvasRoot } from '$lib/fs/root';
 import { canvasDigest } from '$lib/model/digest';
 import { canvasUri, catalog } from './catalog';
-import { readProblem } from './errors';
-import { readCanvas } from './read';
-import type { CanvasRoot } from './root';
 
 /**
  * The facilitation body.

@@ -1,7 +1,17 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { blankCanvas, stampIds, type CanvasFile } from '$lib/model/canvas';
+import { parseCanvasFile } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
-import { serializeCanvas, serializeCanvasFile } from '$lib/model/serialize';
+import { canvasBytes, serializeCanvas, serializeCanvasFile } from '$lib/model/serialize';
+
+// The committed example is the only thing that can prove the on-disk bytes:
+// the fixture is a string in the repo, and the trailing newline is exactly the
+// difference between the two.
+const EXAMPLE = fileURLToPath(
+	new URL('../../../examples/order-fulfillment.bcc.json', import.meta.url)
+);
 
 function referenceFile(): CanvasFile {
 	return JSON.parse(REFERENCE_FILE) as CanvasFile;
@@ -119,5 +129,23 @@ describe('serializeCanvasFile', () => {
 			Object.entries(referenceFile()).reverse()
 		) as unknown as CanvasFile;
 		expect(serializeCanvasFile(shuffled)).toBe(serializeCanvasFile(referenceFile()));
+	});
+});
+
+describe('canvasBytes', () => {
+	it('reproduces a committed example byte for byte', () => {
+		const committed = readFileSync(EXAMPLE, 'utf8');
+		const parsed = parseCanvasFile(committed);
+		expect(parsed.ok).toBe(true);
+		if (!parsed.ok) return;
+
+		expect(canvasBytes(parsed.file)).toBe(committed);
+	});
+
+	it('ends with exactly one newline', () => {
+		const parsed = parseCanvasFile(readFileSync(EXAMPLE, 'utf8'));
+		if (!parsed.ok) throw new Error('the example should parse');
+
+		expect(canvasBytes(parsed.file).endsWith('}\n')).toBe(true);
 	});
 });

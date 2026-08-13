@@ -1,7 +1,9 @@
 /**
- * Containment is the security seam of the package, so it is tested the way an
- * attacker would probe it: traversal, absolute paths, and symlinks — the case
- * a string check on `..` misses entirely.
+ * Containment is what makes the root a root, so it is tested the way an
+ * attacker would probe it even though nobody here is one: traversal, absolute
+ * paths, and symlinks — the case a string check on `..` misses entirely. The
+ * probes are the right ones because they are the ways a walk leaves its bound
+ * by accident, which is the only way it happens now.
  */
 
 import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
@@ -86,7 +88,7 @@ describe('resolve', () => {
 
 	it('says which path was refused and where the root is', () => {
 		expect(() => root.resolve('../elsewhere/secrets.txt')).toThrow(
-			`../elsewhere/secrets.txt: outside the canvas root. Paths are relative to ${root.path}, and the server will not follow one out of it.`
+			`../elsewhere/secrets.txt: outside the canvas root. Paths are relative to ${root.path}, and a path out of it is not followed.`
 		);
 	});
 });
@@ -104,8 +106,8 @@ describe('relative', () => {
 /**
  * The one root that already ends in a separator, so `root + sep` is `//` and
  * every containment check silently inverts. `main.ts` refuses to serve it, but
- * containment is the security seam and it must not depend on that: a rule that
- * is wrong for one root is a rule nobody can reason about.
+ * the rule must not depend on that: a rule that is wrong for one root is a rule
+ * nobody can reason about, and `main.ts` is now one caller of several.
  */
 describe('the filesystem root', () => {
 	const slash = openRoot('/');

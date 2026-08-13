@@ -29407,13 +29407,13 @@ function toError(value) {
   return value instanceof Error ? value : new Error(String(value));
 }
 
-// src/root.ts
+// ../src/lib/fs/root.ts
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { realpathSync, statSync } from "node:fs";
 var OutsideRoot = class extends Error {
   constructor(input, root2) {
     super(
-      `${input}: outside the canvas root. Paths are relative to ${root2}, and the server will not follow one out of it.`
+      `${input}: outside the canvas root. Paths are relative to ${root2}, and a path out of it is not followed.`
     );
     this.input = input;
     this.root = root2;
@@ -29469,214 +29469,11 @@ function openRoot(input) {
   };
 }
 
-// ../src/lib/model/sections.ts
-function nonEmpty(value) {
-  return value !== void 0 && value.trim() !== "";
-}
-var SECTIONS = [
-  {
-    key: "name",
-    label: "Name",
-    placeholder: "Name this context",
-    filled: (file2) => nonEmpty(file2.name)
-  },
-  {
-    key: "purpose",
-    label: "Purpose",
-    placeholder: "What does this context exist to do? A few sentences in business language.",
-    filled: (file2) => nonEmpty(file2.purpose)
-  },
-  {
-    key: "strategicClassification",
-    label: "Strategic classification",
-    // No placeholder in SPEC §10: the axes render an em dash until picked,
-    // and their teaching lives in the picker — the vocabularies themselves.
-    filled: (file2) => nonEmpty(file2.strategicClassification.domain) || nonEmpty(file2.strategicClassification.businessModel) || nonEmpty(file2.strategicClassification.evolution)
-  },
-  {
-    key: "domainRoles",
-    label: "Domain roles",
-    placeholder: "+ trait \u2014 how does this context behave?",
-    filled: (file2) => file2.domainRoles.length > 0
-  },
-  {
-    key: "inboundCommunication",
-    label: "Inbound communication",
-    placeholder: "+ collaborator \u2014 who sends this context commands, queries or events?",
-    filled: (file2) => file2.inboundCommunication.length > 0
-  },
-  {
-    key: "ubiquitousLanguage",
-    label: "Ubiquitous language",
-    placeholder: "+ term \u2014 which words mean something precise here?",
-    filled: (file2) => file2.ubiquitousLanguage.length > 0
-  },
-  {
-    key: "businessDecisions",
-    label: "Business decisions",
-    placeholder: "+ decision \u2014 which rules does this context enforce?",
-    filled: (file2) => file2.businessDecisions.length > 0
-  },
-  {
-    key: "outboundCommunication",
-    label: "Outbound communication",
-    placeholder: "+ collaborator \u2014 who consumes what this context emits?",
-    filled: (file2) => file2.outboundCommunication.length > 0
-  },
-  {
-    key: "assumptions",
-    label: "Assumptions",
-    placeholder: "+ assumption \u2014 what are you taking to be true?",
-    filled: (file2) => file2.assumptions.length > 0
-  },
-  {
-    key: "verificationMetrics",
-    label: "Verification metrics",
-    placeholder: "+ metric \u2014 what would verify this design?",
-    filled: (file2) => file2.verificationMetrics.length > 0
-  },
-  {
-    key: "openQuestions",
-    label: "Open questions",
-    placeholder: "+ question \u2014 what's still unresolved?",
-    filled: (file2) => file2.openQuestions.length > 0
-  }
-];
-function question(section) {
-  const placeholder = section.placeholder;
-  if (placeholder === void 0) return void 0;
-  const dash = placeholder.indexOf(" \u2014 ");
-  return placeholder.startsWith("+ ") && dash >= 0 ? placeholder.slice(dash + 3) : placeholder;
-}
-function sectionByKey(key) {
-  const section = SECTIONS.find((candidate) => candidate.key === key);
-  if (!section) throw new Error(`no such section: ${key}`);
-  return section;
-}
-function emptySections(file2) {
-  return SECTIONS.filter((section) => !section.filled(file2)).map((section) => section.label);
-}
-function filledCount(file2) {
-  return SECTIONS.filter((section) => section.filled(file2)).length;
-}
-
-// ../src/lib/model/digest.ts
-function classification(file2) {
-  const { domain: domain2, businessModel, evolution } = file2.strategicClassification;
-  const picked = [
-    ["Domain", domain2],
-    ["Business model", businessModel],
-    ["Evolution", evolution]
-  ].filter(([, value]) => value !== void 0 && value !== "");
-  if (picked.length === 0) return [];
-  return [picked.map(([label, value]) => `${label}: ${value}`).join(" \xB7 ")];
-}
-function message(row) {
-  const detail = row.description === void 0 || row.description === "" ? "" : ` \u2014 ${row.description}`;
-  return `${row.type} ${row.name}${detail}`;
-}
-function relationshipLine(lane2) {
-  const present2 = (end) => end !== void 0 && end !== "";
-  const theirs = lane2.relationship?.theirs;
-  const ours = lane2.relationship?.ours;
-  if (present2(theirs) && present2(ours)) return `Collaborator: ${theirs} \u2192 this context: ${ours}`;
-  if (present2(theirs)) return `Collaborator: ${theirs} \u2192`;
-  if (present2(ours)) return `\u2192 this context: ${ours}`;
-  return void 0;
-}
-function lanes(rows) {
-  return rows.flatMap((lane2, index) => {
-    const kind = lane2.collaborator.kind;
-    const head = `### ${lane2.collaborator.name}${kind === void 0 ? "" : ` \u2014 ${kind}`}`;
-    const relationship = relationshipLine(lane2);
-    const block = relationship === void 0 ? [head] : [head, "", relationship];
-    const messages = lane2.messages.length === 0 ? [] : ["", ...lane2.messages.map(message)];
-    return index === 0 ? [...block, ...messages] : ["", ...block, ...messages];
-  });
-}
-function pair(head, detail) {
-  return detail === void 0 || detail === "" ? head : `${head} \u2014 ${detail}`;
-}
-function body(section, file2) {
-  switch (section.key) {
-    case "name":
-      return [];
-    case "strategicClassification":
-      return classification(file2);
-    case "purpose":
-      return [file2.purpose];
-    case "domainRoles":
-      return [file2.domainRoles.map((role) => role.name).join(", ")];
-    case "inboundCommunication":
-      return lanes(file2.inboundCommunication);
-    case "outboundCommunication":
-      return lanes(file2.outboundCommunication);
-    case "ubiquitousLanguage":
-      return file2.ubiquitousLanguage.map((row) => pair(row.term, row.definition));
-    case "businessDecisions":
-      return file2.businessDecisions.map((row) => pair(row.name, row.description));
-    case "assumptions":
-      return file2.assumptions;
-    case "verificationMetrics":
-      return file2.verificationMetrics;
-    case "openQuestions":
-      return file2.openQuestions;
-  }
-}
-function canvasDigest(file2) {
-  const lines = [`# ${file2.name.trim() === "" ? "Untitled" : file2.name}`];
-  const missing = [];
-  for (const section of SECTIONS) {
-    if (!section.filled(file2)) {
-      missing.push(section.label);
-      continue;
-    }
-    if (section.key === "name") continue;
-    lines.push("", `## ${section.label}`, "", ...body(section, file2));
-  }
-  if (missing.length > 0) lines.push("", `Nothing yet under: ${missing.join(", ")}.`);
-  return `${lines.join("\n")}
-`;
-}
-
-// src/discover.ts
-import { readdirSync } from "node:fs";
-import { join as join2 } from "node:path";
-var SKIPPED = /* @__PURE__ */ new Set(["node_modules", "dist", "build"]);
-function skipped(name) {
-  return name.startsWith(".") || SKIPPED.has(name);
-}
-var EXTENSIONS = [".bcc.json", ".bcc.html"];
-function isCanvasPath(path) {
-  return EXTENSIONS.some((extension) => path.endsWith(extension));
-}
-function findCanvases(root2) {
-  const paths = [];
-  const unreadable = [];
-  function walk(directory) {
-    let entries;
-    try {
-      entries = readdirSync(directory, { withFileTypes: true });
-    } catch {
-      unreadable.push(root2.relative(directory) || ".");
-      return;
-    }
-    for (const entry of entries) {
-      if (entry.isSymbolicLink()) continue;
-      const path = join2(directory, entry.name);
-      if (entry.isDirectory()) {
-        if (!skipped(entry.name)) walk(path);
-      } else if (entry.isFile() && isCanvasPath(entry.name)) {
-        paths.push(root2.relative(path));
-      }
-    }
-  }
-  walk(root2.path);
-  return { paths: paths.sort(), unreadable: unreadable.sort() };
-}
-
-// src/read.ts
+// ../src/lib/fs/read.ts
 import { readFileSync } from "node:fs";
+
+// ../src/lib/model/canvas.ts
+var CANVAS_VERSION = 2;
 
 // ../src/lib/model/embed.ts
 var OPEN = '<script type="application/json" data-canvas-file>';
@@ -29689,9 +29486,6 @@ function extractEmbeddedCanvas(text) {
   if (close < 0) return null;
   return text.slice(start, close).trim();
 }
-
-// ../src/lib/model/canvas.ts
-var CANVAS_VERSION = 2;
 
 // ../src/lib/model/parse.ts
 function notCanvas(detail) {
@@ -29942,7 +29736,7 @@ function parseCanvasImport(text) {
   return direct.detail?.startsWith(NOT_JSON) ? notCanvas(NEITHER_FORM) : direct;
 }
 
-// src/read.ts
+// ../src/lib/fs/read.ts
 function readCanvas(root2, input) {
   let absolute;
   try {
@@ -29971,6 +29765,224 @@ function readCanvas(root2, input) {
   }
   const text = parseCanvasFile(raw).ok ? raw : extractEmbeddedCanvas(raw) ?? raw;
   return { ok: true, path, file: parsed.file, text };
+}
+function readProblem(result) {
+  switch (result.reason) {
+    case "outside-root":
+      return result.detail;
+    case "unreadable":
+      return `${result.path}: could not be read (${result.detail}).`;
+    case "newer-version":
+      return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); version ${CANVAS_VERSION} is the newest that can be read here.`;
+    case "not-canvas":
+      return `${result.path}: ${result.detail ?? "not a Canvas file."}`;
+  }
+}
+
+// ../src/lib/model/sections.ts
+function nonEmpty(value) {
+  return value !== void 0 && value.trim() !== "";
+}
+var SECTIONS = [
+  {
+    key: "name",
+    label: "Name",
+    placeholder: "Name this context",
+    filled: (file2) => nonEmpty(file2.name)
+  },
+  {
+    key: "purpose",
+    label: "Purpose",
+    placeholder: "What does this context exist to do? A few sentences in business language.",
+    filled: (file2) => nonEmpty(file2.purpose)
+  },
+  {
+    key: "strategicClassification",
+    label: "Strategic classification",
+    // No placeholder in SPEC §10: the axes render an em dash until picked,
+    // and their teaching lives in the picker — the vocabularies themselves.
+    filled: (file2) => nonEmpty(file2.strategicClassification.domain) || nonEmpty(file2.strategicClassification.businessModel) || nonEmpty(file2.strategicClassification.evolution)
+  },
+  {
+    key: "domainRoles",
+    label: "Domain roles",
+    placeholder: "+ trait \u2014 how does this context behave?",
+    filled: (file2) => file2.domainRoles.length > 0
+  },
+  {
+    key: "inboundCommunication",
+    label: "Inbound communication",
+    placeholder: "+ collaborator \u2014 who sends this context commands, queries or events?",
+    filled: (file2) => file2.inboundCommunication.length > 0
+  },
+  {
+    key: "ubiquitousLanguage",
+    label: "Ubiquitous language",
+    placeholder: "+ term \u2014 which words mean something precise here?",
+    filled: (file2) => file2.ubiquitousLanguage.length > 0
+  },
+  {
+    key: "businessDecisions",
+    label: "Business decisions",
+    placeholder: "+ decision \u2014 which rules does this context enforce?",
+    filled: (file2) => file2.businessDecisions.length > 0
+  },
+  {
+    key: "outboundCommunication",
+    label: "Outbound communication",
+    placeholder: "+ collaborator \u2014 who consumes what this context emits?",
+    filled: (file2) => file2.outboundCommunication.length > 0
+  },
+  {
+    key: "assumptions",
+    label: "Assumptions",
+    placeholder: "+ assumption \u2014 what are you taking to be true?",
+    filled: (file2) => file2.assumptions.length > 0
+  },
+  {
+    key: "verificationMetrics",
+    label: "Verification metrics",
+    placeholder: "+ metric \u2014 what would verify this design?",
+    filled: (file2) => file2.verificationMetrics.length > 0
+  },
+  {
+    key: "openQuestions",
+    label: "Open questions",
+    placeholder: "+ question \u2014 what's still unresolved?",
+    filled: (file2) => file2.openQuestions.length > 0
+  }
+];
+function question(section) {
+  const placeholder = section.placeholder;
+  if (placeholder === void 0) return void 0;
+  const dash = placeholder.indexOf(" \u2014 ");
+  return placeholder.startsWith("+ ") && dash >= 0 ? placeholder.slice(dash + 3) : placeholder;
+}
+function sectionByKey(key) {
+  const section = SECTIONS.find((candidate) => candidate.key === key);
+  if (!section) throw new Error(`no such section: ${key}`);
+  return section;
+}
+function emptySections(file2) {
+  return SECTIONS.filter((section) => !section.filled(file2)).map((section) => section.label);
+}
+function filledCount(file2) {
+  return SECTIONS.filter((section) => section.filled(file2)).length;
+}
+
+// ../src/lib/model/digest.ts
+function classification(file2) {
+  const { domain: domain2, businessModel, evolution } = file2.strategicClassification;
+  const picked = [
+    ["Domain", domain2],
+    ["Business model", businessModel],
+    ["Evolution", evolution]
+  ].filter(([, value]) => value !== void 0 && value !== "");
+  if (picked.length === 0) return [];
+  return [picked.map(([label, value]) => `${label}: ${value}`).join(" \xB7 ")];
+}
+function message(row) {
+  const detail = row.description === void 0 || row.description === "" ? "" : ` \u2014 ${row.description}`;
+  return `${row.type} ${row.name}${detail}`;
+}
+function relationshipLine(lane2) {
+  const present2 = (end) => end !== void 0 && end !== "";
+  const theirs = lane2.relationship?.theirs;
+  const ours = lane2.relationship?.ours;
+  if (present2(theirs) && present2(ours)) return `Collaborator: ${theirs} \u2192 this context: ${ours}`;
+  if (present2(theirs)) return `Collaborator: ${theirs} \u2192`;
+  if (present2(ours)) return `\u2192 this context: ${ours}`;
+  return void 0;
+}
+function lanes(rows) {
+  return rows.flatMap((lane2, index) => {
+    const kind = lane2.collaborator.kind;
+    const head = `### ${lane2.collaborator.name}${kind === void 0 ? "" : ` \u2014 ${kind}`}`;
+    const relationship = relationshipLine(lane2);
+    const block = relationship === void 0 ? [head] : [head, "", relationship];
+    const messages = lane2.messages.length === 0 ? [] : ["", ...lane2.messages.map(message)];
+    return index === 0 ? [...block, ...messages] : ["", ...block, ...messages];
+  });
+}
+function pair(head, detail) {
+  return detail === void 0 || detail === "" ? head : `${head} \u2014 ${detail}`;
+}
+function body(section, file2) {
+  switch (section.key) {
+    case "name":
+      return [];
+    case "strategicClassification":
+      return classification(file2);
+    case "purpose":
+      return [file2.purpose];
+    case "domainRoles":
+      return [file2.domainRoles.map((role) => role.name).join(", ")];
+    case "inboundCommunication":
+      return lanes(file2.inboundCommunication);
+    case "outboundCommunication":
+      return lanes(file2.outboundCommunication);
+    case "ubiquitousLanguage":
+      return file2.ubiquitousLanguage.map((row) => pair(row.term, row.definition));
+    case "businessDecisions":
+      return file2.businessDecisions.map((row) => pair(row.name, row.description));
+    case "assumptions":
+      return file2.assumptions;
+    case "verificationMetrics":
+      return file2.verificationMetrics;
+    case "openQuestions":
+      return file2.openQuestions;
+  }
+}
+function canvasDigest(file2) {
+  const lines = [`# ${file2.name.trim() === "" ? "Untitled" : file2.name}`];
+  const missing = [];
+  for (const section of SECTIONS) {
+    if (!section.filled(file2)) {
+      missing.push(section.label);
+      continue;
+    }
+    if (section.key === "name") continue;
+    lines.push("", `## ${section.label}`, "", ...body(section, file2));
+  }
+  if (missing.length > 0) lines.push("", `Nothing yet under: ${missing.join(", ")}.`);
+  return `${lines.join("\n")}
+`;
+}
+
+// ../src/lib/fs/discover.ts
+import { readdirSync } from "node:fs";
+import { join as join2 } from "node:path";
+var SKIPPED = /* @__PURE__ */ new Set(["node_modules", "dist", "build"]);
+function skipped(name) {
+  return name.startsWith(".") || SKIPPED.has(name);
+}
+var EXTENSIONS = [".bcc.json", ".bcc.html"];
+function isCanvasPath(path) {
+  return EXTENSIONS.some((extension) => path.endsWith(extension));
+}
+function findCanvases(root2) {
+  const paths = [];
+  const unreadable = [];
+  function walk(directory) {
+    let entries;
+    try {
+      entries = readdirSync(directory, { withFileTypes: true });
+    } catch {
+      unreadable.push(root2.relative(directory) || ".");
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.isSymbolicLink()) continue;
+      const path = join2(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (!skipped(entry.name)) walk(path);
+      } else if (entry.isFile() && isCanvasPath(entry.name)) {
+        paths.push(root2.relative(path));
+      }
+    }
+  }
+  walk(root2.path);
+  return { paths: paths.sort(), unreadable: unreadable.sort() };
 }
 
 // src/catalog.ts
@@ -30021,47 +30033,6 @@ function catalog(root2) {
     unreadable: found.unreadable,
     sections: SECTIONS.map((section) => section.label)
   };
-}
-
-// src/errors.ts
-function refuse(...lines) {
-  const text = lines.filter((line) => line !== "").join(" ");
-  return { content: [{ type: "text", text }], isError: true };
-}
-function readProblem(result) {
-  switch (result.reason) {
-    case "outside-root":
-      return result.detail;
-    case "unreadable":
-      return `${result.path}: could not be read (${result.detail}).`;
-    case "newer-version":
-      return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); this server reads up to version ${CANVAS_VERSION}.`;
-    case "not-canvas":
-      return `${result.path}: ${result.detail ?? "not a Canvas file."}`;
-  }
-}
-function readRefusal(result) {
-  switch (result.reason) {
-    case "outside-root":
-      return refuse(result.detail, "Call bcc_list_canvases to see the canvases it does cover.");
-    case "unreadable":
-      return refuse(
-        `${result.path}: could not be read (${result.detail}).`,
-        "Call bcc_list_canvases for the canvases that are there."
-      );
-    case "newer-version":
-      return refuse(
-        `${result.path}: written by a newer version of BC Canvas (format version ${result.version});`,
-        `this server reads up to version ${CANVAS_VERSION}. Nothing was read, and nothing was changed.`
-      );
-    case "not-canvas":
-      return refuse(
-        `${result.path}: not a Canvas file.`,
-        result.detail ?? "",
-        "A Canvas file is the eleven-section document bcc_write_canvas takes;",
-        "call bcc_explain for what belongs in each section."
-      );
-  }
 }
 
 // src/prompt.ts
@@ -30166,6 +30137,94 @@ function registerCanvasResource(server, root2) {
 // src/tools.ts
 import { existsSync, mkdirSync, statSync as statSync2 } from "node:fs";
 import { dirname as dirname3 } from "node:path";
+
+// ../src/lib/fs/write.ts
+import { renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname as dirname2, join as join3 } from "node:path";
+var sequence = 0;
+function writeAtomic(path, text) {
+  const temporary = join3(dirname2(path), `.${process.pid}-${sequence++}.bcc-tmp`);
+  try {
+    writeFileSync(temporary, text, "utf8");
+    renameSync(temporary, path);
+  } catch (error51) {
+    rmSync(temporary, { force: true });
+    throw error51;
+  }
+}
+
+// ../src/lib/model/serialize.ts
+function present(value) {
+  return value !== void 0 && value !== "";
+}
+function fileMessage(message3) {
+  return {
+    type: message3.type,
+    name: message3.name,
+    ...present(message3.description) && { description: message3.description }
+  };
+}
+function fileCollaborator(collaborator) {
+  return {
+    name: collaborator.name,
+    ...collaborator.kind !== void 0 && { kind: collaborator.kind }
+  };
+}
+function fileRelationship(relationship) {
+  if (relationship === void 0) return {};
+  const kept = {
+    ...present(relationship.theirs) && { theirs: relationship.theirs },
+    ...present(relationship.ours) && { ours: relationship.ours }
+  };
+  return Object.keys(kept).length === 0 ? {} : { relationship: kept };
+}
+function fileLane(lane2) {
+  return {
+    collaborator: fileCollaborator(lane2.collaborator),
+    ...fileRelationship(lane2.relationship),
+    messages: lane2.messages.map(fileMessage)
+  };
+}
+function fileClassification(sc) {
+  return {
+    ...present(sc.domain) && { domain: sc.domain },
+    ...present(sc.businessModel) && { businessModel: sc.businessModel },
+    ...present(sc.evolution) && { evolution: sc.evolution }
+  };
+}
+function toCanvasFile(doc) {
+  return {
+    version: doc.version,
+    name: doc.name,
+    purpose: doc.purpose,
+    strategicClassification: fileClassification(doc.strategicClassification),
+    domainRoles: doc.domainRoles.map((role) => ({ name: role.name })),
+    inboundCommunication: doc.inboundCommunication.map(fileLane),
+    ubiquitousLanguage: doc.ubiquitousLanguage.map(
+      (row) => ({
+        term: row.term,
+        ...present(row.definition) && { definition: row.definition }
+      })
+    ),
+    businessDecisions: doc.businessDecisions.map(
+      (row) => ({
+        name: row.name,
+        ...present(row.description) && { description: row.description }
+      })
+    ),
+    outboundCommunication: doc.outboundCommunication.map(fileLane),
+    assumptions: [...doc.assumptions],
+    verificationMetrics: [...doc.verificationMetrics],
+    openQuestions: [...doc.openQuestions]
+  };
+}
+function serializeCanvasFile(file2) {
+  return JSON.stringify(toCanvasFile(file2), null, 2).replaceAll("<", "\\u003c");
+}
+function canvasBytes(file2) {
+  return `${serializeCanvasFile(file2)}
+`;
+}
 
 // ../src/lib/editor/vocab.ts
 var PICK_OPTIONS = {
@@ -30330,6 +30389,35 @@ function customValueNotes(file2) {
     ...relationshipNotes(file2.outboundCommunication)
   ];
   return [...new Set(notes)];
+}
+
+// src/errors.ts
+function refuse(...lines) {
+  const text = lines.filter((line) => line !== "").join(" ");
+  return { content: [{ type: "text", text }], isError: true };
+}
+function readRefusal(result) {
+  switch (result.reason) {
+    case "outside-root":
+      return refuse(result.detail, "Call bcc_list_canvases to see the canvases it does cover.");
+    case "unreadable":
+      return refuse(
+        `${result.path}: could not be read (${result.detail}).`,
+        "Call bcc_list_canvases for the canvases that are there."
+      );
+    case "newer-version":
+      return refuse(
+        `${result.path}: written by a newer version of BC Canvas (format version ${result.version});`,
+        `this server reads up to version ${CANVAS_VERSION}. Nothing was read, and nothing was changed.`
+      );
+    case "not-canvas":
+      return refuse(
+        `${result.path}: not a Canvas file.`,
+        result.detail ?? "",
+        "A Canvas file is the eleven-section document bcc_write_canvas takes;",
+        "call bcc_explain for what belongs in each section."
+      );
+  }
 }
 
 // src/explain.ts
@@ -30542,96 +30630,6 @@ var WRITE_INPUT = external_exports.object({
     "The whole canvas. Every section is required; a section with nothing in it is an empty array or an empty string, and the result names which ones came out that way."
   )
 });
-
-// src/write.ts
-import { renameSync, rmSync, writeFileSync } from "node:fs";
-import { dirname as dirname2, join as join3 } from "node:path";
-
-// ../src/lib/model/serialize.ts
-function present(value) {
-  return value !== void 0 && value !== "";
-}
-function fileMessage(message3) {
-  return {
-    type: message3.type,
-    name: message3.name,
-    ...present(message3.description) && { description: message3.description }
-  };
-}
-function fileCollaborator(collaborator) {
-  return {
-    name: collaborator.name,
-    ...collaborator.kind !== void 0 && { kind: collaborator.kind }
-  };
-}
-function fileRelationship(relationship) {
-  if (relationship === void 0) return {};
-  const kept = {
-    ...present(relationship.theirs) && { theirs: relationship.theirs },
-    ...present(relationship.ours) && { ours: relationship.ours }
-  };
-  return Object.keys(kept).length === 0 ? {} : { relationship: kept };
-}
-function fileLane(lane2) {
-  return {
-    collaborator: fileCollaborator(lane2.collaborator),
-    ...fileRelationship(lane2.relationship),
-    messages: lane2.messages.map(fileMessage)
-  };
-}
-function fileClassification(sc) {
-  return {
-    ...present(sc.domain) && { domain: sc.domain },
-    ...present(sc.businessModel) && { businessModel: sc.businessModel },
-    ...present(sc.evolution) && { evolution: sc.evolution }
-  };
-}
-function toCanvasFile(doc) {
-  return {
-    version: doc.version,
-    name: doc.name,
-    purpose: doc.purpose,
-    strategicClassification: fileClassification(doc.strategicClassification),
-    domainRoles: doc.domainRoles.map((role) => ({ name: role.name })),
-    inboundCommunication: doc.inboundCommunication.map(fileLane),
-    ubiquitousLanguage: doc.ubiquitousLanguage.map(
-      (row) => ({
-        term: row.term,
-        ...present(row.definition) && { definition: row.definition }
-      })
-    ),
-    businessDecisions: doc.businessDecisions.map(
-      (row) => ({
-        name: row.name,
-        ...present(row.description) && { description: row.description }
-      })
-    ),
-    outboundCommunication: doc.outboundCommunication.map(fileLane),
-    assumptions: [...doc.assumptions],
-    verificationMetrics: [...doc.verificationMetrics],
-    openQuestions: [...doc.openQuestions]
-  };
-}
-function serializeCanvasFile(file2) {
-  return JSON.stringify(toCanvasFile(file2), null, 2).replaceAll("<", "\\u003c");
-}
-
-// src/write.ts
-function canvasBytes(file2) {
-  return `${serializeCanvasFile(file2)}
-`;
-}
-var sequence = 0;
-function writeAtomic(path, text) {
-  const temporary = join3(dirname2(path), `.${process.pid}-${sequence++}.bcc-tmp`);
-  try {
-    writeFileSync(temporary, text, "utf8");
-    renameSync(temporary, path);
-  } catch (error51) {
-    rmSync(temporary, { force: true });
-    throw error51;
-  }
-}
 
 // src/tools.ts
 var CANVAS_EXTENSION = ".bcc.json";

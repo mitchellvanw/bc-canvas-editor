@@ -104,9 +104,10 @@ export function toCanvasFile(doc: CanvasFile): CanvasFile {
 }
 
 /**
- * The bytes, from a Canvas file. The MCP server holds one of these — it writes
- * what `parseCanvasFile` handed back, never a runtime document — so it needs
- * the same canonical output the editor exports, one step further in.
+ * The bytes, from a Canvas file. The MCP server and `bcc` both hold one of
+ * these — they write what `parseCanvasFile` handed back, never a runtime
+ * document — so they need the same canonical output the editor exports, one
+ * step further in.
  */
 export function serializeCanvasFile(file: CanvasFile): string {
 	return JSON.stringify(toCanvasFile(file), null, 2).replaceAll('<', '\\u003c');
@@ -114,4 +115,17 @@ export function serializeCanvasFile(file: CanvasFile): string {
 
 export function serializeCanvas(doc: CanvasDoc): string {
 	return serializeCanvasFile(doc);
+}
+
+/**
+ * What a `.bcc.json` looks like on disk, byte for byte: the above plus the
+ * trailing newline the committed `examples/*.bcc.json` carry (SPEC §3.5).
+ * These files are meant to be read in a diff, and a file without a final
+ * newline is a file every tool downstream complains about.
+ *
+ * It lives here rather than beside the write, because the newline is part of
+ * what the file format is — the same reason it is what `bcc fmt` is, whole.
+ */
+export function canvasBytes(file: CanvasFile): string {
+	return `${serializeCanvasFile(file)}\n`;
 }

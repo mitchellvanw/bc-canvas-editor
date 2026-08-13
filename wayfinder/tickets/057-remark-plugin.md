@@ -4,7 +4,7 @@ title: "Task: one remark plugin, every unified-based site"
 labels: [wayfinder:task]
 status: open
 assignee:
-blocked-by: [fence-shape, headless-renderer]
+blocked-by: [fence-shape, headless-renderer, fs-seam]
 ---
 
 ## Question

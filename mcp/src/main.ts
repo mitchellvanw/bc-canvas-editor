@@ -3,7 +3,7 @@
 import { fail } from './stderr';
 
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
-import { openRoot, whyUnservable, type CanvasRoot } from './root';
+import { openRoot, whyUnservable, type CanvasRoot } from '$lib/fs/root';
 import { buildServer } from './server';
 
 const USAGE = 'usage: bc-canvas-mcp [--root <directory>]';

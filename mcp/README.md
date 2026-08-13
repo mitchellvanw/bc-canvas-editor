@@ -100,7 +100,9 @@ npm run build     # refresh dist/server.js after changing src/
 
 `dist/server.js` is committed, because a plugin install copies files as they sit in the repo and runs no build step. It inlines everything but Node itself. The suite diffs the committed bytes against a fresh build, so a bundle left stale after a source change fails the tests instead of shipping.
 
-The server reuses `src/lib/model/*` from the app unchanged, through a `$lib/*` path mapping. That is deliberate: one parser and one serializer decide what a Canvas file is, so the bytes this server writes open in the editor and the bytes the editor exports read here.
+The server reuses `src/lib/model/*` and `src/lib/fs/*` from the app unchanged, through a `$lib/*` path mapping. That is deliberate: one parser and one serializer decide what a Canvas file is, so the bytes this server writes open in the editor and the bytes the editor exports read here. `src/lib/fs/*` is the same story one layer out — the root and its containment rule, the walk that finds canvases, reading one through the parser, and the atomic write — so that a path means the same thing to everything that reads a canvas off disk, not just to this server.
+
+Only `src/` is shared, and only in that direction: nothing in the app imports out of `mcp/`.
 
 ## License & attribution
 

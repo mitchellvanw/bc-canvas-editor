@@ -19,11 +19,10 @@
  */
 
 import { ResourceTemplate, type McpServer } from '@modelcontextprotocol/server';
+import { readCanvas, readProblem } from '$lib/fs/read';
+import type { CanvasRoot } from '$lib/fs/root';
 import { canvasDigest } from '$lib/model/digest';
 import { canvasUri, catalog, CANVAS_URI_TEMPLATE, pathFromUri } from './catalog';
-import { readProblem } from './errors';
-import { readCanvas } from './read';
-import type { CanvasRoot } from './root';
 
 export function registerCanvasResource(server: McpServer, root: CanvasRoot): void {
 	server.registerResource(

@@ -1,8 +1,9 @@
 /**
- * Finding the canvases under the root — every tool starts here, whether it is
- * listing them, offering completions, or checking that a path names one of
- * ours. Both importable forms count: `.bcc.json` files and the `.bcc.html`
- * artifacts that carry one embedded.
+ * Finding the canvases under the root — the server's tools start here, whether
+ * they are listing them, offering completions, or checking that a path names
+ * one of ours, and so does every `bcc` subcommand that takes no path. Both
+ * importable forms count: `.bcc.json` files and the `.bcc.html` artifacts that
+ * carry one embedded.
  *
  * Hidden directories — any name starting with a dot — and generated or
  * vendored trees are skipped outright: a canvas someone means to keep never
@@ -12,12 +13,13 @@
  * is how a walk leaves it or loops forever.
  *
  * A directory the process cannot open stops that branch and nothing else. The
- * walk covers a root the server did not choose — a host may hand it one far
- * wider than a checkout — and somewhere under a wide enough root there is
- * always a directory the OS keeps to itself. Letting one of those throw would
- * lose every canvas the walk had already found, in the tool whose description
- * tells the model to start here. They are named rather than swallowed: a
- * listing that quietly covers less than it claims is worse than a short one.
+ * walk covers a root the walker did not choose — an MCP host may hand the
+ * server one far wider than a checkout, and a `bcc` invocation inherits
+ * whatever directory it was run from — and somewhere under a wide enough root
+ * there is always a directory the OS keeps to itself. Letting one of those
+ * throw would lose every canvas the walk had already found, in the one step
+ * everything else starts from. They are named rather than swallowed: a listing
+ * that quietly covers less than it claims is worse than a short one.
  */
 
 import { readdirSync } from 'node:fs';

@@ -14,7 +14,7 @@
 
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { CANVAS_VERSION } from '$lib/model/canvas';
-import type { CanvasRead } from './read';
+import type { CanvasRead } from '$lib/fs/read';
 
 /** An error result: one sentence per line, no JSON envelope to unwrap. */
 export function refuse(...lines: string[]): CallToolResult {
@@ -23,28 +23,15 @@ export function refuse(...lines: string[]): CallToolResult {
 }
 
 /**
- * Why a read came back empty, in one sentence.
+ * What to say about a read that did not come back with a canvas.
  *
- * The resource and the prompt both have to say this without a tool result to
- * put it in — a `resources/read` miss and a `prompts/get` miss are JSON-RPC
- * errors, not conversation — so the sentence lives here rather than being
- * written out once per call site.
+ * The sentence itself is `readProblem` in `$lib/fs/read`, shared with every
+ * other surface that reads a canvas off disk. What is server-shaped, and stays
+ * here, is the second half of each refusal: the tool that gets the model out of
+ * the hole. That is why these are written out rather than composed from
+ * `readProblem` — `not-canvas` reorders it around the explanation, and
+ * `newer-version` adds the thing only a *write* surface can promise.
  */
-export function readProblem(result: Extract<CanvasRead, { ok: false }>): string {
-	switch (result.reason) {
-		case 'outside-root':
-			// `OutsideRoot` already names the path and the root it left.
-			return result.detail;
-		case 'unreadable':
-			return `${result.path}: could not be read (${result.detail}).`;
-		case 'newer-version':
-			return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); this server reads up to version ${CANVAS_VERSION}.`;
-		case 'not-canvas':
-			return `${result.path}: ${result.detail ?? 'not a Canvas file.'}`;
-	}
-}
-
-/** What to say about a read that did not come back with a canvas. */
 export function readRefusal(result: Extract<CanvasRead, { ok: false }>): CallToolResult {
 	switch (result.reason) {
 		case 'outside-root':

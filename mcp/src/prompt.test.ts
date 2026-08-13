@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/client';
 import { InMemoryTransport } from '@modelcontextprotocol/server';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { openRoot } from './root';
+import { openRoot } from '$lib/fs/root';
 import { buildServer } from './server';
 
 const EXAMPLES = fileURLToPath(new URL('../../examples/', import.meta.url));
