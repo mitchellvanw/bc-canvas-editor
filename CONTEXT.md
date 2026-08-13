@@ -24,7 +24,7 @@ Glossary for the bounded context canvas editor. The app's own domain — not the
 
 **Fence** — a fenced code block in someone else's markdown file, marked `bcc`, holding one path to a Canvas file. Where the file is built or previewed, the Fence is replaced by the Sheet; everywhere else the path is what a reader sees, which is why the Fence holds a pointer rather than a canvas. It is read-only and has no options: it resolves the path relative to the markdown file that holds it, draws a Render's bare fragment, and where it cannot, puts a visible placeholder saying why in the same place. An **adapter** is one host's share of that — a remark plugin, a markdown-it rule — and holds nothing of the contract itself.
 
-**Artifact** — a read-only export of a Canvas for sharing: a self-contained single-file HTML render, or a PNG. An Artifact is read-only as a document — it is never edited in place. The HTML Artifact carries the Canvas file embedded within it and can be imported back; the PNG is presentation only. The HTML Artifact carries all three Views, pre-rendered into the file so none of them depends on script to be readable; the PNG is the Sheet only.
+**Artifact** — a read-only export of a Canvas for sharing: a self-contained single-file HTML render, a PNG, or an SVG. An Artifact is read-only as a document — it is never edited in place. The HTML Artifact carries the Canvas file embedded within it and can be imported back; the two images are presentation only. The HTML Artifact carries all three Views, pre-rendered into the file so none of them depends on script to be readable; the images are the Sheet only. The SVG is the one meant to be **committed** beside its Canvas file, where a markdown host that will never draw a Fence can still point an `<img>` at it; a check re-renders it and compares the bytes, so an Artifact left behind by its Canvas is caught rather than believed.
 
 **Canvas file** — the portable, re-importable serialization of a Canvas (JSON; schema owned by this project, versioned). The durable format; localStorage autosave is only a safety net.
 
@@ -32,7 +32,7 @@ Glossary for the bounded context canvas editor. The app's own domain — not the
 
 **Commit** — one discrete accepted change to the Canvas: a field edit accepted on blur, or a single structural action (add, remove, reorder, pick). The unit of undo/redo and of autosave.
 
-**Unexported changes** — the Canvas has changed since it was last carried out of the browser in a re-importable form: cleared by Canvas-file export/import and by HTML-Artifact export/import, never by the lossy exports — PNG and Markdown. The only dirtiness that can cost the user work.
+**Unexported changes** — the Canvas has changed since it was last carried out of the browser in a re-importable form: cleared by Canvas-file export/import and by HTML-Artifact export/import, never by the lossy exports — PNG, SVG and Markdown. The only dirtiness that can cost the user work.
 
 **Canvas root** — the one directory the MCP server may read and write (`--root`, defaulting to where it was launched). Every path a tool accepts is resolved inside it before anything touches the filesystem, symlinks resolved first; there is no second root, and nothing outside it exists as far as the server is concerned.
 

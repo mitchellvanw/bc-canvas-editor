@@ -13,7 +13,7 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 - WYSIWYG inline editing of one Bounded Context Canvas, V5 canonical layout.
 - **Three Views of that one canvas** (§6): the Sheet, the Canvas file's JSON — editable, applied explicitly — and a read-only Markdown rendering.
 - Import/export of the versioned Canvas file (`.bcc.json`).
-- Export of a self-contained, re-importable HTML artifact (`.bcc.html`), a 2x PNG (`.bcc.png`), and the Markdown rendering (`.bcc.md`) — one-way, never an import.
+- Export of a self-contained, re-importable HTML artifact (`.bcc.html`), a 2x PNG (`.bcc.png`), an SVG image (`.bcc.svg`, §9.3), and the Markdown rendering (`.bcc.md`) — the last three one-way, never an import.
 - Autosave to localStorage as a safety net; single linear undo/redo.
 - Full keyboard operability of the editor; WCAG AA for the HTML artifact.
 - Four bundled example canvases, opened from the chrome through the import path (§3.5, §10).
@@ -105,7 +105,9 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
 
 ### 3.4 File naming
 
-Slugified context name as stem, family-signaling extensions: `<slug>.bcc.json` / `<slug>.bcc.html` / `<slug>.bcc.png` / `<slug>.bcc.md` (e.g. `order-fulfillment.bcc.json`). Unnamed canvas falls back to `bounded-context-canvas`. No date stamps. The `.bcc.md` file is the Markdown View's bytes exactly (§6), from the one renderer, delivered as a Blob download like the others — and it is the one member of the family that never comes back in (§1).
+Slugified context name as stem, family-signaling extensions: `<slug>.bcc.json` / `<slug>.bcc.html` / `<slug>.bcc.png` / `<slug>.bcc.svg` / `<slug>.bcc.md` (e.g. `order-fulfillment.bcc.json`). Unnamed canvas falls back to `bounded-context-canvas`. No date stamps. The `.bcc.md` file is the Markdown View's bytes exactly (§6), from the one renderer, delivered as a Blob download like the others — and with the two images it is a member of the family that never comes back in (§1).
+
+`bcc` (§1) names a rendered file differently, and deliberately: it takes the **stem of the canvas file on disk** (`orders.bcc.json` → `orders.bcc.svg`), never a slug of the context name inside it. A committed image has to be findable from the path of the canvas beside it — that is what makes §9.3's staleness check possible — and renaming the context inside a file would otherwise move the image out from under it.
 
 ### 3.5 Bundled examples
 
@@ -114,6 +116,7 @@ Four curated example canvases — Order Fulfillment (core, every section filled)
 - The committed `examples/*.bcc.json` files are the **single source**: serializer-canonical bytes plus a trailing newline, bundled into the app as raw text and linked from the README as plain downloads. Nothing is duplicated in `src/`.
 - Opening one goes through the **same parse path as any import** — version check and migrations included — so a schema bump reaches the examples through its migration; a pinning test (`src/lib/chrome/examples.test.ts`) holds every file byte-exact through that path at the current version.
 - The chooser itself is chrome (§10); its entry one-liners are app copy, never file content.
+- Each canvas has a committed **`.bcc.svg`** beside it (§9.3), rendered by `bcc`, one of which the README draws. They are the project's own first use of a committed image, so the staleness check runs over them in the suite: `bcc check --root examples` re-renders each and compares the bytes.
 
 ## 4. Curated vocabularies
 
@@ -275,7 +278,7 @@ Winner of the empty-state prototype; primary source `prototype/empty-state/1-pla
 
 Full decision record: `wayfinder/tickets/010-keyboard-a11y.md`.
 
-**Ambition:** the editor commits to **full keyboard operability** — every pointer action has a keyboard path — with sound roles/labels/announcements, but makes **no formal WCAG claim** for v1. The **HTML artifact commits to WCAG AA**. PNG is exempt (presentation-only).
+**Ambition:** the editor commits to **full keyboard operability** — every pointer action has a keyboard path — with sound roles/labels/announcements, but makes **no formal WCAG claim** for v1. The **HTML artifact commits to WCAG AA**. The two images are exempt (presentation-only) — an SVG drawn through `<img>` is a picture like a PNG, and the `alt` text beside it is the document's job, not the file's.
 
 ### 8.1 Tab order
 
@@ -316,9 +319,9 @@ Real text throughout; heading hierarchy (canvas name h1, sections h2, collaborat
 
 Full decision record: `wayfinder/tickets/007-artifact-design.md`.
 
-**Render source.** One shared read-only `CanvasSheet` Svelte component is the canonical visual truth, compiled two ways from the one source: a **headless server compile** (`src/lib/render/`, built into a committed module — full decision record `wayfinder/tickets/050-renderer-shape.md`) that draws the sheet in plain Node with no browser, and the live **client mount** in a hidden container that the PNG rasterizes. The HTML artifact is one container over the headless renderer, which is what makes the sheet an editor exports and the sheet `bcc render` writes one function called twice rather than two outputs a test compares. Editor and artifacts can never drift visually; the two artifacts are pixel-identical. Never serialize the live editor DOM — affordances, contenteditable spans and placeholders must not leak in.
+**Render source.** One shared read-only `CanvasSheet` Svelte component is the canonical visual truth, compiled two ways from the one source: a **headless server compile** (`src/lib/render/`, built into a committed module — full decision record `wayfinder/tickets/050-renderer-shape.md`) that draws the sheet in plain Node with no browser, and the live **client mount** in a hidden container that the PNG rasterizes. The HTML artifact is one container over the headless renderer, which is what makes the sheet an editor exports and the sheet `bcc render` writes one function called twice rather than two outputs a test compares. Editor and artifacts can never drift visually; the artifacts are pixel-identical. Never serialize the live editor DOM — affordances, contenteditable spans and placeholders must not leak in.
 
-**Shared content rules.** Both artifacts carry the footer legend + attribution (inside the PNG capture region, so the credit is in the pixels). Empty sections render as their sheet with the section label and an empty body — no hints, no placeholders.
+**Shared content rules.** Every artifact carries the footer legend + attribution (inside the PNG capture region, so the credit is in the pixels). Empty sections render as their sheet with the section label and an empty body — no hints, no placeholders.
 
 ### 9.1 HTML artifact (`.bcc.html`)
 
@@ -340,6 +343,21 @@ Full decision record: `wayfinder/tickets/007-artifact-design.md`.
 - Region: the offscreen artifact render from title block through footer, on its cream paper ground with a fixed margin, at the fixed ~1440px desktop layout width regardless of window size. App chrome never appears.
 - `scale: 2`, clamped only if iOS canvas pixel limits force it.
 
+### 9.3 SVG artifact (`.bcc.svg`)
+
+The sheet as one self-contained image a markdown file can point an `<img>` at — which is what a canvas committed in a repo needs, because no markdown host outside this project's own adapters draws a `bcc` fence: GitHub's renderer takes no plugins and its sanitizer drops inline `<svg>` whole, so a committed image is not a compromise reached after trying — it is the only surface that exists there. Full decision record: `wayfinder/tickets/049-github-svg-probe.md`, `wayfinder/tickets/056-committed-images.md`.
+
+- **The same HTML, wrapped.** A `foreignObject` carrying the markup the headless renderer already emits — not a second emitter drawing native `<text>`, which would be exactly the visual drift §9 exists to rule out.
+- **Fixed size, and the frame is not optional.** The sheet lays out in the §9.2 page frame at the fixed ~1440px width, cream ground to the edge. The image declares its height, and a `foreignObject` clips rather than growing, so the height and the frame together are the contract.
+- **A browser measures; Node reproduces.** Nothing headless can measure a height. The editor has one for free (`getBoundingClientRect` on the offscreen mount) and `bcc render --svg` drives an already-installed Chrome for it, with `--height` as the escape hatch. Everything after that — including the check below — runs in plain Node.
+- **Staleness is a re-render and a byte diff.** `bcc check` parses the height out of the committed file, re-renders at it, and compares the bytes; an absent image is silent, and a file whose height cannot be read is a refusal in its own right rather than "stale". The declared height is only ever used to *reproduce*, never trusted: clipping arises from content growth, and content growth fails the diff first. This is the property that keeps SVG ahead of PNG for a committed image — a PNG's check could never be anything but a rasterization.
+- **Fonts are embedded, and everything else is refused.** Drawn through `<img>` a browser sandboxes the document: no network, no scripts, and every `data:` URI route to an image (`background-image`, `<img>`, `content:`) renders nothing. Base64 WOFF2 `@font-face` rules are the one external-resource route that works, which is why the file is ~200 KB. In a repo that cost is largely recovered by delta compression — the font payload is byte-identical across canvases.
+- **`xmlns` is load-bearing twice.** The root's stays on `http:`, or github.com's blob view re-serializes the file. And every `<svg>` inside the `foreignObject` declares its own: the content there is XHTML, so an undeclared `<svg>` inherits XHTML and is not a drawing — the collaborator-kind glyphs and the footer legend keys silently vanish. `render.test.ts` guards both, because nothing on screen ever shows what either attribute is for.
+- **XHTML-shaped, or it does not draw at all.** An SVG must be well-formed XML. Svelte's server output satisfies this by construction rather than by promise, so one unclosed void element in the sheet would stop every committed image rendering, silently, everywhere; `render.test.ts` guards the shape.
+- **Credit:** the same ddd-crew CC BY 4.0 comment `.bcc.html` carries, above the root element, plus the attribution line in the sheet's own footer.
+- **One-way.** Import… never takes it: an image carries no Canvas file, so like PNG it leaves Unexported changes standing (§6.1).
+- **Opened directly, the fonts are blocked, and this is not a bug.** A raw file URL is a top-level document under `default-src 'none'`, which forbids the `data:` font loads; the sheet falls back to system faces and reflows. Through an `<img>` — the way it is meant to be used, and the way a README draws it — they load.
+
 ## 10. UI copy — final strings
 
 Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documentary, matching the quiet sheet.
@@ -353,7 +371,7 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
   - **Notifications** — *Delivers order updates to customers on their preferred channel.*
   - **Appointment Scheduling** — *Books patients into clinic slots and keeps no-shows down.*
   - **Royalty Distribution** — *Splits streaming revenue among rights holders. Captured mid-workshop.* (the trailing flag marks the deliberately half-finished canvas)
-- **Export** menu: **Canvas file (.bcc.json)** · **HTML artifact (.bcc.html)** · **PNG image (2x)** · **Markdown (.bcc.md)**. Markdown is last, beside PNG rather than beside the Canvas file: the first two leave in a form Import… takes back and these two don't, and this menu is the only place a reader sees all four together. The entry names the format and nothing else — the format's own name, the same word the View's tab carries, promises no round trip; a noun of its own ("summary", "rendering") would either be untrue or explain the design.
+- **Export** menu: **Canvas file (.bcc.json)** · **HTML artifact (.bcc.html)** · **PNG image (2x)** · **SVG image** · **Markdown (.bcc.md)**. Markdown is last, beside the two images rather than beside the Canvas file: the first two leave in a form Import… takes back and the last three don't, and this menu is the only place a reader sees them all together. **SVG image** takes the shape of the entry above it and drops the parenthesis: PNG's `(2x)` is a fact a reader cannot see anywhere else, and there is no equivalent fact here — an SVG has no scale, and `(.bcc.svg)` would only repeat the word beside it. The entry names the format and nothing else — the format's own name, the same word the View's tab carries, promises no round trip; a noun of its own ("summary", "rendering") would either be untrue or explain the design.
 - **New canvas**.
 - Undo/Redo with shortcut in tooltip: `Undo (⌘Z)` / `Redo (⇧⌘Z)`.
 - **Reference** at the far end of the chrome, tooltip `Reference (⌘/)` (§12).

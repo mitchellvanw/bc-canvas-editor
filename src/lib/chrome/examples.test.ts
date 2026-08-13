@@ -69,6 +69,18 @@ describe('the committed example files (SPEC §3.5)', () => {
 		expect(fromRoster.toSorted()).toEqual(onDisk.toSorted());
 	});
 
+	it('carries a committed image beside every canvas (ticket 062)', () => {
+		// Whether an image is *current* is `bcc check`'s answer, and the suite
+		// asks it in cli/src/bcc.test.ts. This asks the other half: a fifth
+		// example arriving with no image beside it would render as a broken
+		// picture in whatever markdown pointed at it, and a comparison that only
+		// ever looks at files that exist would never notice.
+		const images = readdirSync(EXAMPLES_DIR).filter((f) => f.endsWith('.bcc.svg'));
+		expect(images.toSorted()).toEqual(
+			EXAMPLES.map((entry) => exportFileName(entry.name, 'svg')).toSorted()
+		);
+	});
+
 	it.each(EXAMPLES.map((entry) => [entry.name, entry] as const))(
 		'pins %s byte-exactly through the real import path at version %d'.replace(
 			'%d',

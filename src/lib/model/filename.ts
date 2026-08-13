@@ -7,7 +7,7 @@
  * at every place that switches over the set.
  */
 
-export type ExportKind = 'json' | 'html' | 'png' | 'md';
+export type ExportKind = 'json' | 'html' | 'png' | 'md' | 'svg';
 
 function slugify(name: string): string {
 	return name

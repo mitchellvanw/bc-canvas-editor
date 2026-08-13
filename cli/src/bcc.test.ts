@@ -142,7 +142,11 @@ describe('bcc ls', () => {
 });
 
 describe('bcc check', () => {
-	it('accepts every committed example, through the parser the editor imports with', () => {
+	it('accepts every committed example and every image beside one', () => {
+		// This is the repo's staleness guard for `examples/*.bcc.svg` (ticket
+		// 062), and deliberately not a second implementation of one: an image
+		// that no longer reproduces from the canvas beside it fails the suite
+		// here, through the same comparison anyone else's `bcc check` runs.
 		const run = spawnSync(process.execPath, [BCC, 'check', '--root', path.join(repo, 'examples')], {
 			cwd: repo,
 			encoding: 'utf8'
@@ -150,6 +154,7 @@ describe('bcc check', () => {
 		expect(run.stderr).toBe('');
 		expect(run.status).toBe(0);
 		expect(run.stdout).toContain('4 canvases check out.');
+		expect(run.stdout).toContain('4 images match the canvas beside them.');
 	});
 
 	it('migrates a version-1 file rather than refusing it', () => {

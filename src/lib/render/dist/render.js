@@ -1810,7 +1810,7 @@ function newId() {
 //#endregion
 //#region src/lib/sheet/CanvasSheet.svelte
 function kindIcon($$renderer, kind, size) {
-	$$renderer.push(`<svg${attr_class(clsx(size === "lane" ? "kind__svg" : "key__svg"))} viewBox="0 0 16 16" fill="none" stroke="currentColor"${attr("stroke-width", size === "lane" ? 1.3 : 1.4)} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${html(KIND_META[kind].icon)}</svg>`);
+	$$renderer.push(`<svg xmlns="http://www.w3.org/2000/svg"${attr_class(clsx(size === "lane" ? "kind__svg" : "key__svg"))} viewBox="0 0 16 16" fill="none" stroke="currentColor"${attr("stroke-width", size === "lane" ? 1.3 : 1.4)} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${html(KIND_META[kind].icon)}</svg>`);
 }
 var GLYPHS = {
 	command: "▶",
@@ -2457,6 +2457,13 @@ function fontFaceCss() {
 /** The page frame both file containers draw the sheet in (SPEC §9.2). */
 var FRAME_CSS = `body { margin: 0; }
 main { max-width: ${SHEET_WIDTH}px; margin: 0 auto; padding: 40px; }`;
+/**
+* The ddd-crew's credit, on every file this project hands to somebody. The
+* sheet carries it visibly in its own footer; this is the machine-readable
+* half, and it lives here because both file containers are written here and a
+* second copy of a licence sentence is how one of them ends up without it.
+*/
+var CREDIT_COMMENT = "<!-- Based on the Bounded Context Canvas by the ddd-crew (https://github.com/ddd-crew/bounded-context-canvas), licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). -->";
 function escapeHtml(text) {
 	return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
@@ -2482,30 +2489,48 @@ ${css}
 `;
 }
 /**
-* The sheet as an SVG file: the same HTML, wrapped in a `foreignObject` so
-* that no browser is needed to produce it and any web engine can draw it.
+* The sheet as an SVG file: the same HTML, in the same page frame, wrapped in a
+* `foreignObject` so that no browser is needed to produce it and any web engine
+* can draw it.
 *
 * The size is the caller's because the renderer cannot know it — laying the
 * sheet out is exactly the work a headless renderer does not do. What the
 * committed image does with that is wayfinder ticket 056's.
+*
+* The frame is `FRAME_CSS`, the one `sheetDocument` draws in and the one
+* `measure.ts` measures against, so the height a browser reports for the page
+* is the height this file needs. Until ticket 062 that claim was false — the
+* sheet laid out edge to edge at the full viewport width where every other
+* surface gave it 1360 — and the slack showed up as blank paper at the bottom
+* of every measured image.
+*
+* The root `<div>` takes the scoping class, the way the artifact's `<body>`
+* does, so the paper ground reaches the frame's margin rather than stopping at
+* the sheet. That nests the wrapper inside a second one, and the ground is
+* neutralised on the inner of the two for the reason the artifact neutralises
+* it: a second painting restarts the 32px drafting grid at the wrapper's
+* origin, which is a visible seam.
 *
 * `xmlns` stays on `http:` deliberately: on `https:` github.com's blob view
 * re-serializes the file (ticket 049).
 */
 function sheetSvg(doc, size) {
 	const { markup, css } = renderSheetParts(doc);
-	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${size.height}" viewBox="0 0 ${size.width} ${size.height}">
+	return `${CREDIT_COMMENT}
+<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${size.height}" viewBox="0 0 ${size.width} ${size.height}">
 <foreignObject x="0" y="0" width="${size.width}" height="${size.height}">
-<div xmlns="http://www.w3.org/1999/xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml" class="${SCOPE_CLASS}">
 <style>${fontFaceCss()}</style>
 <style>
+${FRAME_CSS}
 ${css}
+.${SCOPE_CLASS} .${SCOPE_CLASS} { background: none; }
 </style>
-${markup}
+<main>${markup}</main>
 </div>
 </foreignObject>
 </svg>
 `;
 }
 //#endregion
-export { SCOPE_CLASS, fontFaceCss, renderSheetParts, sheetDocument, sheetSvg };
+export { CREDIT_COMMENT, SCOPE_CLASS, fontFaceCss, renderSheetParts, sheetDocument, sheetSvg };

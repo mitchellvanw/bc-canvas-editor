@@ -1,10 +1,12 @@
 # BC Canvas
 
-A client-side editor for the [ddd-crew Bounded Context Canvas](https://github.com/ddd-crew/bounded-context-canvas), live at [bc-canvas.pages.dev](https://bc-canvas.pages.dev). Edits happen inline on the rendered sheet; the canvas stays on your machine until you export it as a re-importable Canvas file (`.bcc.json`), a self-contained HTML artifact (`.bcc.html`), a PNG, or Markdown (`.bcc.md`, one-way). `SPEC.md` is the full specification.
+A client-side editor for the [ddd-crew Bounded Context Canvas](https://github.com/ddd-crew/bounded-context-canvas), live at [bc-canvas.pages.dev](https://bc-canvas.pages.dev). Edits happen inline on the rendered sheet; the canvas stays on your machine until you export it as a re-importable Canvas file (`.bcc.json`), a self-contained HTML artifact (`.bcc.html`), a PNG or SVG image, or Markdown (`.bcc.md`, one-way). `SPEC.md` is the full specification.
 
 ## Examples
 
 Four curated example canvases ship in the app's **Examples** menu. The same files are downloadable here and re-importable as-is:
+
+[![The Order Fulfillment canvas as a rendered sheet](examples/order-fulfillment.bcc.svg)](examples/order-fulfillment.bcc.json)
 
 - [Order Fulfillment](examples/order-fulfillment.bcc.json) — coordinates picking, packing and shipping once an order is paid; every section of the canvas filled.
 - [Notifications](examples/notifications.bcc.json) — delivers order updates to customers on their preferred channel; what a generic context looks like, receiving Order Fulfillment's `Order Shipped` event.
@@ -12,6 +14,8 @@ Four curated example canvases ship in the app's **Examples** menu. The same file
 - [Royalty Distribution](examples/royalty-distribution.bcc.json) — splits streaming revenue among rights holders; captured mid-workshop, open questions still outnumbering decisions.
 
 `examples/` is the canonical source the app bundles from; a test pins every file byte-exactly through the real import path.
+
+Each canvas has a `.bcc.svg` beside it — the sheet as one self-contained image, which is what draws above and what any markdown file can point an `<img>` at. `bcc check` re-renders each one and compares the bytes, so the suite fails on an image that has fallen behind the canvas it was drawn from. The image links to its Canvas file for anyone who would rather read the source than trust the picture.
 
 ## MCP server
 

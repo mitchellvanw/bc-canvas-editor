@@ -30,7 +30,15 @@ import { describe, expect, it } from 'vitest';
 import { stampIds } from '$lib/model/canvas';
 import { parseCanvasFile } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
-import { fontFaceCss, renderSheetParts, SCOPE_CLASS, sheetDocument, sheetSvg } from './index';
+import {
+	CREDIT_COMMENT,
+	fontFaceCss,
+	renderSheetParts,
+	SCOPE_CLASS,
+	sheetDocument,
+	sheetSvg
+} from './index';
+import { SHEET_WIDTH } from './metrics';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../../..');
@@ -178,13 +186,26 @@ describe('sheetDocument', () => {
 describe('sheetSvg', () => {
 	it('wraps the same HTML in a foreignObject at the size it is given', () => {
 		const svg = sheetSvg(referenceDoc(), { width: 1440, height: 2400 });
-		expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg"')).toBe(true);
+		expect(svg.startsWith(`${CREDIT_COMMENT}\n<svg xmlns="http://www.w3.org/2000/svg"`)).toBe(true);
 		// http:, not https: — on https: github.com's blob view re-serializes the
 		// file (wayfinder ticket 049).
 		expect(svg).not.toContain('https://www.w3.org/');
 		expect(svg).toContain('viewBox="0 0 1440 2400"');
-		expect(svg).toContain('<div xmlns="http://www.w3.org/1999/xhtml">');
+		expect(svg).toContain(`<div xmlns="http://www.w3.org/1999/xhtml" class="${SCOPE_CLASS}">`);
 		expect(svg).toContain(renderSheetParts(referenceDoc()).markup);
+	});
+
+	it('draws the sheet in the page frame the measurement was taken against', () => {
+		// The height comes from a browser laying out `sheetDocument`, so an SVG
+		// laying the sheet out at a different width is measured slack — blank
+		// paper at the foot of every committed image (ticket 062).
+		const svg = sheetSvg(referenceDoc(), { width: SHEET_WIDTH, height: 2400 });
+		expect(svg).toContain(sheetDocument(referenceDoc()).match(/^main \{.*$/m)?.[0]);
+		expect(svg).toContain(`<main>${renderSheetParts(referenceDoc()).markup}</main>`);
+		// Ground to the frame's edge, painted once: the root div carries it the
+		// way the artifact's body does, and the wrapper inside stops painting so
+		// the 32px drafting grid does not restart at the sheet's corner.
+		expect(svg).toContain(`.${SCOPE_CLASS} .${SCOPE_CLASS} { background: none; }`);
 	});
 
 	it('is well-formed XML, which an SVG has to be to draw at all', () => {
@@ -194,5 +215,19 @@ describe('sheetSvg', () => {
 		// rendering, silently, everywhere.
 		expect(svg).not.toMatch(/<(br|hr|img|input|meta|link)(\s[^>]*[^/])?>/);
 		expect(svg).not.toMatch(/&(?!amp;|lt;|gt;|quot;|apos;|#)/);
+	});
+
+	it('declares the SVG namespace on every glyph the sheet draws', () => {
+		// Inside the foreignObject this markup is XHTML, and an <svg> that does
+		// not say otherwise inherits it — so the four collaborator-kind glyphs
+		// and the footer legend keys draw as nothing at all. Nothing on screen
+		// shows this: in the browser the HTML parser supplies the namespace, and
+		// the attribute looks like one a tidy-up could drop (ticket 056).
+		const { markup } = renderSheetParts(referenceDoc());
+		const opens = markup.match(/<svg\b[^>]*>/g) ?? [];
+		expect(opens.length).toBeGreaterThan(4);
+		expect(opens.filter((tag) => !tag.includes('xmlns="http://www.w3.org/2000/svg"'))).toEqual(
+			[]
+		);
 	});
 });

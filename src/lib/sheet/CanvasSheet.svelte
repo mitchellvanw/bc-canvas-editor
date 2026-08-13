@@ -127,7 +127,14 @@
 {#snippet text(slot: TextSlot)}{#if field}{@render field(slot)}{:else}{slot.value}{/if}{/snippet}
 
 {#snippet kindIcon(kind: CollaboratorKind, size: 'lane' | 'key')}
+	<!-- The namespace is load-bearing off-screen (wayfinder ticket 056 decision 1):
+	     inside a committed `.bcc.svg` this markup is XHTML, and an <svg> that does
+	     not declare its own namespace inherits XHTML and is not a drawing — the
+	     four collaborator-kind glyphs and the footer legend keys silently vanish.
+	     In the browser the HTML parser supplies it, so nothing on screen shows
+	     what it is for; render.test.ts is where that gets caught. -->
 	<svg
+		xmlns="http://www.w3.org/2000/svg"
 		class={size === 'lane' ? 'kind__svg' : 'key__svg'}
 		viewBox="0 0 16 16"
 		fill="none"

@@ -43,6 +43,9 @@ export interface SvgSize {
  */
 export const SCOPE_CLASS: string = built.SCOPE_CLASS;
 
+/** The ddd-crew's credit, on every file a container writes. */
+export const CREDIT_COMMENT: string = built.CREDIT_COMMENT;
+
 /** The sheet as markup plus the CSS it needs. Every container is built on it. */
 export const renderSheetParts: (doc: CanvasDoc) => SheetParts = built.renderSheetParts;
 

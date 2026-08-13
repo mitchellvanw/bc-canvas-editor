@@ -168,6 +168,25 @@
 		}
 	}
 
+	/**
+	 * The `.bcc.svg` a markdown file points an `<img>` at (SPEC §9.3), and the
+	 * file `bcc render --svg` writes from a checkout. One-way like PNG: it
+	 * carries no Canvas file, so it clears nothing (SPEC §6.1).
+	 */
+	async function exportSvg() {
+		exportMenuOpen = false;
+		try {
+			// Loaded on demand, like the HTML artifact: an editor session that
+			// never exports an image has no use for the renderer's ~200 KB of
+			// embedded faces.
+			const { exportSvgArtifact } = await import('$lib/artifact/svg');
+			await exportSvgArtifact(canvas.doc);
+		} catch (error) {
+			// SPEC §10 defines no export-failure notice; don't let it vanish silently.
+			console.error('SVG export failed', error);
+		}
+	}
+
 	function newCanvas() {
 		if (canvas.unexported) {
 			dialog = { kind: 'confirm-new' };
@@ -340,6 +359,8 @@
 				>
 					HTML artifact (.bcc.html)
 				</button>
+				<!-- The two entries above leave in a form Import… takes back; the
+				     three below don't, and sit together at the end (SPEC §10). -->
 				<button
 					type="button"
 					role="menuitem"
@@ -349,8 +370,15 @@
 				>
 					PNG image (2x)
 				</button>
-				<!-- Last, beside PNG: the two entries above leave in a form Import…
-				     takes back, and these two don't (SPEC §10). -->
+				<button
+					type="button"
+					role="menuitem"
+					class={menuItem}
+					onclick={exportSvg}
+					onkeydown={closeExportMenuOnEscape}
+				>
+					SVG image
+				</button>
 				<button
 					type="button"
 					role="menuitem"

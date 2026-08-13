@@ -1963,7 +1963,7 @@ function newId2() {
   return crypto.randomUUID();
 }
 function kindIcon($$renderer, kind, size) {
-  $$renderer.push(`<svg${attr_class(clsx(size === "lane" ? "kind__svg" : "key__svg"))} viewBox="0 0 16 16" fill="none" stroke="currentColor"${attr("stroke-width", size === "lane" ? 1.3 : 1.4)} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${html(KIND_META[kind].icon)}</svg>`);
+  $$renderer.push(`<svg xmlns="http://www.w3.org/2000/svg"${attr_class(clsx(size === "lane" ? "kind__svg" : "key__svg"))} viewBox="0 0 16 16" fill="none" stroke="currentColor"${attr("stroke-width", size === "lane" ? 1.3 : 1.4)} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${html(KIND_META[kind].icon)}</svg>`);
 }
 var GLYPHS = {
   command: "\u25B6",

@@ -1,0 +1,4 @@
+# The committed sheet images (SPEC §9.3) are generated files, ~200 KB of them
+# base64 fonts. A diff of one says nothing a human can read; whether one is
+# current is `bcc check`'s answer, not a reviewer's.
+*.bcc.svg -diff

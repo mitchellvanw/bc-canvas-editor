@@ -2020,7 +2020,7 @@ function newId2() {
   return crypto.randomUUID();
 }
 function kindIcon($$renderer, kind, size) {
-  $$renderer.push(`<svg${attr_class(clsx(size === "lane" ? "kind__svg" : "key__svg"))} viewBox="0 0 16 16" fill="none" stroke="currentColor"${attr("stroke-width", size === "lane" ? 1.3 : 1.4)} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${html(KIND_META[kind].icon)}</svg>`);
+  $$renderer.push(`<svg xmlns="http://www.w3.org/2000/svg"${attr_class(clsx(size === "lane" ? "kind__svg" : "key__svg"))} viewBox="0 0 16 16" fill="none" stroke="currentColor"${attr("stroke-width", size === "lane" ? 1.3 : 1.4)} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${html(KIND_META[kind].icon)}</svg>`);
 }
 var GLYPHS = {
   command: "\u25B6",
@@ -2053,8 +2053,8 @@ function CanvasSheet($$renderer, $$props) {
   $$renderer.global.css.add($$css);
   $$renderer.component(($$renderer2) => {
     let { doc, field: field2, removeItem, addItem, addMessage, grip, pickValue, addTrait } = $$props;
-    const REPO_URL2 = "https://github.com/ddd-crew/bounded-context-canvas";
-    const LICENSE_URL2 = "https://creativecommons.org/licenses/by/4.0/";
+    const REPO_URL = "https://github.com/ddd-crew/bounded-context-canvas";
+    const LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/";
     const LEGEND = [
       {
         meaning: "command",
@@ -2500,7 +2500,7 @@ function CanvasSheet($$renderer, $$props) {
       kindIcon($$renderer2, kind, "key");
       $$renderer2.push(`<!----></span>${escape_html(KIND_META[kind].label.toLowerCase())}</li>`);
     }
-    $$renderer2.push(`<!--]--> <li class="svelte-18zyimi"><span class="sr-only svelte-18zyimi">relationship: </span><span class="key__theirs svelte-18zyimi">theirs</span><span class="key__arrow svelte-18zyimi" aria-hidden="true">\u2192</span><span class="key__ours svelte-18zyimi">ours</span></li></ul> <p class="note svelte-18zyimi">Based on the <a${attr("href", REPO_URL2)} class="svelte-18zyimi">Bounded Context Canvas by the ddd-crew</a> \xB7 <a${attr("href", LICENSE_URL2)} class="svelte-18zyimi">CC BY 4.0</a></p></footer></article>`);
+    $$renderer2.push(`<!--]--> <li class="svelte-18zyimi"><span class="sr-only svelte-18zyimi">relationship: </span><span class="key__theirs svelte-18zyimi">theirs</span><span class="key__arrow svelte-18zyimi" aria-hidden="true">\u2192</span><span class="key__ours svelte-18zyimi">ours</span></li></ul> <p class="note svelte-18zyimi">Based on the <a${attr("href", REPO_URL)} class="svelte-18zyimi">Bounded Context Canvas by the ddd-crew</a> \xB7 <a${attr("href", LICENSE_URL)} class="svelte-18zyimi">CC BY 4.0</a></p></footer></article>`);
   });
 }
 function windowTitle(name) {
@@ -2584,6 +2584,7 @@ function fontFaceCss() {
 }
 var FRAME_CSS = `body { margin: 0; }
 main { max-width: ${SHEET_WIDTH}px; margin: 0 auto; padding: 40px; }`;
+var CREDIT_COMMENT = "<!-- Based on the Bounded Context Canvas by the ddd-crew (https://github.com/ddd-crew/bounded-context-canvas), licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). -->";
 function escapeHtml(text) {
   return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
@@ -2609,14 +2610,17 @@ ${css}
 }
 function sheetSvg(doc, size) {
   const { markup, css } = renderSheetParts(doc);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${size.height}" viewBox="0 0 ${size.width} ${size.height}">
+  return `${CREDIT_COMMENT}
+<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${size.height}" viewBox="0 0 ${size.width} ${size.height}">
 <foreignObject x="0" y="0" width="${size.width}" height="${size.height}">
-<div xmlns="http://www.w3.org/1999/xhtml">
+<div xmlns="http://www.w3.org/1999/xhtml" class="${SCOPE_CLASS}">
 <style>${fontFaceCss()}</style>
 <style>
+${FRAME_CSS}
 ${css}
+.${SCOPE_CLASS} .${SCOPE_CLASS} { background: none; }
 </style>
-${markup}
+<main>${markup}</main>
 </div>
 </foreignObject>
 </svg>
@@ -2625,6 +2629,7 @@ ${markup}
 
 // ../src/lib/render/index.ts
 var SCOPE_CLASS2 = SCOPE_CLASS;
+var CREDIT_COMMENT2 = CREDIT_COMMENT;
 var renderSheetParts2 = renderSheetParts;
 var fontFaceCss2 = fontFaceCss;
 var sheetDocument2 = sheetDocument;
@@ -3119,8 +3124,6 @@ function windowTitle2(name) {
 }
 
 // ../src/lib/artifact/html.ts
-var REPO_URL = "https://github.com/ddd-crew/bounded-context-canvas";
-var LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/";
 var STACK_BREAKPOINT = 760;
 var ARTIFACT_CSS = `
 /* The sheet at the editor's fixed desktop metrics, centered on the paper ground. */
@@ -3351,7 +3354,7 @@ function artifactDocument(doc) {
   const title = windowTitle2(doc.name);
   const markdown = canvasDigest(toCanvasFile(doc));
   return `<!doctype html>
-<!-- Based on the Bounded Context Canvas by the ddd-crew (${REPO_URL}), licensed CC BY 4.0 (${LICENSE_URL}). -->
+${CREDIT_COMMENT2}
 <html lang="en">
 <head>
 <meta charset="utf-8" />

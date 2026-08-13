@@ -11,9 +11,9 @@
  * - It carries the one renderer's bytes, through the same normalization the
  *   Markdown View uses (`views.test.ts` pins the pane to that expression), so
  *   the file and the pane cannot say different things.
- * - It sits last in the menu, beside PNG rather than beside the Canvas file:
- *   the menu is the only place a user sees all four side by side, and the order
- *   is where "this one doesn't come back" is said.
+ * - It sits last in the menu, beside the two images rather than beside the
+ *   Canvas file: the menu is the only place a user sees every export side by
+ *   side, and the order is where "this one doesn't come back" is said.
  */
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -102,12 +102,13 @@ describe('the Markdown export (SPEC §10, ticket 046)', () => {
 		document.body.innerHTML = '';
 	});
 
-	it('is the fourth entry, last, below PNG', () => {
+	it('is the last entry, below the two images (ticket 062 put SVG fourth)', () => {
 		const el = render();
 		expect(openExportMenu(el).map((item) => item.textContent?.trim())).toEqual([
 			'Canvas file (.bcc.json)',
 			'HTML artifact (.bcc.html)',
 			'PNG image (2x)',
+			'SVG image',
 			'Markdown (.bcc.md)'
 		]);
 	});

@@ -30,12 +30,9 @@ import { embeddedCanvasBlock } from '$lib/model/embed';
 import { exportFileName } from '$lib/model/filename';
 import { serializeCanvas, toCanvasFile } from '$lib/model/serialize';
 import { windowTitle } from '$lib/model/title';
-import { fontFaceCss, renderSheetParts, SCOPE_CLASS } from '$lib/render';
+import { CREDIT_COMMENT, fontFaceCss, renderSheetParts, SCOPE_CLASS } from '$lib/render';
 import { SHEET_MARGIN, SHEET_WIDTH } from '$lib/render/metrics';
 import { downloadBlob } from './download';
-
-const REPO_URL = 'https://github.com/ddd-crew/bounded-context-canvas';
-const LICENSE_URL = 'https://creativecommons.org/licenses/by/4.0/';
 
 /**
  * Below this the grid stacks to one column in reading order (SPEC §9.1); it
@@ -318,7 +315,7 @@ export function artifactDocument(doc: CanvasDoc): string {
 	const markdown = canvasDigest(toCanvasFile(doc));
 
 	return `<!doctype html>
-<!-- Based on the Bounded Context Canvas by the ddd-crew (${REPO_URL}), licensed CC BY 4.0 (${LICENSE_URL}). -->
+${CREDIT_COMMENT}
 <html lang="en">
 <head>
 <meta charset="utf-8" />
