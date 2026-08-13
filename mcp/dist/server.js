@@ -29766,16 +29766,17 @@ function readCanvas(root2, input) {
   const text = parseCanvasFile(raw).ok ? raw : extractEmbeddedCanvas(raw) ?? raw;
   return { ok: true, path, file: parsed.file, text };
 }
-function readProblem(result) {
+function readProblem(result, disclosure = {}) {
+  const detail = disclosure.detail ?? true;
   switch (result.reason) {
     case "outside-root":
-      return result.detail;
+      return detail ? result.detail : `${result.path}: outside the canvas root, and a path out of it is not followed.`;
     case "unreadable":
-      return `${result.path}: could not be read (${result.detail}).`;
+      return detail ? `${result.path}: could not be read (${result.detail}).` : `${result.path}: could not be read.`;
     case "newer-version":
       return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); version ${CANVAS_VERSION} is the newest that can be read here.`;
     case "not-canvas":
-      return `${result.path}: ${result.detail ?? "not a Canvas file."}`;
+      return `${result.path}: ${(detail ? result.detail : void 0) ?? "not a Canvas file."}`;
   }
 }
 

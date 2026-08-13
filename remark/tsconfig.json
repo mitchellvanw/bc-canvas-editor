@@ -1,0 +1,30 @@
+{
+	"compilerOptions": {
+		"target": "es2023",
+		// No `dom`, unlike `cli/tsconfig.json`. The CLI reaches
+		// `$lib/artifact/html.ts`, whose neighbours are legitimately typed against
+		// a browser; a fence draws through `$lib/render` and `$lib/fence`, which
+		// touch nothing of the sort. Keeping it out is a type-level guarantee that
+		// a plugin running inside someone else's build has no DOM to want.
+		"lib": ["es2023"],
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"types": ["node"],
+		// `$lib/render/index.ts` imports the committed `dist/render.js`, which is
+		// build output carrying `@ts-nocheck`. The root and CLI configs do the same.
+		"allowJs": true,
+		"strict": true,
+		"noUnusedLocals": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"verbatimModuleSyntax": true,
+		"forceConsistentCasingInFileNames": true,
+		// The one seam `mcp/` and `cli/` also declare: `src/lib/*` stays where it
+		// is and is pulled in through this alias, which esbuild resolves at build
+		// time from this same file.
+		"paths": {
+			"$lib/*": ["../src/lib/*"]
+		}
+	},
+	"include": ["src/**/*.ts", "build.js"]
+}

@@ -6,15 +6,21 @@
 	"bin": {
 		"bcc": "./cli/dist/bcc.js"
 	},
+	"exports": {
+		"./remark": "./remark/dist/plugin.js",
+		"./sheet.css": "./remark/dist/sheet.css"
+	},
 	"files": [
-		"cli/dist"
+		"cli/dist",
+		"remark/dist"
 	],
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
 		"build:render": "node src/lib/render/build.js",
 		"build:cli": "node cli/build.js",
-		"build:bundles": "npm run build:render && npm run build:cli",
+		"build:remark": "node remark/build.js",
+		"build:bundles": "npm run build:render && npm run build:cli && npm run build:remark",
 		"bcc": "node cli/dist/bcc.js",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -22,6 +28,7 @@
 		"test:mcp": "npm test --prefix mcp",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:cli": "tsc --noEmit -p cli/tsconfig.json",
+		"check:remark": "tsc --noEmit -p remark/tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
@@ -37,10 +44,14 @@
 		"esbuild": "^0.27.7",
 		"jsdom": "^30.0.1",
 		"playwright-core": "^1.58.0",
+		"rehype-stringify": "^10.0.1",
+		"remark-parse": "^11.0.0",
+		"remark-rehype": "^11.1.2",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3",
+		"unified": "^11.0.5",
 		"vite": "^8.0.16",
 		"vitest": "^4.1.10"
 	}

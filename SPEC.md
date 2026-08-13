@@ -18,6 +18,7 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 - Full keyboard operability of the editor; WCAG AA for the HTML artifact.
 - Four bundled example canvases, opened from the chrome through the import path (§3.5, §10).
 - A command line over the canvases committed in a project, `bcc` (`cli/`): `render`, `check`, `fmt`, `ls`. It writes the same artifact families the editor exports, through the same parser, serializer and headless renderer (§9) — the artifact `bcc render` writes and the artifact the Export menu downloads are byte-identical, because one function writes both. Full decision record: `wayfinder/tickets/051-cli-home.md`, `wayfinder/tickets/055-bcc-cli.md`.
+- A **`bcc` fence** in a markdown file (`CONTEXT.md`), holding one path to a Canvas file and rendering as the Sheet where the file is built or previewed. Its contract is one thing in one place (`src/lib/fence/fence.ts`) and its adapters are thin: `remark/` covers every unified-based site generator. The fence is read-only, adds no parser and takes no options; it resolves through the same read-and-parse path every other filesystem caller uses, and what it cannot draw it says so in place of. Full decision record: `wayfinder/tickets/052-fence-shape.md`, `wayfinder/tickets/057-remark-plugin.md`.
 
 **Out of scope (v1):**
 

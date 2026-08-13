@@ -18,7 +18,8 @@
  * file whether they are a model, a developer at a terminal, or an author with
  * a broken fence in a preview. What differs is what each surface does *with*
  * it: `mcp/src/errors.ts` wraps it in an error result that names the tool to
- * call next; a fence puts it in a placeholder.
+ * call next; a fence puts it in a placeholder and the same sentence, one level
+ * of disclosure down, on the developer's warning channel.
  */
 
 import { readFileSync } from 'node:fs';
@@ -101,17 +102,35 @@ export function readCanvas(root: CanvasRoot, input: string): CanvasRead {
  * Path first, always — it is the one thing that identifies which file failed
  * when several are on screen, and on the fence surfaces it is the only thing
  * the reader can act on.
+ *
+ * **Two levels of disclosure**, which is SPEC §3.3's rule rather than a second
+ * one: the detail is shown where the offending bytes are on screen. A terminal
+ * and a tool result are that; a rendered markdown page is the case §3.3 was not
+ * written for, because the bytes are in a *different file* and the page may be
+ * a built site read by strangers. So a fence's placeholder asks for
+ * `{ detail: false }` — which also keeps this machine's absolute paths, which
+ * both the filesystem's message and the root's name carry, out of a published
+ * page — and puts the full sentence on the developer's warning channel.
  */
-export function readProblem(result: Extract<CanvasRead, { ok: false }>): string {
+export function readProblem(
+	result: Extract<CanvasRead, { ok: false }>,
+	disclosure: { detail?: boolean } = {}
+): string {
+	const detail = disclosure.detail ?? true;
 	switch (result.reason) {
 		case 'outside-root':
-			// `OutsideRoot` already names the path and the root it left.
-			return result.detail;
+			// `OutsideRoot` already names the path and the root it left — which is
+			// the part a page cannot have.
+			return detail
+				? result.detail
+				: `${result.path}: outside the canvas root, and a path out of it is not followed.`;
 		case 'unreadable':
-			return `${result.path}: could not be read (${result.detail}).`;
+			return detail
+				? `${result.path}: could not be read (${result.detail}).`
+				: `${result.path}: could not be read.`;
 		case 'newer-version':
 			return `${result.path}: written by a newer version of BC Canvas (format version ${result.version}); version ${CANVAS_VERSION} is the newest that can be read here.`;
 		case 'not-canvas':
-			return `${result.path}: ${result.detail ?? 'not a Canvas file.'}`;
+			return `${result.path}: ${(detail ? result.detail : undefined) ?? 'not a Canvas file.'}`;
 	}
 }

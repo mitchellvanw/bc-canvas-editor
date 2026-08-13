@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 // ../src/lib/fs/root.ts
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { realpathSync, statSync } from "node:fs";
@@ -34,11 +32,6 @@ function boundary(root) {
 function inside(path, root) {
   return path === root || path.startsWith(boundary(root));
 }
-function whyUnservable(path) {
-  if (dirname(path) !== path) return null;
-  return `${path} is the filesystem root, not a project \u2014 listing it would walk the whole disk.
-Pass --root <directory>, naming the folder your canvases live under.`;
-}
 function openRoot(input) {
   const absolute = resolve(input);
   let path;
@@ -62,50 +55,8 @@ function openRoot(input) {
   };
 }
 
-// src/args.ts
-var UsageError = class extends Error {
-};
-function known(spec) {
-  return [...spec.booleans ?? [], ...spec.values ?? []].map((name) => `--${name}`).sort();
-}
-function parseOptions(argv, spec) {
-  const booleans = /* @__PURE__ */ new Set();
-  const values = /* @__PURE__ */ new Map();
-  const operands = [];
-  for (let i = 0; i < argv.length; i++) {
-    const argument = argv[i];
-    if (argument === "--") {
-      operands.push(...argv.slice(i + 1));
-      break;
-    }
-    if (!argument.startsWith("--")) {
-      operands.push(argument);
-      continue;
-    }
-    const split = argument.indexOf("=");
-    const name = (split === -1 ? argument : argument.slice(0, split)).slice(2);
-    if (spec.booleans?.includes(name)) {
-      if (split !== -1) throw new UsageError(`--${name} takes no value.`);
-      booleans.add(name);
-      continue;
-    }
-    if (spec.values?.includes(name)) {
-      const value = split === -1 ? argv[++i] : argument.slice(split + 1);
-      if (value === void 0 || value === "") {
-        throw new UsageError(`--${name} needs a value after it.`);
-      }
-      values.set(name, value);
-      continue;
-    }
-    throw new UsageError(
-      `no such option: ${argument}. This command takes ${known(spec).join(", ")}.`
-    );
-  }
-  return { booleans, values, operands };
-}
-
-// src/check.ts
-import { readFileSync as readFileSync2 } from "node:fs";
+// ../src/lib/fence/fence.ts
+import { relative, resolve as resolve2 } from "node:path";
 
 // ../src/lib/fs/read.ts
 import { readFileSync } from "node:fs";
@@ -120,7 +71,7 @@ function stampLane(lane) {
     id: newId(),
     collaborator: { ...lane.collaborator },
     ...lane.relationship !== void 0 && { relationship: { ...lane.relationship } },
-    messages: lane.messages.map((message2) => ({ ...message2, id: newId() }))
+    messages: lane.messages.map((message) => ({ ...message, id: newId() }))
   };
 }
 function stampIds(file) {
@@ -143,11 +94,6 @@ function stampIds(file) {
 // ../src/lib/model/embed.ts
 var OPEN = '<script type="application/json" data-canvas-file>';
 var CLOSE = "</script>";
-function embeddedCanvasBlock(json) {
-  return `${OPEN}
-${json}
-${CLOSE}`;
-}
 function extractEmbeddedCanvas(text) {
   const open = text.indexOf(OPEN);
   if (open < 0) return null;
@@ -164,9 +110,9 @@ function notCanvas(detail) {
 var NOT_JSON = "expected valid JSON";
 function migrateLaneV1(item) {
   if (!isRecord(item)) return item;
-  const { collaborator, relationship, ...rest2 } = item;
+  const { collaborator, relationship, ...rest } = item;
   return {
-    ...rest2,
+    ...rest,
     ...collaborator !== void 0 && {
       collaborator: typeof collaborator === "string" ? { name: collaborator } : collaborator
     },
@@ -176,8 +122,8 @@ function migrateLaneV1(item) {
   };
 }
 function migrateLanesV1(raw, key) {
-  const lanes2 = raw[key];
-  return Array.isArray(lanes2) ? { [key]: lanes2.map(migrateLaneV1) } : {};
+  const lanes = raw[key];
+  return Array.isArray(lanes) ? { [key]: lanes.map(migrateLaneV1) } : {};
 }
 var MIGRATIONS = {
   // v1 → v2 (ticket canvas-file-v2): `description` becomes `purpose` —
@@ -186,9 +132,9 @@ var MIGRATIONS = {
   // rewritten: a domain role that stopped matching the picker vocabulary
   // survives exactly as typed.
   1: (raw) => {
-    const { description, ...rest2 } = raw;
+    const { description, ...rest } = raw;
     return {
-      ...rest2,
+      ...rest,
       version: 2,
       ...description !== void 0 && { purpose: description },
       ...migrateLanesV1(raw, "inboundCommunication"),
@@ -450,9 +396,6 @@ function readProblem(result, disclosure = {}) {
   }
 }
 
-// src/image.ts
-import { extname } from "node:path";
-
 // ../src/lib/render/dist/render.js
 var UNINITIALIZED = /* @__PURE__ */ Symbol("uninitialized");
 var ATTR_REGEX = /[&"<]/g;
@@ -491,14 +434,14 @@ var has_own_property = Object.prototype.hasOwnProperty;
 var noop = () => {
 };
 function deferred() {
-  var resolve2;
+  var resolve4;
   var reject;
   return {
     promise: new Promise((res, rej) => {
-      resolve2 = res;
+      resolve4 = res;
       reject = rej;
     }),
-    resolve: resolve2,
+    resolve: resolve4,
     reject
   };
 }
@@ -725,11 +668,11 @@ async function with_render_context(fn) {
     unresolved_promises: /* @__PURE__ */ new Map()
   } };
   if (in_webcontainer()) {
-    const { promise, resolve: resolve2 } = deferred();
+    const { promise, resolve: resolve4 } = deferred();
     const previous_render = current_render;
     current_render = promise;
     await previous_render;
-    return fn().finally(resolve2);
+    return fn().finally(resolve4);
   }
   try {
     if (als === null) async_local_storage_unavailable();
@@ -785,8 +728,8 @@ var DevalueError = class extends Error {
   * @param {any} [value] - The value that failed to be serialized
   * @param {any} [root] - The root value being serialized
   */
-  constructor(message2, keys, value, root) {
-    super(message2);
+  constructor(message, keys, value, root) {
+    super(message);
     this.name = "DevalueError";
     this.path = keys.join("");
     this.value = value;
@@ -1169,8 +1112,8 @@ function uneval(value, replacer) {
       }
     });
     statements.push(`return ${str}`);
-    const body2 = [...reconstructions, ...statements].join(";");
-    return `(function(${params.join(",")}){${body2}}(${values.join(",")}))`;
+    const body = [...reconstructions, ...statements].join(";");
+    return `(function(${params.join(",")}){${body}}(${values.join(",")}))`;
   } else return str;
 }
 function stringify_typed_array_elements(array) {
@@ -1460,17 +1403,17 @@ var Renderer = class Renderer2 {
   * @param {number | undefined} [flags]
   * @param {boolean | undefined} [is_rich]
   */
-  option(attrs, body2, css_hash, classes, styles, flags, is_rich) {
+  option(attrs, body, css_hash, classes, styles, flags, is_rich) {
     this.#out.push(`<option${attributes(attrs, css_hash, classes, styles, flags)}`);
-    const close = (renderer, value, { head, body: body3 }) => {
+    const close = (renderer, value, { head, body: body2 }) => {
       if (has_own_property.call(attrs, "value")) value = attrs.value;
       if (value === this.local.select_value) renderer.#out.push(' selected=""');
-      renderer.#out.push(`>${body3}${is_rich ? "<!>" : ""}</option>`);
+      renderer.#out.push(`>${body2}${is_rich ? "<!>" : ""}</option>`);
       if (head) renderer.head((child) => child.push(head));
     };
-    if (typeof body2 === "function") this.child((renderer) => {
+    if (typeof body === "function") this.child((renderer) => {
       const r2 = new Renderer2(this.global, this);
-      body2(r2);
+      body(r2);
       if (this.global.mode === "async") return r2.#collect_content_async().then((content) => {
         close(renderer, content.body.replaceAll("<!---->", ""), content);
       });
@@ -1479,7 +1422,7 @@ var Renderer = class Renderer2 {
         close(renderer, content.body.replaceAll("<!---->", ""), content);
       }
     });
-    else close(this, body2, { body: escape_html(body2) });
+    else close(this, body, { body: escape_html(body) });
   }
   /**
   * @param {(renderer: Renderer) => void} fn
@@ -1774,11 +1717,11 @@ var Renderer = class Renderer2 {
   static #close_render(content, renderer) {
     for (const cleanup of renderer.#collect_on_destroy()) cleanup();
     let head = content.head + renderer.global.get_title();
-    let body2 = content.body;
+    let body = content.body;
     for (const { hash, code } of renderer.global.css) head += `<style id="${hash}">${code}</style>`;
     return {
       head,
-      body: body2,
+      body,
       hashes: { script: renderer.global.csp.script_hashes }
     };
   }
@@ -1799,7 +1742,7 @@ var Renderer = class Renderer2 {
     let prelude = `const h = (window.__svelte ??= {}).h ??= new Map();`;
     if (has_promises) prelude = `const r = (v) => Promise.resolve(v);
 				${prelude}`;
-    const body2 = `
+    const body = `
 			{
 				${prelude}
 
@@ -1813,11 +1756,11 @@ var Renderer = class Renderer2 {
     let csp_attr = "";
     if (this.global.csp.nonce) csp_attr = ` nonce="${this.global.csp.nonce}"`;
     else if (this.global.csp.hash) {
-      const hash = await sha256(body2);
+      const hash = await sha256(body);
       this.global.csp.script_hashes.push(`sha256-${hash}`);
     }
     return `
-		<script${csp_attr}>${body2}</script>`;
+		<script${csp_attr}>${body}</script>`;
   }
 };
 var SSRState = class {
@@ -2053,8 +1996,8 @@ function CanvasSheet($$renderer, $$props) {
   $$renderer.global.css.add($$css);
   $$renderer.component(($$renderer2) => {
     let { doc, field: field2, removeItem, addItem, addMessage, grip, pickValue, addTrait } = $$props;
-    const REPO_URL2 = "https://github.com/ddd-crew/bounded-context-canvas";
-    const LICENSE_URL2 = "https://creativecommons.org/licenses/by/4.0/";
+    const REPO_URL = "https://github.com/ddd-crew/bounded-context-canvas";
+    const LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/";
     const LEGEND = [
       {
         meaning: "command",
@@ -2124,12 +2067,12 @@ function CanvasSheet($$renderer, $$props) {
       }
       $$renderer3.push(`<!--]-->`);
     }
-    function communication($$renderer3, label, lanes2, area, question) {
+    function communication($$renderer3, label, lanes, area, question) {
       $$renderer3.push(`<section${attr_class(`panel panel--collab ${stringify(area)}`, "svelte-18zyimi")}><h2 class="panel__label svelte-18zyimi">${escape_html(label)}</h2> <div class="panel__body svelte-18zyimi">`);
-      if (lanes2.length > 0) {
+      if (lanes.length > 0) {
         $$renderer3.push("<!--[0-->");
         $$renderer3.push(`<ul class="lanes svelte-18zyimi"><!--[-->`);
-        const each_array = ensure_array_like(lanes2);
+        const each_array = ensure_array_like(lanes);
         for (let laneIndex = 0, $$length = each_array.length; laneIndex < $$length; laneIndex++) {
           let lane = each_array[laneIndex];
           $$renderer3.push(`<li class="lane svelte-18zyimi"><div class="lane__head svelte-18zyimi">`);
@@ -2166,7 +2109,7 @@ function CanvasSheet($$renderer, $$props) {
           removeItem?.($$renderer3, {
             label: `Remove collaborator ${lane.collaborator.name}`.trim(),
             type: "Collaborator",
-            remove: () => lanes2.splice(laneIndex, 1)
+            remove: () => lanes.splice(laneIndex, 1)
           });
           $$renderer3.push(`<!----></div> `);
           if (pickValue) {
@@ -2208,31 +2151,31 @@ function CanvasSheet($$renderer, $$props) {
             $$renderer3.push(`<ul class="msgs svelte-18zyimi"><!--[-->`);
             const each_array_1 = ensure_array_like(lane.messages);
             for (let messageIndex = 0, $$length2 = each_array_1.length; messageIndex < $$length2; messageIndex++) {
-              let message2 = each_array_1[messageIndex];
-              $$renderer3.push(`<li class="msg svelte-18zyimi"${attr("data-meaning", message2.type)}><span class="msg__glyph svelte-18zyimi" aria-hidden="true">${escape_html(GLYPHS[message2.type])}</span><span class="sr-only svelte-18zyimi">${escape_html(message2.type)},</span>`);
+              let message = each_array_1[messageIndex];
+              $$renderer3.push(`<li class="msg svelte-18zyimi"${attr("data-meaning", message.type)}><span class="msg__glyph svelte-18zyimi" aria-hidden="true">${escape_html(GLYPHS[message.type])}</span><span class="sr-only svelte-18zyimi">${escape_html(message.type)},</span>`);
               text($$renderer3, {
-                value: message2.name,
+                value: message.name,
                 label: "Message name",
                 placeholder: "Message name",
-                set: (value) => message2.name = value
+                set: (value) => message.name = value
               });
               $$renderer3.push(`<!----> `);
-              if (field2 || message2.description) {
+              if (field2 || message.description) {
                 $$renderer3.push("<!--[0-->");
                 $$renderer3.push(`<span class="msg__desc svelte-18zyimi">`);
                 text($$renderer3, {
-                  value: message2.description ?? "",
+                  value: message.description ?? "",
                   label: "Message description",
                   placeholder: "detail",
                   multiline: true,
-                  set: (value) => message2.description = value
+                  set: (value) => message.description = value
                 });
                 $$renderer3.push(`<!----></span>`);
               } else $$renderer3.push("<!--[-1-->");
               $$renderer3.push(`<!--]--> `);
               removeItem?.($$renderer3, {
-                label: `Remove ${message2.type} ${message2.name}`.trim(),
-                type: message2.type.charAt(0).toUpperCase() + message2.type.slice(1),
+                label: `Remove ${message.type} ${message.name}`.trim(),
+                type: message.type.charAt(0).toUpperCase() + message.type.slice(1),
                 remove: () => lane.messages.splice(messageIndex, 1)
               });
               $$renderer3.push(`<!----></li>`);
@@ -2254,9 +2197,9 @@ function CanvasSheet($$renderer, $$props) {
       } else $$renderer3.push("<!--[-1-->");
       $$renderer3.push(`<!--]--> `);
       addItem?.($$renderer3, {
-        ...ghostFace(lanes2.length, "+ collaborator", question),
+        ...ghostFace(lanes.length, "+ collaborator", question),
         focusField: "Collaborator",
-        add: () => lanes2.push({
+        add: () => lanes.push({
           id: newId2(),
           collaborator: { name: "" },
           messages: []
@@ -2500,12 +2443,8 @@ function CanvasSheet($$renderer, $$props) {
       kindIcon($$renderer2, kind, "key");
       $$renderer2.push(`<!----></span>${escape_html(KIND_META[kind].label.toLowerCase())}</li>`);
     }
-    $$renderer2.push(`<!--]--> <li class="svelte-18zyimi"><span class="sr-only svelte-18zyimi">relationship: </span><span class="key__theirs svelte-18zyimi">theirs</span><span class="key__arrow svelte-18zyimi" aria-hidden="true">\u2192</span><span class="key__ours svelte-18zyimi">ours</span></li></ul> <p class="note svelte-18zyimi">Based on the <a${attr("href", REPO_URL2)} class="svelte-18zyimi">Bounded Context Canvas by the ddd-crew</a> \xB7 <a${attr("href", LICENSE_URL2)} class="svelte-18zyimi">CC BY 4.0</a></p></footer></article>`);
+    $$renderer2.push(`<!--]--> <li class="svelte-18zyimi"><span class="sr-only svelte-18zyimi">relationship: </span><span class="key__theirs svelte-18zyimi">theirs</span><span class="key__arrow svelte-18zyimi" aria-hidden="true">\u2192</span><span class="key__ours svelte-18zyimi">ours</span></li></ul> <p class="note svelte-18zyimi">Based on the <a${attr("href", REPO_URL)} class="svelte-18zyimi">Bounded Context Canvas by the ddd-crew</a> \xB7 <a${attr("href", LICENSE_URL)} class="svelte-18zyimi">CC BY 4.0</a></p></footer></article>`);
   });
-}
-function windowTitle(name) {
-  const trimmed = name.trim();
-  return `${trimmed === "" ? "Untitled" : trimmed} \u2014 BC Canvas`;
 }
 var SHEET_WIDTH = 1440;
 var SCOPE_CLASS = "bcc-canvas";
@@ -2532,9 +2471,9 @@ var RESET_CSS = `.${SCOPE_CLASS},
 	list-style: none;
 }`;
 function renderSheetParts(doc) {
-  const { body: body2, head } = render(CanvasSheet, { props: { doc } });
+  const { body, head } = render(CanvasSheet, { props: { doc } });
   return {
-    markup: `<div class="${SCOPE_CLASS}">${body2}</div>`,
+    markup: `<div class="${SCOPE_CLASS}">${body}</div>`,
     css: `.${SCOPE_CLASS} {
 /* Quiet-sheet tokens (SPEC \xA75). AA-verified by src/lib/sheet/contrast.test.ts;
 	   if a pair fails there, the token shifts here \u2014 everywhere at once. */
@@ -2584,1018 +2523,117 @@ function fontFaceCss() {
 }
 var FRAME_CSS = `body { margin: 0; }
 main { max-width: ${SHEET_WIDTH}px; margin: 0 auto; padding: 40px; }`;
+
+// ../src/lib/render/index.ts
+var renderSheetParts2 = renderSheetParts;
+var fontFaceCss2 = fontFaceCss;
+
+// ../src/lib/fence/fence.ts
+var FENCE_LANG = "bcc";
+function fencePreamble(css) {
+  return `<style>${fontFaceCss2()}</style>
+<style>
+${css}
+</style>`;
+}
 function escapeHtml(text) {
   return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
-function sheetDocument(doc) {
-  const { markup, css } = renderSheetParts(doc);
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${escapeHtml(windowTitle(doc.name))}</title>
-<style>${fontFaceCss()}</style>
-<style>
-${FRAME_CSS}
-${css}
-</style>
-</head>
-<body>
-<main>${markup}</main>
-</body>
-</html>
-`;
+function placeholder(problem) {
+  return `<div style="border: 1px solid #d8d2c4; border-radius: 6px; padding: 0.75rem 1rem; background: #faf7f0; color: #33312c; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.9375rem; line-height: 1.5;"><strong>This bcc fence didn&#39;t render.</strong><br /><code style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em;">${escapeHtml(problem)}</code></div>`;
 }
-function sheetSvg(doc, size) {
-  const { markup, css } = renderSheetParts(doc);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${size.height}" viewBox="0 0 ${size.width} ${size.height}">
-<foreignObject x="0" y="0" width="${size.width}" height="${size.height}">
-<div xmlns="http://www.w3.org/1999/xhtml">
-<style>${fontFaceCss()}</style>
-<style>
-${css}
-</style>
-${markup}
-</div>
-</foreignObject>
-</svg>
-`;
+function refuse(problem) {
+  return { html: placeholder(problem), css: null, problem };
 }
-
-// ../src/lib/render/index.ts
-var SCOPE_CLASS2 = SCOPE_CLASS;
-var renderSheetParts2 = renderSheetParts;
-var fontFaceCss2 = fontFaceCss;
-var sheetDocument2 = sheetDocument;
-var sheetSvg2 = sheetSvg;
-
-// ../src/lib/render/metrics.ts
-var SHEET_WIDTH2 = 1440;
-var SHEET_MARGIN = 40;
-
-// src/image.ts
-function outputPath(canvasPath, kind) {
-  const stem = /\.bcc\.(json|html)$/.test(canvasPath) ? canvasPath.slice(0, -".bcc.json".length) : canvasPath.slice(0, canvasPath.length - extname(canvasPath).length);
-  return `${stem}.bcc.${kind}`;
-}
-function declaredHeight(svg) {
-  const root = svg.match(/<svg\b[^>]*>/);
-  const height = root?.[0].match(/\bheight="(\d+)"/);
-  return height ? Number(height[1]) : null;
-}
-function reproduce(doc, height) {
-  return sheetSvg2(doc, { width: SHEET_WIDTH2, height });
-}
-
-// src/check.ts
-function check(root, paths) {
-  const report = { canvases: 0, images: 0, problems: [] };
-  const compared = /* @__PURE__ */ new Set();
-  for (const input of paths) {
-    const result = readCanvas(root, input);
-    if (!result.ok) {
-      report.problems.push(readProblem(result));
-      continue;
-    }
-    report.canvases++;
-    const imagePath = outputPath(result.path, "svg");
-    if (compared.has(imagePath)) continue;
-    let committed;
-    try {
-      committed = readFileSync2(root.resolve(imagePath), "utf8");
-    } catch {
-      continue;
-    }
-    compared.add(imagePath);
-    const height = declaredHeight(committed);
-    if (height === null) {
-      report.problems.push(
-        `${imagePath}: no height on its <svg> element, so it cannot be redrawn and compared. Write it again with bcc render --svg ${result.path}.`
-      );
-      continue;
-    }
-    if (reproduce(stampIds(result.file), height) === committed) {
-      report.images++;
-      continue;
-    }
-    report.problems.push(
-      `${imagePath}: does not match ${result.path} as it stands. Redraw it with bcc render --svg ${result.path}.`
+function pointerIn(info, body) {
+  const written = info.trim();
+  if (written !== FENCE_LANG) {
+    return refuse(`bcc takes no options; this fence's info string reads "${written}".`);
+  }
+  const lines = body.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
+  if (lines.length !== 1) {
+    return refuse("A bcc fence holds one path to a Canvas file and nothing else.");
+  }
+  const pointer = lines[0];
+  if (pointer.startsWith("/")) {
+    return refuse(
+      `${pointer}: a bcc fence path is relative to the markdown file that holds it, and a leading "/" is not read here as the repo root.`
     );
   }
-  return report;
+  return { ok: true, pointer };
 }
-
-// ../src/lib/fs/write.ts
-import { renameSync, rmSync, writeFileSync } from "node:fs";
-import { dirname as dirname2, join as join2 } from "node:path";
-var sequence = 0;
-function writeAtomic(path, text) {
-  const temporary = join2(dirname2(path), `.${process.pid}-${sequence++}.bcc-tmp`);
-  try {
-    writeFileSync(temporary, text, "utf8");
-    renameSync(temporary, path);
-  } catch (error) {
-    rmSync(temporary, { force: true });
-    throw error;
+function renderFence(request) {
+  const parsed = pointerIn(request.info, request.body);
+  if (!("ok" in parsed)) return parsed;
+  const { pointer } = parsed;
+  if (request.document === null) {
+    return refuse(
+      `${pointer}: no document to resolve against; a bcc fence needs the location of the file that holds it.`
+    );
   }
-}
-
-// ../src/lib/model/serialize.ts
-function present(value) {
-  return value !== void 0 && value !== "";
-}
-function fileMessage(message2) {
-  return {
-    type: message2.type,
-    name: message2.name,
-    ...present(message2.description) && { description: message2.description }
-  };
-}
-function fileCollaborator(collaborator) {
-  return {
-    name: collaborator.name,
-    ...collaborator.kind !== void 0 && { kind: collaborator.kind }
-  };
-}
-function fileRelationship(relationship) {
-  if (relationship === void 0) return {};
-  const kept = {
-    ...present(relationship.theirs) && { theirs: relationship.theirs },
-    ...present(relationship.ours) && { ours: relationship.ours }
-  };
-  return Object.keys(kept).length === 0 ? {} : { relationship: kept };
-}
-function fileLane(lane) {
-  return {
-    collaborator: fileCollaborator(lane.collaborator),
-    ...fileRelationship(lane.relationship),
-    messages: lane.messages.map(fileMessage)
-  };
-}
-function fileClassification(sc) {
-  return {
-    ...present(sc.domain) && { domain: sc.domain },
-    ...present(sc.businessModel) && { businessModel: sc.businessModel },
-    ...present(sc.evolution) && { evolution: sc.evolution }
-  };
-}
-function toCanvasFile(doc) {
-  return {
-    version: doc.version,
-    name: doc.name,
-    purpose: doc.purpose,
-    strategicClassification: fileClassification(doc.strategicClassification),
-    domainRoles: doc.domainRoles.map((role) => ({ name: role.name })),
-    inboundCommunication: doc.inboundCommunication.map(fileLane),
-    ubiquitousLanguage: doc.ubiquitousLanguage.map(
-      (row) => ({
-        term: row.term,
-        ...present(row.definition) && { definition: row.definition }
-      })
-    ),
-    businessDecisions: doc.businessDecisions.map(
-      (row) => ({
-        name: row.name,
-        ...present(row.description) && { description: row.description }
-      })
-    ),
-    outboundCommunication: doc.outboundCommunication.map(fileLane),
-    assumptions: [...doc.assumptions],
-    verificationMetrics: [...doc.verificationMetrics],
-    openQuestions: [...doc.openQuestions]
-  };
-}
-function serializeCanvasFile(file) {
-  return JSON.stringify(toCanvasFile(file), null, 2).replaceAll("<", "\\u003c");
-}
-function serializeCanvas(doc) {
-  return serializeCanvasFile(doc);
-}
-function canvasBytes(file) {
-  return `${serializeCanvasFile(file)}
-`;
-}
-
-// ../src/lib/fs/discover.ts
-import { readdirSync } from "node:fs";
-import { join as join3 } from "node:path";
-var SKIPPED = /* @__PURE__ */ new Set(["node_modules", "dist", "build"]);
-function skipped(name) {
-  return name.startsWith(".") || SKIPPED.has(name);
-}
-var EXTENSIONS = [".bcc.json", ".bcc.html"];
-function isCanvasPath(path) {
-  return EXTENSIONS.some((extension) => path.endsWith(extension));
-}
-function findCanvases(root) {
-  const paths = [];
-  const unreadable = [];
-  function walk(directory) {
-    let entries;
-    try {
-      entries = readdirSync(directory, { withFileTypes: true });
-    } catch {
-      unreadable.push(root.relative(directory) || ".");
-      return;
-    }
-    for (const entry of entries) {
-      if (entry.isSymbolicLink()) continue;
-      const path = join3(directory, entry.name);
-      if (entry.isDirectory()) {
-        if (!skipped(entry.name)) walk(path);
-      } else if (entry.isFile() && isCanvasPath(entry.name)) {
-        paths.push(root.relative(path));
-      }
-    }
+  const absolute = resolve2(request.document, "..", pointer);
+  const result = readCanvas(request.root, relative(request.root.path, absolute));
+  if (!result.ok) {
+    return {
+      html: placeholder(readProblem(result, { detail: false })),
+      css: null,
+      // The warning channel is a developer's, and the whole sentence is for
+      // them: which field the parser tripped on, what the filesystem said.
+      problem: readProblem(result)
+    };
   }
-  walk(root.path);
-  return { paths: paths.sort(), unreadable: unreadable.sort() };
+  const { markup, css } = renderSheetParts2(stampIds(result.file));
+  return { html: markup, css, problem: null };
 }
 
-// src/targets.ts
-function targets(root, operands) {
-  if (operands.length > 0) return { paths: operands, unreadable: [], walked: false };
-  const found = findCanvases(root);
-  return { paths: found.paths, unreadable: found.unreadable, walked: true };
+// src/plugin.ts
+import { isAbsolute as isAbsolute2, resolve as resolve3 } from "node:path";
+function infoString(node) {
+  return node.meta ? `${node.lang} ${node.meta}` : node.lang ?? "";
 }
-function canvasFiles(paths) {
-  return paths.filter((path) => path.endsWith(".bcc.json"));
-}
-function isArtifact(path) {
-  return isCanvasPath(path) && !path.endsWith(".bcc.json");
-}
-
-// src/fmt.ts
-function fmt(root, paths, options) {
-  const report = { unchanged: 0, changed: [], problems: [] };
-  for (const input of paths) {
-    if (isArtifact(input)) {
-      if (options.walked) continue;
-      report.problems.push(
-        `${input}: an HTML artifact carries a canvas rather than being one, and fmt writes Canvas files. Name the .bcc.json it was exported from.`
-      );
-      continue;
-    }
-    const result = readCanvas(root, input);
-    if (!result.ok) {
-      report.problems.push(readProblem(result));
-      continue;
-    }
-    const canonical = canvasBytes(result.file);
-    if (canonical === result.text) {
-      report.unchanged++;
-      continue;
-    }
-    report.changed.push(result.path);
-    if (!options.dryRun) writeAtomic(root.resolve(result.path), canonical);
+function fences(tree, found = []) {
+  const children = tree.children;
+  if (!children) return found;
+  for (let index = 0; index < children.length; index += 1) {
+    const node = children[index];
+    if (node.type === "code" && node.lang === FENCE_LANG) found.push({ parent: tree, index, node });
+    else fences(node, found);
   }
-  return report;
+  return found;
 }
-
-// ../src/lib/model/sections.ts
-function nonEmpty(value) {
-  return value !== void 0 && value.trim() !== "";
-}
-var SECTIONS = [
-  {
-    key: "name",
-    label: "Name",
-    placeholder: "Name this context",
-    filled: (file) => nonEmpty(file.name)
-  },
-  {
-    key: "purpose",
-    label: "Purpose",
-    placeholder: "What does this context exist to do? A few sentences in business language.",
-    filled: (file) => nonEmpty(file.purpose)
-  },
-  {
-    key: "strategicClassification",
-    label: "Strategic classification",
-    // No placeholder in SPEC §10: the axes render an em dash until picked,
-    // and their teaching lives in the picker — the vocabularies themselves.
-    filled: (file) => nonEmpty(file.strategicClassification.domain) || nonEmpty(file.strategicClassification.businessModel) || nonEmpty(file.strategicClassification.evolution)
-  },
-  {
-    key: "domainRoles",
-    label: "Domain roles",
-    placeholder: "+ trait \u2014 how does this context behave?",
-    filled: (file) => file.domainRoles.length > 0
-  },
-  {
-    key: "inboundCommunication",
-    label: "Inbound communication",
-    placeholder: "+ collaborator \u2014 who sends this context commands, queries or events?",
-    filled: (file) => file.inboundCommunication.length > 0
-  },
-  {
-    key: "ubiquitousLanguage",
-    label: "Ubiquitous language",
-    placeholder: "+ term \u2014 which words mean something precise here?",
-    filled: (file) => file.ubiquitousLanguage.length > 0
-  },
-  {
-    key: "businessDecisions",
-    label: "Business decisions",
-    placeholder: "+ decision \u2014 which rules does this context enforce?",
-    filled: (file) => file.businessDecisions.length > 0
-  },
-  {
-    key: "outboundCommunication",
-    label: "Outbound communication",
-    placeholder: "+ collaborator \u2014 who consumes what this context emits?",
-    filled: (file) => file.outboundCommunication.length > 0
-  },
-  {
-    key: "assumptions",
-    label: "Assumptions",
-    placeholder: "+ assumption \u2014 what are you taking to be true?",
-    filled: (file) => file.assumptions.length > 0
-  },
-  {
-    key: "verificationMetrics",
-    label: "Verification metrics",
-    placeholder: "+ metric \u2014 what would verify this design?",
-    filled: (file) => file.verificationMetrics.length > 0
-  },
-  {
-    key: "openQuestions",
-    label: "Open questions",
-    placeholder: "+ question \u2014 what's still unresolved?",
-    filled: (file) => file.openQuestions.length > 0
-  }
-];
-function emptySections(file) {
-  return SECTIONS.filter((section) => !section.filled(file)).map((section) => section.label);
-}
-function filledCount(file) {
-  return SECTIONS.filter((section) => section.filled(file)).length;
-}
-
-// src/ls.ts
-function plural(count, one, many) {
-  return `${count} ${count === 1 ? one : many}`;
-}
-function ls(root, out2) {
-  const found = findCanvases(root);
-  const rows = [];
-  const problems = [];
-  for (const path of found.paths) {
-    const result = readCanvas(root, path);
-    if (result.ok) {
-      rows.push({
-        path,
-        name: result.file.name === "" ? "Untitled" : result.file.name,
-        filled: filledCount(result.file),
-        empty: emptySections(result.file)
+function remarkBcc(options = {}) {
+  const roots = /* @__PURE__ */ new Map();
+  return function transformer(tree, file) {
+    const found = fences(tree);
+    if (!found.length) return;
+    const rootPath = resolve3(file.cwd, options.root ?? ".");
+    let root = roots.get(rootPath);
+    if (!root) {
+      root = openRoot(rootPath);
+      roots.set(rootPath, root);
+    }
+    const document = file.path ? isAbsolute2(file.path) ? file.path : resolve3(file.cwd, file.path) : null;
+    let preamble = null;
+    for (const { parent, index, node } of found) {
+      const result = renderFence({
+        root,
+        document,
+        info: infoString(node),
+        body: node.value ?? ""
       });
-    } else {
-      problems.push(readProblem(result));
+      if (result.problem !== null) {
+        const message = file.message(result.problem, node);
+        message.source = "remark-bcc";
+        message.ruleId = "fence";
+      }
+      if (result.css !== null && options.css !== "imported") {
+        preamble ??= fencePreamble(result.css);
+      }
+      parent.children[index] = { type: "html", value: result.html };
     }
-  }
-  if (rows.length === 0 && problems.length === 0) {
-    out2(`No canvases under ${root.path}.`);
-    out2(
-      "bcc looks for .bcc.json and .bcc.html files, skipping hidden directories, node_modules, dist and build."
-    );
-  }
-  const width = Math.max(0, ...rows.map((row) => row.path.length));
-  const total = SECTIONS.length;
-  for (const row of rows) {
-    const filled = `${row.filled}/${total}`.padStart(`${total}/${total}`.length);
-    out2(`${row.path.padEnd(width)}  ${filled}  ${row.name}`);
-    if (row.empty.length > 0) {
-      out2(`${" ".repeat(width)}  ${" ".repeat(filled.length)}  empty: ${row.empty.join(", ")}`);
-    }
-  }
-  if (problems.length > 0) {
-    out2("");
-    out2(
-      problems.length === 1 ? "1 file is named like a canvas and did not read as one:" : `${problems.length} files are named like canvases and did not read as one:`
-    );
-    for (const problem2 of problems) out2(`  ${problem2}`);
-  }
-  if (found.unreadable.length > 0) {
-    out2("");
-    out2(
-      `${plural(found.unreadable.length, "directory", "directories")} could not be opened, so nothing under ${found.unreadable.length === 1 ? "it is" : "them is"} listed: ` + found.unreadable.join(", ")
-    );
-  }
-  return 0;
-}
-
-// src/measure.ts
-var NoBrowser = class extends Error {
-};
-async function chromium() {
-  let module;
-  try {
-    module = await import("playwright-core");
-  } catch {
-    throw new NoBrowser(
-      "measuring a sheet needs playwright-core, which is not installed here. Install it beside a desktop Chrome (npm install playwright-core), or pass --height <pixels> and skip the measurement."
-    );
-  }
-  return module.chromium;
-}
-function firstLine(error) {
-  return error instanceof Error ? error.message.split("\n")[0] : String(error);
-}
-async function openMeasurer() {
-  const engine = await chromium();
-  let browser;
-  try {
-    browser = await engine.launch({ channel: "chrome" });
-  } catch (error) {
-    throw new NoBrowser(
-      `no Chrome to measure with (${firstLine(error)}). bcc drives the Chrome already installed on this machine rather than downloading one; pass --height <pixels> to skip the measurement.`
-    );
-  }
-  const page = await browser.newPage({ viewport: { width: SHEET_WIDTH2, height: 900 } });
-  return {
-    async height(doc) {
-      await page.setContent(sheetDocument2(doc), { waitUntil: "load" });
-      await page.evaluate("document.fonts.ready");
-      const measured = await page.evaluate("document.documentElement.scrollHeight");
-      return Math.ceil(Number(measured));
-    },
-    async close() {
-      await browser.close();
-    }
+    if (preamble !== null) tree.children.unshift({ type: "html", value: preamble });
   };
 }
-
-// ../src/lib/editor/views.ts
-var VIEWS = [
-  { key: "sheet", label: "Sheet" },
-  { key: "json", label: "JSON" },
-  { key: "markdown", label: "Markdown" }
-];
-
-// ../src/lib/model/digest.ts
-function classification(file) {
-  const { domain, businessModel, evolution } = file.strategicClassification;
-  const picked = [
-    ["Domain", domain],
-    ["Business model", businessModel],
-    ["Evolution", evolution]
-  ].filter(([, value]) => value !== void 0 && value !== "");
-  if (picked.length === 0) return [];
-  return [picked.map(([label, value]) => `${label}: ${value}`).join(" \xB7 ")];
-}
-function message(row) {
-  const detail = row.description === void 0 || row.description === "" ? "" : ` \u2014 ${row.description}`;
-  return `${row.type} ${row.name}${detail}`;
-}
-function relationshipLine(lane) {
-  const present2 = (end) => end !== void 0 && end !== "";
-  const theirs = lane.relationship?.theirs;
-  const ours = lane.relationship?.ours;
-  if (present2(theirs) && present2(ours)) return `Collaborator: ${theirs} \u2192 this context: ${ours}`;
-  if (present2(theirs)) return `Collaborator: ${theirs} \u2192`;
-  if (present2(ours)) return `\u2192 this context: ${ours}`;
-  return void 0;
-}
-function lanes(rows) {
-  return rows.flatMap((lane, index) => {
-    const kind = lane.collaborator.kind;
-    const head = `### ${lane.collaborator.name}${kind === void 0 ? "" : ` \u2014 ${kind}`}`;
-    const relationship = relationshipLine(lane);
-    const block = relationship === void 0 ? [head] : [head, "", relationship];
-    const messages = lane.messages.length === 0 ? [] : ["", ...lane.messages.map(message)];
-    return index === 0 ? [...block, ...messages] : ["", ...block, ...messages];
-  });
-}
-function pair(head, detail) {
-  return detail === void 0 || detail === "" ? head : `${head} \u2014 ${detail}`;
-}
-function body(section, file) {
-  switch (section.key) {
-    case "name":
-      return [];
-    case "strategicClassification":
-      return classification(file);
-    case "purpose":
-      return [file.purpose];
-    case "domainRoles":
-      return [file.domainRoles.map((role) => role.name).join(", ")];
-    case "inboundCommunication":
-      return lanes(file.inboundCommunication);
-    case "outboundCommunication":
-      return lanes(file.outboundCommunication);
-    case "ubiquitousLanguage":
-      return file.ubiquitousLanguage.map((row) => pair(row.term, row.definition));
-    case "businessDecisions":
-      return file.businessDecisions.map((row) => pair(row.name, row.description));
-    case "assumptions":
-      return file.assumptions;
-    case "verificationMetrics":
-      return file.verificationMetrics;
-    case "openQuestions":
-      return file.openQuestions;
-  }
-}
-function canvasDigest(file) {
-  const lines = [`# ${file.name.trim() === "" ? "Untitled" : file.name}`];
-  const missing = [];
-  for (const section of SECTIONS) {
-    if (!section.filled(file)) {
-      missing.push(section.label);
-      continue;
-    }
-    if (section.key === "name") continue;
-    lines.push("", `## ${section.label}`, "", ...body(section, file));
-  }
-  if (missing.length > 0) lines.push("", `Nothing yet under: ${missing.join(", ")}.`);
-  return `${lines.join("\n")}
-`;
-}
-
-// ../src/lib/model/title.ts
-function windowTitle2(name) {
-  const trimmed = name.trim();
-  return `${trimmed === "" ? "Untitled" : trimmed} \u2014 BC Canvas`;
-}
-
-// ../src/lib/artifact/html.ts
-var REPO_URL = "https://github.com/ddd-crew/bounded-context-canvas";
-var LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/";
-var STACK_BREAKPOINT = 760;
-var ARTIFACT_CSS = `
-/* The sheet at the editor's fixed desktop metrics, centered on the paper ground. */
-body { margin: 0; }
-main { max-width: ${SHEET_WIDTH2}px; margin: 0 auto; padding: ${SHEET_MARGIN}px; }
-
-/* The renderer's wrapper paints the paper ground so that a fence carries its
-   own; in a document the body already paints it, and a second painting would
-   restart the 32px drafting grid at the wrapper's origin \u2014 a visible seam
-   around the Sheet panel. */
-.views__panel .${SCOPE_CLASS2} { background: none; }
-
-/* One-column stack in reading order below the single breakpoint (SPEC \xA79.1).
-   The centre box is one stacked cell holding its two sections in order. */
-@media (max-width: ${STACK_BREAKPOINT}px) {
-	main { padding: 16px; }
-	article.quiet-sheet .grid {
-		grid-template-columns: 1fr;
-		grid-template-areas:
-			'purpose' 'classification' 'roles' 'inbound' 'centre'
-			'outbound' 'assumptions' 'metrics' 'questions';
-	}
-}
-
-/* --- The three Views (SPEC \xA79.1) ---------------------------------------
-   All three panels are in the document and visible; the script at the end of
-   the body hides two of them and turns the strip into a tablist. Every rule
-   here is written so that *doing nothing* leaves a readable file: the strip
-   ships hidden, the panels ship shown, and each panel keeps a heading until
-   the tab strip is live to carry that word instead. */
-/* The strip is its own box with no wrapper, and it carries its own bottom gap:
-   a bar around it would keep that gap when the strip inside went hidden and
-   stand as an empty band above the sheet (the prototype's, exactly). Nothing
-   to leak if there is nothing to leak from. The inline-flex is what the
-   absent wrapper was for \u2014 the strip is as wide as its three tabs, not the
-   page. */
-/* Filled sheet at rest, which is where the artifact parts company with the
-   editor (SPEC \xA75). The editor's strip rests *unfilled* to soften its
-   resemblance to the chrome band above it; an artifact has no chrome band, so
-   that softening buys nothing here and costs something real \u2014 on bare paper
-   the 32px drafting grid runs straight through the control and its lines
-   compete with the segment dividers. Filled, the strip is one object, the
-   grid stops at its edge, and the ink segment reads as one of three peers. */
-.views__strip[hidden] { display: none; }
-.views__strip {
-	display: inline-flex;
-	margin-bottom: 14px;
-	overflow: hidden;
-	border: 1px solid var(--color-line);
-	border-radius: 4px;
-	background: var(--color-sheet);
-}
-.views__tab {
-	padding: 0.35rem 0.95rem;
-	border: 0;
-	border-left: 1px solid var(--color-line);
-	background: none;
-	color: var(--color-ink-soft);
-	font-family: var(--font-sans);
-	font-size: 0.8rem;
-	font-weight: 500;
-	cursor: pointer;
-}
-.views__tab:first-child { border-left: 0; }
-/* Resting on sheet, hover darkens to paper \u2014 the chrome button's own
-   direction, which is only available here because there is no chrome. */
-.views__tab:hover { background: var(--color-paper); color: var(--color-ink); }
-.views__tab[aria-selected='true'] {
-	background: var(--color-ink);
-	color: var(--color-sheet);
-	font-weight: 600;
-}
-/* Inset, and inverted on the filled segment: roving tabindex means the
-   selected tab is the only one that can hold focus, so an ink ring on ink
-   would be the only ring anyone ever saw (SPEC \xA75). */
-.views__tab:focus-visible { outline: 2px solid var(--color-ink); outline-offset: -2px; }
-.views__tab[aria-selected='true']:focus-visible { outline-color: var(--color-sheet); }
-
-/* The script-less wayfinder: which of the three stacked panels this is. A
-   paragraph and not a heading \u2014 \xA78.6 promises canvas name h1 / sections h2 /
-   collaborators h3, and a real heading above the Sheet's own h1 would invert
-   that. The stacked panels are regions instead, so they are still navigable. */
-.views__heading {
-	margin: 1.8rem 0 0.6rem;
-	color: var(--color-ink-soft);
-	font-family: var(--font-sans);
-	font-size: 0.72rem;
-	font-weight: 600;
-	letter-spacing: 0.11em;
-	text-transform: uppercase;
-}
-.views__panel:first-of-type .views__heading { margin-top: 0; }
-/* The inactive panels are hidden by a class the artifact owns, and pointedly
-   not by the hidden attribute. The app stylesheet inlined above is Tailwind's,
-   whose preflight hides [hidden] with an !important inside @layer base \u2014 and
-   cascade layers reverse for important declarations, so an unlayered
-   !important of ours would lose to it however specific. The print pass has to
-   raise the Sheet panel back up whichever tab is live; against a plain class
-   it simply outranks it by specificity, and nothing in the file needs
-   !important at all. Found by printing from the JSON tab, which produced a
-   blank page \u2014 wayfinder/tickets/048-views-checkpoint.md. */
-.views__panel--off { display: none; }
-.views--enhanced .views__heading { display: none; }
-
-/* The two text Views: the same sheet panel the canvas is drawn on, grown to
-   hold text. No height cap \u2014 the editor capped its panes so Copy and Apply
-   stayed reachable, and an artifact has no buttons to keep in reach. Wrapped
-   rather than scrolled, including the JSON: nothing here is edited, so a long
-   line is something to read, and a pane that scrolls sideways at 200% zoom is
-   the horizontal scroll \xA78.6 rules out. */
-.views__source {
-	margin: 0;
-	padding: 1.35rem 1.5rem;
-	border: 1px solid var(--color-line);
-	border-radius: 5px;
-	background: var(--color-sheet);
-	box-shadow: 0 1px 2px rgb(26 30 32 / 0.04);
-	color: var(--color-ink);
-	font-family: var(--font-mono);
-	font-size: 0.8rem;
-	line-height: 1.65;
-	white-space: pre-wrap;
-	overflow-wrap: anywhere;
-}
-
-/* Minimal print pass: clean section breaks \u2014 printing is the PDF answer.
-   Sections keep together whether they sit in the grid or inside the centre
-   box; the box itself prefers to keep its pair on one page. */
-@media print {
-	main { max-width: none; padding: 0; }
-	/* Print is the Sheet, whichever View the viewer happens to be looking at \u2014
-	   a printed JSON dump is nobody's PDF (SPEC \xA79.1). The id outranks the
-	   off-class the script writes, which is the whole reason that class exists
-	   rather than the hidden attribute: see .views__panel--off above. */
-	.views__strip, .views__heading { display: none; }
-	#view-panel-sheet { display: block; }
-	#view-panel-json, #view-panel-markdown { display: none; }
-	article.quiet-sheet .grid { display: block; }
-	article.quiet-sheet .grid section,
-	article.quiet-sheet .centre { break-inside: avoid; }
-	article.quiet-sheet .grid > * + * { margin-top: 18px; }
-	/* The centre plate is a background wash (SPEC \xA75); ask print engines to
-	   keep it, since browsers drop backgrounds by default. */
-	article.quiet-sheet .centre { display: block; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-	article.quiet-sheet .centre > section + section { margin-top: 18px; }
-	article.quiet-sheet .tb,
-	article.quiet-sheet .foot { break-inside: avoid; }
-}
-`;
-var VIEWS_SCRIPT = `<script>
-(function () {
-	var root = document.querySelector('[data-canvas-views]');
-	if (!root) return;
-	var strip = root.querySelector('[role="tablist"]');
-	var tabs = [].slice.call(root.querySelectorAll('[role="tab"]'));
-	var panels = [].slice.call(root.querySelectorAll('.views__panel'));
-	if (!strip || !tabs.length || tabs.length !== panels.length) return;
-
-	for (var i = 0; i < panels.length; i++) {
-		// Tab semantics are the script's to add: a tabpanel with no live
-		// tablist above it would be a promise the script-less file can't keep.
-		panels[i].setAttribute('role', 'tabpanel');
-		panels[i].setAttribute('aria-labelledby', tabs[i].id);
-		panels[i].removeAttribute('aria-label');
-		panels[i].tabIndex = 0;
-	}
-
-	function select(index) {
-		for (var i = 0; i < tabs.length; i++) {
-			tabs[i].setAttribute('aria-selected', i === index ? 'true' : 'false');
-			tabs[i].tabIndex = i === index ? 0 : -1;
-			// A class, not the hidden attribute \u2014 the print pass has to raise
-			// the Sheet back up from here, and preflight's layered important
-			// [hidden] rule cannot be outranked from an unlayered sheet.
-			if (i === index) panels[i].classList.remove('views__panel--off');
-			else panels[i].classList.add('views__panel--off');
-		}
-	}
-
-	function move(index) {
-		select(index);
-		tabs[index].focus();
-	}
-
-	for (var t = 0; t < tabs.length; t++) {
-		(function (index) {
-			tabs[index].addEventListener('click', function () { select(index); });
-			tabs[index].addEventListener('keydown', function (event) {
-				var next = -1;
-				if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % tabs.length;
-				if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + tabs.length) % tabs.length;
-				if (event.key === 'Home') next = 0;
-				if (event.key === 'End') next = tabs.length - 1;
-				if (next < 0) return;
-				event.preventDefault();
-				move(next);
-			});
-		})(t);
-	}
-
-	root.className += ' views--enhanced';
-	select(0);
-	// Last, not first: the strip is only allowed to look live once it is. If
-	// anything above threw, the file is still the honest stack.
-	strip.removeAttribute('hidden');
-})();
-</script>`;
-function viewPanels(sheet, json, markdown) {
-  const tabs = VIEWS.map(
-    (view, index) => `<button type="button" class="views__tab" role="tab" id="view-tab-${view.key}" aria-controls="view-panel-${view.key}" aria-selected="${index === 0}" tabindex="${index === 0 ? 0 : -1}">${view.label}</button>`
-  ).join("");
-  const [sheetLabel, jsonLabel, markdownLabel] = VIEWS.map((view) => view.label);
-  const panel = (key, label, body2) => `<section class="views__panel" id="view-panel-${key}" aria-label="${label}">
-<p class="views__heading">${label}</p>
-${body2}
-</section>`;
-  return `<div class="views__strip" role="tablist" aria-label="Views" hidden>${tabs}</div>
-${panel("sheet", sheetLabel, sheet)}
-${panel("json", jsonLabel, `<pre class="views__source">${escapeHtml2(json)}</pre>`)}
-${panel("markdown", markdownLabel, `<pre class="views__source">${escapeHtml2(markdown)}</pre>`)}`;
-}
-function escapeHtml2(text) {
-  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
-function artifactDocument(doc) {
-  const json = serializeCanvas(doc);
-  const { markup, css } = renderSheetParts2(doc);
-  const title = windowTitle2(doc.name);
-  const markdown = canvasDigest(toCanvasFile(doc));
-  return `<!doctype html>
-<!-- Based on the Bounded Context Canvas by the ddd-crew (${REPO_URL}), licensed CC BY 4.0 (${LICENSE_URL}). -->
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${escapeHtml2(title)}</title>
-<style>${fontFaceCss2()}</style>
-<style>
-${css}
-</style>
-<style>${ARTIFACT_CSS}</style>
-</head>
-<body class="${SCOPE_CLASS2}">
-<main data-canvas-views>
-${viewPanels(markup, json, markdown)}
-</main>
-${embeddedCanvasBlock(json)}
-${VIEWS_SCRIPT}
-</body>
-</html>
-`;
-}
-
-// src/render.ts
-async function render2(root, paths, options) {
-  const report = { written: [], problems: [] };
-  let measurer = null;
-  try {
-    for (const input of paths) {
-      const result = readCanvas(root, input);
-      if (!result.ok) {
-        report.problems.push(readProblem(result));
-        continue;
-      }
-      const target = options.out ?? outputPath(result.path, options.kind);
-      const absolute = root.resolve(target);
-      if (absolute === root.resolve(result.path)) {
-        report.problems.push(
-          `${result.path}: rendering it as ${options.kind.toUpperCase()} would overwrite the file it was read from. Name --out <file>, or render the .bcc.json it was exported from.`
-        );
-        continue;
-      }
-      const doc = stampIds(result.file);
-      let text;
-      if (options.kind === "svg") {
-        let height = options.height;
-        if (height === void 0) {
-          measurer ??= await openMeasurer();
-          height = await measurer.height(doc);
-        }
-        text = reproduce(doc, height);
-      } else {
-        text = artifactDocument(doc);
-      }
-      writeAtomic(absolute, text);
-      report.written.push(root.relative(absolute));
-    }
-  } finally {
-    await measurer?.close();
-  }
-  return report;
-}
-
-// src/main.ts
-var USAGE = `bcc \u2014 the Bounded Context Canvas files in a project.
-
-usage: bcc <command> [options] [<canvas>...]
-
-  render   draw a canvas as an HTML artifact, or as an SVG image
-  check    read every canvas through the parser the editor imports with
-  fmt      rewrite canvases in their canonical bytes
-  ls       list the canvases under the root
-
-Every command takes --root <directory>: where bcc looks, and the furthest it
-goes. It defaults to the working directory.
-
-bcc <command> --help says what one command takes.`;
-var COMMAND_USAGE = {
-  render: `usage: bcc render [--svg] [--height <pixels>] [--out <file>] [<canvas>...]
-
-Writes <canvas>.bcc.html beside each canvas, or <canvas>.bcc.svg with --svg.
-With no canvas named, every .bcc.json under the root.
-
-  --svg               an SVG image instead of the HTML artifact
-  --height <pixels>   the SVG's height, rather than measuring it in Chrome
-  --out <file>        write here instead of beside the canvas; one canvas only
-  --root <directory>  where canvases live (default: the working directory)`,
-  check: `usage: bcc check [--root <directory>] [<canvas>...]
-
-Reads each canvas through the parser the editor's Import\u2026 uses, so a canvas
-that passes here opens there. Any .bcc.svg beside a canvas is redrawn at the
-height it declares and compared byte for byte; a canvas with no image beside it
-is not a finding. With no canvas named, everything under the root.
-
-Exits 1 if anything does not check out.`,
-  fmt: `usage: bcc fmt [--check] [--root <directory>] [<canvas>...]
-
-Rewrites each .bcc.json in the bytes an export would have written \u2014 the same
-key order, the same indent, the same trailing newline. With no canvas named,
-every one under the root.
-
-  --check   name what would change, write nothing, and exit 1`,
-  ls: `usage: bcc ls [--root <directory>]
-
-Every canvas under the root, with how many of its eleven sections say something
-and which ones do not.`
+export {
+  remarkBcc as default
 };
-function out(line) {
-  process.stdout.write(`${line}
-`);
-}
-function problem(line) {
-  process.stderr.write(`${line}
-`);
-}
-function unusable(message2, usage2) {
-  problem(message2);
-  problem("");
-  problem(usage2);
-  process.exit(2);
-}
-function plural2(count, one, many) {
-  return `${count} ${count === 1 ? one : many}`;
-}
-function openRequestedRoot(requested, usage2) {
-  let root;
-  try {
-    root = openRoot(requested);
-  } catch (error) {
-    const why = error instanceof Error ? error.message : String(error);
-    unusable(`--root ${requested}: ${why}`, usage2);
-  }
-  const unservable = whyUnservable(root.path);
-  if (unservable !== null) unusable(unservable, usage2);
-  return root;
-}
-function positiveInteger(value, option) {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new UsageError(`${option} takes a whole number of pixels, not ${value}.`);
-  }
-  return parsed;
-}
-async function run(command2, argv, usage2) {
-  const spec = {
-    render: { booleans: ["svg", "help"], values: ["height", "out", "root"] },
-    check: { booleans: ["help"], values: ["root"] },
-    fmt: { booleans: ["check", "help"], values: ["root"] },
-    ls: { booleans: ["help"], values: ["root"] }
-  }[command2];
-  if (spec === void 0) {
-    unusable(`no such command: ${command2}. bcc takes render, check, fmt and ls.`, USAGE);
-  }
-  const options = parseOptions(argv, spec);
-  if (options.booleans.has("help")) {
-    out(usage2);
-    return 0;
-  }
-  const root = openRequestedRoot(options.values.get("root") ?? process.cwd(), usage2);
-  if (command2 === "ls") {
-    if (options.operands.length > 0) {
-      throw new UsageError("ls takes no canvas \u2014 it lists them all. Did you mean bcc check?");
-    }
-    return ls(root, out);
-  }
-  const found = targets(root, options.operands);
-  for (const directory of found.unreadable) {
-    problem(`${directory}: could not be opened, so nothing under it was looked at.`);
-  }
-  if (command2 === "check") {
-    if (found.paths.length === 0) return nothingFound(root, found, 0);
-    const report2 = check(root, found.paths);
-    for (const line of report2.problems) problem(line);
-    if (report2.canvases > 0) out(`${plural2(report2.canvases, "canvas", "canvases")} check out.`);
-    if (report2.images > 0) {
-      const beside = report2.images === 1 ? "it" : "them";
-      out(`${plural2(report2.images, "image matches", "images match")} the canvas beside ${beside}.`);
-    }
-    return report2.problems.length === 0 ? 0 : 1;
-  }
-  if (command2 === "fmt") {
-    const paths2 = found.walked ? canvasFiles(found.paths) : found.paths;
-    if (paths2.length === 0) return nothingFound(root, found, found.paths.length);
-    const dryRun = options.booleans.has("check");
-    const report2 = fmt(root, paths2, { dryRun, walked: found.walked });
-    for (const line of report2.problems) problem(line);
-    for (const path of report2.changed) {
-      if (dryRun) problem(`${path}: not the bytes an export would write.`);
-      else out(path);
-    }
-    if (report2.changed.length === 0 && report2.problems.length === 0) {
-      out(`${plural2(report2.unchanged, "canvas is", "canvases are")} in canonical form.`);
-    } else if (dryRun && report2.changed.length > 0) {
-      problem(`Rewrite ${report2.changed.length === 1 ? "it" : "them"} with bcc fmt.`);
-    }
-    return report2.problems.length > 0 || dryRun && report2.changed.length > 0 ? 1 : 0;
-  }
-  const kind = options.booleans.has("svg") ? "svg" : "html";
-  const height = options.values.has("height") ? positiveInteger(options.values.get("height"), "--height") : void 0;
-  if (height !== void 0 && kind === "html") {
-    throw new UsageError("--height sizes an SVG viewport, and the HTML artifact has none.");
-  }
-  const paths = found.walked ? canvasFiles(found.paths) : found.paths;
-  if (paths.length === 0) return nothingFound(root, found, found.paths.length);
-  if (paths.length > 1 && options.values.has("out")) {
-    throw new UsageError(`--out names one file, and ${paths.length} canvases are in reach.`);
-  }
-  if (paths.length > 1 && height !== void 0) {
-    throw new UsageError(
-      `--height is one canvas's height, and ${paths.length} canvases are in reach. Render them one at a time, or leave it out and let Chrome measure each.`
-    );
-  }
-  const report = await render2(root, paths, { kind, height, out: options.values.get("out") });
-  for (const line of report.problems) problem(line);
-  for (const path of report.written) out(path);
-  return report.problems.length === 0 ? 0 : 1;
-}
-function nothingFound(root, found, artifacts) {
-  if (!found.walked) return 0;
-  if (artifacts > 0) {
-    out(`No .bcc.json canvases under ${root.path}.`);
-    out(
-      artifacts === 1 ? "The one file here named like a canvas is an HTML artifact, which carries a canvas rather than being one." : `The ${artifacts} files here named like canvases are HTML artifacts, which carry a canvas rather than being one.`
-    );
-    return 0;
-  }
-  out(`No canvases under ${root.path}.`);
-  out(
-    "bcc looks for .bcc.json and .bcc.html files, skipping hidden directories, node_modules, dist and build."
-  );
-  return 0;
-}
-var [command = "", ...rest] = process.argv.slice(2);
-if (command === "" || command === "--help" || command === "help") {
-  out(USAGE);
-  process.exit(0);
-}
-var usage = COMMAND_USAGE[command] ?? USAGE;
-try {
-  process.exitCode = await run(command, rest, usage);
-} catch (error) {
-  if (error instanceof UsageError) unusable(error.message, usage);
-  if (error instanceof NoBrowser) {
-    problem(error.message);
-    process.exit(1);
-  }
-  throw error;
-}
