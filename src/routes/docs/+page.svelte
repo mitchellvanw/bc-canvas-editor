@@ -101,7 +101,7 @@ rehypePlugins: [[rehypeRaw, { passThrough: ['mdxjsEsm', 'mdxFlowExpression',
 	<div class="mt-16 max-w-3xl">
 		<p class="text-sm font-semibold tracking-[0.08em] uppercase text-ink-soft">The docs</p>
 		<h1 class="mt-4 text-4xl leading-[1.08] font-bold tracking-tight text-balance sm:text-5xl">
-			<span class="underline-term">One file</span>, and every tool that
+			<span class="underline-command">One file</span>, and every tool that
 			<span class="underline-event">touches it</span>.
 		</h1>
 		<p class="mt-6 font-serif text-lg leading-relaxed text-ink-soft">
@@ -606,8 +606,8 @@ rehypePlugins: [[rehypeRaw, { passThrough: ['mdxjsEsm', 'mdxFlowExpression',
 
 <style>
 	/* The homepage's marker underlines, under the headline's load-bearing words. */
-	.underline-term {
-		box-shadow: inset 0 -0.18em 0 0 var(--color-term);
+	.underline-command {
+		box-shadow: inset 0 -0.18em 0 0 var(--color-command);
 	}
 	.underline-event {
 		box-shadow: inset 0 -0.18em 0 0 var(--color-event);
