@@ -228,9 +228,19 @@
 				>
 					<span class="text-ink-faint">$</span>
 					{NPX_LINE}
-					<span class="font-sans text-xs font-semibold text-ink-soft group-hover:text-ink">
-						{copied ? 'Copied' : 'Copy'}
+					<span class="shrink-0 text-ink-soft group-hover:text-ink" aria-hidden="true">
+						{#if copied}
+							<svg class="h-4 w-4 text-query-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M20 6 9 17l-5-5" />
+							</svg>
+						{:else}
+							<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="9" y="9" width="13" height="13" rx="2" />
+								<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+							</svg>
+						{/if}
 					</span>
+					<span class="sr-only" aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
 				</button>
 			</div>
 		</div>
@@ -571,12 +581,20 @@
 {/if}
 
 <style>
-	/* Marker underlines: a thick palette stroke under the load-bearing words. */
+	/* Marker underlines: a thick palette stroke under the load-bearing words.
+	   Drawn as a bottom-aligned gradient so on load each stroke can swipe in
+	   left to right, one after the other, once the chip stack has pinned. */
+	.underline-event,
+	.underline-command {
+		background-repeat: no-repeat;
+		background-position: left bottom;
+		background-size: 100% 0.18em;
+	}
 	.underline-event {
-		box-shadow: inset 0 -0.18em 0 0 var(--color-event);
+		background-image: linear-gradient(var(--color-event), var(--color-event));
 	}
 	.underline-command {
-		box-shadow: inset 0 -0.18em 0 0 var(--color-command);
+		background-image: linear-gradient(var(--color-command), var(--color-command));
 	}
 	/* The sheet's own ubiquitous-term treatment (CanvasSheet .terms dt):
 	   mono over a highlighter stroke through the glyphs' lower half. */
@@ -621,6 +639,24 @@
 		.chip {
 			animation: pin 400ms cubic-bezier(0.2, 0, 0, 1) both;
 			animation-delay: calc(180ms + var(--i) * 90ms);
+		}
+
+		/* The last chip settles at ~940ms; the marker strokes follow it. */
+		.underline-event,
+		.underline-command {
+			background-size: 0% 0.18em;
+			animation: swipe 480ms cubic-bezier(0.2, 0, 0, 1) both;
+		}
+		.underline-event {
+			animation-delay: 1020ms;
+		}
+		.underline-command {
+			animation-delay: 1290ms;
+		}
+		@keyframes swipe {
+			to {
+				background-size: 100% 0.18em;
+			}
 		}
 
 		:global(.pending) {
