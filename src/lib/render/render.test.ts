@@ -215,6 +215,14 @@ describe('sheetSvg', () => {
 		// rendering, silently, everywhere.
 		expect(svg).not.toMatch(/<(br|hr|img|input|meta|link)(\s[^>]*[^/])?>/);
 		expect(svg).not.toMatch(/&(?!amp;|lt;|gt;|quot;|apos;|#)/);
+		// The markup is serializer-escaped, but `<style>` is a raw-text element
+		// the serializer never touches: a literal `<` inside it — a CSS comment
+		// is all it takes — is legal HTML and fatal XML, so the artifact keeps
+		// working while every committed image turns into a broken-image icon
+		// (ticket 063, found the day it happened).
+		const styles = [...svg.matchAll(/<style>(.*?)<\/style>/gs)];
+		expect(styles.length).toBeGreaterThan(0);
+		for (const [, css] of styles) expect(css).not.toContain('<');
 	});
 
 	it('declares the SVG namespace on every glyph the sheet draws', () => {

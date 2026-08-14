@@ -66,10 +66,12 @@ describe('quiet-sheet tokens meet WCAG AA (SPEC §8.4)', () => {
 		}
 	});
 
-	it('title-block text passes 4.5:1 on the ink block, including the 60%-opacity eyebrow', () => {
+	it('title-block text passes 4.5:1 on the ink block, including the 60% color-mix eyebrow', () => {
 		expect(contrast(token('sheet'), token('ink'))).toBeGreaterThanOrEqual(4.5);
+		// The eyebrow is color-mix(in srgb, sheet 60%, ink) — dimmed by colour,
+		// never by opacity (ticket 063) — which is exactly this blend.
 		const eyebrow = blend(token('sheet'), token('ink'), 0.6);
-		expect(contrast(eyebrow, token('ink')), 'eyebrow at 60% opacity').toBeGreaterThanOrEqual(4.5);
+		expect(contrast(eyebrow, token('ink')), 'eyebrow at 60% mix').toBeGreaterThanOrEqual(4.5);
 	});
 
 	it('ink text on the pastel fills passes 4.5:1 (chips, glyphs, term highlighter — at-risk pairs)', () => {

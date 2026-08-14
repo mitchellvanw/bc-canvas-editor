@@ -118,7 +118,14 @@
 	   sheet is self-contained by construction rather than by a rule someone
 	   remembered to copy. */.sr-only.svelte-18zyimi {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);white-space:nowrap;border-width:0;}.quiet-sheet.svelte-18zyimi {--gap: 18px;font-family:var(--font-serif);color:var(--color-ink);line-height:1.5;}
 
-	/* ---- title block (SPEC §5): ink block, eyebrow, name ---- */.tb.svelte-18zyimi {display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--gap) 2.5rem;margin-bottom:var(--gap);padding:1.5rem 1.7rem;border-radius:6px;background:var(--color-ink);color:var(--color-sheet);}.tb__id.svelte-18zyimi {flex:1 1 320px;min-width:0;}.tb__eyebrow.svelte-18zyimi {margin:0 0 0.55rem;font-family:var(--font-sans);font-size:0.62rem;font-weight:600;letter-spacing:0.24em;text-transform:uppercase;opacity:0.6;}.tb__name.svelte-18zyimi {margin:0;font-family:var(--font-sans);font-weight:700;font-size:2.4rem;line-height:1.1;letter-spacing:0.01em;min-height:1.1em;}
+	/* ---- title block (SPEC §5): ink block, eyebrow, name ---- */.tb.svelte-18zyimi {display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--gap) 2.5rem;margin-bottom:var(--gap);padding:1.5rem 1.7rem;border-radius:6px;background:var(--color-ink);color:var(--color-sheet);}.tb__id.svelte-18zyimi {flex:1 1 320px;min-width:0;}.tb__eyebrow.svelte-18zyimi {margin:0 0 0.55rem;font-family:var(--font-sans);font-size:0.62rem;font-weight:600;letter-spacing:0.24em;text-transform:uppercase;
+		/* Dimmed by colour, never by opacity (wayfinder ticket 063): any opacity
+		   below 1 is a stacking context, and WebKit's SVG-as-image path paints
+		   stacking contexts unscaled when the committed image displays below
+		   natural size — the eyebrow drew full-size on top of the name. The mix
+		   is the same blend contrast.test.ts verifies against AA. (This CSS also
+		   travels inside XML, so no left angle bracket may appear in it —
+		   render.test.ts pins that.) */color:color-mix(in srgb, var(--color-sheet) 60%, var(--color-ink));}.tb__name.svelte-18zyimi {margin:0;font-family:var(--font-sans);font-weight:700;font-size:2.4rem;line-height:1.1;letter-spacing:0.01em;min-height:1.1em;}
 
 	/* ---- the V5 canonical 12-column grid (SPEC §5): ten panels ---- */.grid.svelte-18zyimi {display:grid;gap:var(--gap);grid-template-columns:repeat(12, 1fr);grid-template-areas:'purpose purpose purpose purpose purpose classification classification classification classification roles roles roles'
 			'inbound inbound inbound inbound centre centre centre centre outbound outbound outbound outbound'
@@ -164,7 +171,16 @@
 			transparent 92%
 		);}.terms.svelte-18zyimi dd:where(.svelte-18zyimi) {margin:0.15rem 0 0;font-size:0.9rem;line-height:1.45;color:var(--color-ink-soft);}
 
-	/* ---- decisions / assumptions / questions ---- */.stack.svelte-18zyimi {margin:0;padding:0;list-style:none;}.stack.svelte-18zyimi li:where(.svelte-18zyimi) {position:relative;padding-left:1.15rem;font-size:0.9rem;line-height:1.5;}.stack.svelte-18zyimi li:where(.svelte-18zyimi) + li:where(.svelte-18zyimi) {margin-top:0.65rem;}.stack.svelte-18zyimi li:where(.svelte-18zyimi)::before {content:'';position:absolute;left:0;top:0.48em;width:7px;height:7px;border-radius:2px;background:var(--color-ink-faint);}.stack--policy.svelte-18zyimi li:where(.svelte-18zyimi)::before {background:var(--color-policy);border:1px solid var(--color-policy-ink);}.stack--hotspot.svelte-18zyimi li:where(.svelte-18zyimi)::before {background:var(--color-hotspot);border:1px solid var(--color-hotspot-ink);transform:rotate(14deg);}.stack.svelte-18zyimi b:where(.svelte-18zyimi) {font-family:var(--font-sans);font-size:0.8rem;font-weight:600;letter-spacing:0.01em;}.stack__detail.svelte-18zyimi {color:var(--color-ink-soft);}
+	/* ---- decisions / assumptions / questions ---- */.stack.svelte-18zyimi {margin:0;padding:0;list-style:none;}.stack.svelte-18zyimi li:where(.svelte-18zyimi) {padding-left:1.15rem;font-size:0.9rem;line-height:1.5;}.stack.svelte-18zyimi li:where(.svelte-18zyimi) + li:where(.svelte-18zyimi) {margin-top:0.65rem;}
+	/* The marker rides the first line box, pulled into the li's padding — see
+	   the stackMarker snippet for why it is not a positioned ::before. overflow
+	   keeps the tilted hotspot's corners; the stroke is the same-hue ink border
+	   the chips carry, self-coloured on the neutral marker. */.stack__marker.svelte-18zyimi {
+		/* Explicit, because the sheet renders inside hosts whose stylesheets
+		   reach element selectors — Tailwind's preflight makes every svg
+		   display: block, which would put each marker on its own line in the
+		   editor while the artifact keeps flowing. Stated here, no host can
+		   disagree. */display:inline-block;width:7px;height:7px;margin-left:-1.15rem;margin-right:calc(1.15rem - 7px);overflow:visible;vertical-align:0.05em;}.stack__marker.svelte-18zyimi rect:where(.svelte-18zyimi) {fill:var(--color-ink-faint);stroke:var(--color-ink-faint);stroke-width:1;}.stack--policy.svelte-18zyimi .stack__marker:where(.svelte-18zyimi) rect:where(.svelte-18zyimi) {fill:var(--color-policy);stroke:var(--color-policy-ink);}.stack--hotspot.svelte-18zyimi .stack__marker:where(.svelte-18zyimi) rect:where(.svelte-18zyimi) {fill:var(--color-hotspot);stroke:var(--color-hotspot-ink);}.stack.svelte-18zyimi b:where(.svelte-18zyimi) {font-family:var(--font-sans);font-size:0.8rem;font-weight:600;letter-spacing:0.01em;}.stack__detail.svelte-18zyimi {color:var(--color-ink-soft);}
 
 	/* ---- footer: legend + attribution (SPEC §10), inside the capture region ---- */.foot.svelte-18zyimi {display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0.6rem 2rem;margin-top:var(--gap);padding-top:1rem;border-top:1px solid var(--color-line);}.key.svelte-18zyimi {display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem 1.05rem;margin:0;padding:0;list-style:none;}.key.svelte-18zyimi li:where(.svelte-18zyimi) {display:inline-flex;align-items:center;gap:0.35rem;font-family:var(--font-mono);font-size:0.72rem;color:var(--color-ink-soft);}.key__swatch.svelte-18zyimi {display:inline-block;width:10px;height:10px;background:var(--fill);border:1px solid var(--edge);border-radius:3px;}.key__icon.svelte-18zyimi {display:inline-block;width:12px;height:12px;color:var(--color-collaborator-ink);}.key__icon.svelte-18zyimi .key__svg {display:block;width:100%;height:100%;}
 	/* The relationship-pair key: the same set-back/forward inks the lanes use,

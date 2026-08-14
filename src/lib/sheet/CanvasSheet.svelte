@@ -149,6 +149,32 @@
 	</svg>
 {/snippet}
 
+{#snippet stackMarker(tilted: boolean)}
+	<!-- The stack markers are inline SVG, not positioned pseudo-elements
+	     (wayfinder ticket 063): WebKit's SVG-as-image path paints positioned
+	     boxes and stacking contexts unscaled when the committed image displays
+	     below natural size, which blanked all four stack panels on GitHub in
+	     Safari — so nothing in the sheet may lean on position, opacity or a
+	     CSS transform. The hotspot tilt is an SVG-internal rotate, which stays
+	     inside the SVG painter and scales. xmlns is load-bearing off-screen,
+	     as on the kind icons above. -->
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		class="stack__marker"
+		viewBox="0 0 7 7"
+		aria-hidden="true"
+	>
+		<rect
+			x="0.5"
+			y="0.5"
+			width="6"
+			height="6"
+			rx="2"
+			transform={tilted ? 'rotate(14 3.5 3.5)' : undefined}
+		/>
+	</svg>
+{/snippet}
+
 {#snippet communication(label: string, lanes: LaneRow[], area: string, question: string)}
 	<section class="panel panel--collab {area}">
 		<h2 class="panel__label">{label}</h2>
@@ -327,7 +353,7 @@
 				<ul class="stack stack--policy">
 					{#each doc.businessDecisions as decision, index (decision.id)}
 						<li>
-							<b
+							{@render stackMarker(false)}<b
 								>{@render text({
 									value: decision.name,
 									label: 'Decision',
@@ -382,7 +408,7 @@
 				<ul class="stack" class:stack--hotspot={hotspot}>
 					{#each items as item, index (index)}
 						<li>
-							{@render text({
+							{@render stackMarker(hotspot)}{@render text({
 								value: item,
 								label: itemLabel,
 								placeholder: '…',
@@ -627,7 +653,14 @@
 		font-weight: 600;
 		letter-spacing: 0.24em;
 		text-transform: uppercase;
-		opacity: 0.6;
+		/* Dimmed by colour, never by opacity (wayfinder ticket 063): any opacity
+		   below 1 is a stacking context, and WebKit's SVG-as-image path paints
+		   stacking contexts unscaled when the committed image displays below
+		   natural size — the eyebrow drew full-size on top of the name. The mix
+		   is the same blend contrast.test.ts verifies against AA. (This CSS also
+		   travels inside XML, so no left angle bracket may appear in it —
+		   render.test.ts pins that.) */
+		color: color-mix(in srgb, var(--color-sheet) 60%, var(--color-ink));
 	}
 	.tb__name {
 		margin: 0;
@@ -973,7 +1006,6 @@
 		list-style: none;
 	}
 	.stack li {
-		position: relative;
 		padding-left: 1.15rem;
 		font-size: 0.9rem;
 		line-height: 1.5;
@@ -981,24 +1013,36 @@
 	.stack li + li {
 		margin-top: 0.65rem;
 	}
-	.stack li::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0.48em;
+	/* The marker rides the first line box, pulled into the li's padding — see
+	   the stackMarker snippet for why it is not a positioned ::before. overflow
+	   keeps the tilted hotspot's corners; the stroke is the same-hue ink border
+	   the chips carry, self-coloured on the neutral marker. */
+	.stack__marker {
+		/* Explicit, because the sheet renders inside hosts whose stylesheets
+		   reach element selectors — Tailwind's preflight makes every svg
+		   display: block, which would put each marker on its own line in the
+		   editor while the artifact keeps flowing. Stated here, no host can
+		   disagree. */
+		display: inline-block;
 		width: 7px;
 		height: 7px;
-		border-radius: 2px;
-		background: var(--color-ink-faint);
+		margin-left: -1.15rem;
+		margin-right: calc(1.15rem - 7px);
+		overflow: visible;
+		vertical-align: 0.05em;
 	}
-	.stack--policy li::before {
-		background: var(--color-policy);
-		border: 1px solid var(--color-policy-ink);
+	.stack__marker rect {
+		fill: var(--color-ink-faint);
+		stroke: var(--color-ink-faint);
+		stroke-width: 1;
 	}
-	.stack--hotspot li::before {
-		background: var(--color-hotspot);
-		border: 1px solid var(--color-hotspot-ink);
-		transform: rotate(14deg);
+	.stack--policy .stack__marker rect {
+		fill: var(--color-policy);
+		stroke: var(--color-policy-ink);
+	}
+	.stack--hotspot .stack__marker rect {
+		fill: var(--color-hotspot);
+		stroke: var(--color-hotspot-ink);
 	}
 	.stack b {
 		font-family: var(--font-sans);
