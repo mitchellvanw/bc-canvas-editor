@@ -2673,9 +2673,17 @@ function check(root, paths) {
     report.canvases++;
     const imagePath = outputPath(result.path, "svg");
     if (compared.has(imagePath)) continue;
+    let resolved;
+    try {
+      resolved = root.resolve(imagePath);
+    } catch (error) {
+      if (!(error instanceof OutsideRoot)) throw error;
+      report.problems.push(error.message);
+      continue;
+    }
     let committed;
     try {
-      committed = readFileSync2(root.resolve(imagePath), "utf8");
+      committed = readFileSync2(resolved, "utf8");
     } catch {
       continue;
     }

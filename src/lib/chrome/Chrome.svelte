@@ -11,7 +11,6 @@
 	 */
 	import { announce } from '$lib/a11y/announce';
 	import { downloadBlob } from '$lib/artifact/download';
-	import { exportPngArtifact } from '$lib/artifact/png';
 	import { EXAMPLES, type ExampleEntry } from '$lib/chrome/examples';
 	import { REFERENCE_CLUSTERS, REFERENCE_URL, renderKeys } from '$lib/chrome/reference';
 	import { canvas } from '$lib/editor/document.svelte';
@@ -161,6 +160,10 @@
 	async function exportPng() {
 		exportMenuOpen = false;
 		try {
+			// Loaded on demand, like the HTML artifact and the SVG: snapdom is
+			// ~30 KB of the page chunk an editor session that never exports a
+			// PNG has no use for.
+			const { exportPngArtifact } = await import('$lib/artifact/png');
 			await exportPngArtifact(canvas.doc);
 		} catch (error) {
 			// SPEC §10 defines no export-failure notice; don't let it vanish silently.

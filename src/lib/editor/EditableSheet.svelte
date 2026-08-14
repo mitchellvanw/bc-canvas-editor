@@ -26,7 +26,6 @@
 	import { dragReorder } from './drag';
 	import { editableText } from './editable';
 	import { commitMove, handleStructuralKey, modelList } from './keyboard';
-	import { handleUndoShortcut } from './undo';
 	import Picker from './Picker.svelte';
 	import TraitPicker from './TraitPicker.svelte';
 	import { CLEAR_LABELS, PICK_OPTIONS } from './vocab';
@@ -98,7 +97,6 @@
 		if (openPicker && !target?.closest('.pickwrap')) closePicker(false);
 	}}
 	onkeydown={(event) => {
-		handleUndoShortcut(event);
 		handleStructuralKey(event);
 		if (event.key === 'Escape') {
 			typePopover = null;
@@ -277,6 +275,16 @@
 	.field--block {
 		display: block;
 		min-height: 1lh;
+	}
+	/* An inline-block baselines on its last line box, so a stack item that
+	   wraps would drag the marker beside it down to the final line. Top
+	   alignment pins the field to the line box the marker rides; the field
+	   shares the li's font metrics, so its first line still lands exactly
+	   where a single-line item's text does. Fully :global because the field
+	   renders inside CanvasSheet's li — a boundary the compiler cannot see
+	   across, so a scoped selector would be pruned as unused. */
+	:global(.stack li > .field) {
+		vertical-align: top;
 	}
 
 	/* Faint halo on hover, hairline outline on focus (SPEC §6) — nothing at rest. */

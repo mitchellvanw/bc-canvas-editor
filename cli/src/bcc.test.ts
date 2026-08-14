@@ -271,6 +271,24 @@ describe("bcc check's image leg", () => {
 		expect(run.stderr).toContain('no height on its <svg> element');
 		expect(run.stderr).not.toContain('does not match');
 	});
+
+	it('refuses an image swapped for a symlink out of the root, rather than reading it as absent', () => {
+		// Ticket 065's third face, loudened: the swallow read this state as the
+		// silent no-image case, and a check that says nothing here has stopped
+		// guarding the one image it was pointed at.
+		const outside = mkdtempSync(path.join(tmpdir(), 'bcc-outside-'));
+		try {
+			writeFileSync(path.join(outside, 'orders.bcc.svg'), 'elsewhere');
+			symlinkSync(path.join(outside, 'orders.bcc.svg'), path.join(root, 'orders.bcc.svg'));
+
+			const run = bcc('check');
+			expect(run.status).toBe(1);
+			expect(run.stderr).toContain('orders.bcc.svg: outside the canvas root');
+			expect(run.stderr).not.toMatch(/^\s+at /m);
+		} finally {
+			rmSync(outside, { recursive: true, force: true });
+		}
+	});
 });
 
 describe('bcc fmt', () => {

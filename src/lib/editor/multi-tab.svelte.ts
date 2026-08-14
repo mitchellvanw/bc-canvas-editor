@@ -53,7 +53,14 @@ export class MultiTabMonitor {
 	// A fresh nonce per write: writing a value identical to the stored one
 	// fires no storage event, and every presence write must be heard.
 	#write(type: PresenceType): void {
-		this.#storage?.setItem(PRESENCE_KEY, JSON.stringify({ type, nonce: crypto.randomUUID() }));
+		// Blocked or full storage must not throw out of watch() — a tab that
+		// cannot say hello also cannot overwrite anyone through the autosave
+		// key, so losing presence loses nothing the notice protects.
+		try {
+			this.#storage?.setItem(PRESENCE_KEY, JSON.stringify({ type, nonce: crypto.randomUUID() }));
+		} catch {
+			/* presence is best-effort */
+		}
 	}
 
 	#seen(): void {

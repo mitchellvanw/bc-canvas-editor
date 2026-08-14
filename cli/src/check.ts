@@ -10,17 +10,19 @@
  * written for.
  *
  * The image leg (ticket 056 decisions 6 and 8) re-renders at the height the
- * `.bcc.svg` itself declares and diffs the bytes. Three outcomes, and they are
+ * `.bcc.svg` itself declares and diffs the bytes. Four outcomes, and they are
  * deliberately not two: an **absent** image is silent, because most checkouts
  * never asked for one and a check that fails on those is a check people turn
  * off; an image that **differs** is stale; an image whose height cannot be read
  * is a refusal in its own right, since nothing was reproduced and so nothing
- * was shown to differ.
+ * was shown to differ; and an image whose path resolves out of the root — a
+ * symlink committed where an image was — refuses too, rather than reading as
+ * absent (ticket 065's third face).
  */
 
 import { readFileSync } from 'node:fs';
 import { readCanvas, readProblem } from '$lib/fs/read';
-import type { CanvasRoot } from '$lib/fs/root';
+import { OutsideRoot, type CanvasRoot } from '$lib/fs/root';
 import { stampIds } from '$lib/model/canvas';
 import { declaredHeight, outputPath, reproduce } from './image';
 
@@ -50,9 +52,20 @@ export function check(root: CanvasRoot, paths: readonly string[]): CheckReport {
 		const imagePath = outputPath(result.path, 'svg');
 		if (compared.has(imagePath)) continue;
 
+		// Resolved before the read so its refusal stays loud: a committed image
+		// swapped for a symlink pointing out of the root is a finding, not the
+		// absent-image case the catch below stands for (ticket 065's third face).
+		let resolved: string;
+		try {
+			resolved = root.resolve(imagePath);
+		} catch (error) {
+			if (!(error instanceof OutsideRoot)) throw error;
+			report.problems.push(error.message);
+			continue;
+		}
 		let committed: string;
 		try {
-			committed = readFileSync(root.resolve(imagePath), 'utf8');
+			committed = readFileSync(resolved, 'utf8');
 		} catch {
 			// No image beside this canvas, which is the ordinary case.
 			continue;

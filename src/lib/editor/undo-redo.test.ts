@@ -1,18 +1,18 @@
 // @vitest-environment jsdom
 /**
- * Undo/redo wiring (SPEC §6.1): ⌘Z/⇧⌘Z intercepted globally on the live
- * sheet — reverting an in-progress field or popping app history — with the
- * affected region scrolled into view and flashed, focus never moving, instant
- * under reduced motion. Chrome offers Undo/Redo buttons with the exact SPEC
- * §10 tooltips, disabled at the ends of history.
+ * Undo/redo wiring (SPEC §6.1): ⌘Z/⇧⌘Z intercepted globally — it rides the
+ * page, so it pops app history in every View — reverting an in-progress field
+ * first, with the affected region scrolled into view and flashed, focus never
+ * moving, instant under reduced motion. Chrome offers Undo/Redo buttons with
+ * the exact SPEC §10 tooltips, disabled at the ends of history.
  */
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Chrome from '$lib/chrome/Chrome.svelte';
 import { renderKeys } from '$lib/chrome/reference';
 import { canvas } from '$lib/editor/document.svelte';
-import EditableSheet from '$lib/editor/EditableSheet.svelte';
 import { FLASH_CLASS } from '$lib/editor/undo';
+import Page from '../../routes/+page.svelte';
 import { stampIds } from '$lib/model/canvas';
 import { parseCanvasFile } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
@@ -58,7 +58,7 @@ function referenceDoc() {
 
 let component: ReturnType<typeof mount> | null = null;
 
-function render(Component: typeof EditableSheet | typeof Chrome): HTMLElement {
+function render(Component: typeof Page | typeof Chrome): HTMLElement {
 	const target = document.createElement('div');
 	document.body.append(target);
 	component = mount(Component, { target });
@@ -106,9 +106,9 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe('⌘Z / ⇧⌘Z on the live sheet', () => {
+describe('⌘Z / ⇧⌘Z on the page', () => {
 	it('undoes the last commit, consuming the event so native undo never fires', () => {
-		const el = render(EditableSheet);
+		const el = render(Page);
 		editAndBlur(field(el, 'Purpose'), 'Edited description.');
 		const event = press(window, 'z', { metaKey: true });
 		expect(event.defaultPrevented).toBe(true);
@@ -121,7 +121,7 @@ describe('⌘Z / ⇧⌘Z on the live sheet', () => {
 	});
 
 	it('redoes with ⇧⌘Z', () => {
-		const el = render(EditableSheet);
+		const el = render(Page);
 		editAndBlur(field(el, 'Term'), 'Parcel');
 		press(window, 'z', { metaKey: true });
 		expect(canvas.doc.ubiquitousLanguage[0].term).toBe('Shipment');
@@ -132,14 +132,14 @@ describe('⌘Z / ⇧⌘Z on the live sheet', () => {
 	});
 
 	it('supports Ctrl+Z off-Mac', () => {
-		const el = render(EditableSheet);
+		const el = render(Page);
 		editAndBlur(field(el, 'Assumption'), 'Stock is live.');
 		press(window, 'z', { ctrlKey: true });
 		expect(canvas.doc.assumptions).toEqual(['Warehouse stock counts are accurate within the hour.']);
 	});
 
 	it('reverts the focused field instead when it has uncommitted edits', () => {
-		const el = render(EditableSheet);
+		const el = render(Page);
 		const term = field(el, 'Term');
 		editAndBlur(term, 'Parcel');
 		expect(canvas.canUndo).toBe(true);
@@ -156,7 +156,7 @@ describe('⌘Z / ⇧⌘Z on the live sheet', () => {
 	});
 
 	it('scrolls the affected region into view with a brief highlight, focus untouched', async () => {
-		const el = render(EditableSheet);
+		const el = render(Page);
 		editAndBlur(field(el, 'Open question'), 'Who owns refunds?');
 		const parked = field(el, 'Term');
 		parked.focus();
@@ -172,7 +172,7 @@ describe('⌘Z / ⇧⌘Z on the live sheet', () => {
 
 	it('scrolls instantly under prefers-reduced-motion', async () => {
 		reducedMotion = true;
-		const el = render(EditableSheet);
+		const el = render(Page);
 		editAndBlur(field(el, 'Name'), 'Fulfillment');
 		press(window, 'z', { metaKey: true });
 		await settle();
@@ -181,20 +181,46 @@ describe('⌘Z / ⇧⌘Z on the live sheet', () => {
 	});
 
 	it('is a quiet no-op at the end of history', () => {
-		render(EditableSheet);
+		render(Page);
 		const event = press(window, 'z', { metaKey: true });
 		expect(event.defaultPrevented).toBe(true);
 		expect(scrollIntoView).not.toHaveBeenCalled();
 	});
 
 	it('leaves ⌘Z alone inside a real input — pickers keep native text undo', () => {
-		const el = render(EditableSheet);
+		const el = render(Page);
 		editAndBlur(field(el, 'Term'), 'Parcel');
 		const input = document.createElement('input');
 		el.append(input);
 		const event = press(input, 'z', { metaKey: true });
 		expect(event.defaultPrevented).toBe(false);
 		expect(canvas.doc.ubiquitousLanguage[0].term).toBe('Parcel');
+	});
+
+	it('still pops history in the Markdown View — the shortcut rides the page, not the Sheet', () => {
+		const el = render(Page);
+		canvas.commit((doc) => (doc.name = 'Edited'));
+		flushSync();
+		el.querySelector<HTMLButtonElement>('#tab-markdown')?.click();
+		flushSync();
+
+		const event = press(window, 'z', { metaKey: true });
+		expect(event.defaultPrevented).toBe(true);
+		expect(canvas.doc.name).toBe('Order Fulfillment');
+	});
+
+	it('leaves the JSON View textarea on native text undo', () => {
+		const el = render(Page);
+		canvas.commit((doc) => (doc.name = 'Edited'));
+		flushSync();
+		el.querySelector<HTMLButtonElement>('#tab-json')?.click();
+		flushSync();
+
+		const textarea = el.querySelector('textarea');
+		if (!textarea) throw new Error('no JSON textarea');
+		const event = press(textarea, 'z', { metaKey: true });
+		expect(event.defaultPrevented).toBe(false);
+		expect(canvas.doc.name).toBe('Edited');
 	});
 });
 

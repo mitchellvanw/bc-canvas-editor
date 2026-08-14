@@ -28,6 +28,15 @@ describe('saveAutosave', () => {
 		expect(AUTOSAVE_KEY).toBe('bcc.autosave');
 		expect(storage.getItem('bcc.autosave')).toBe(serializeCanvas(doc));
 	});
+
+	it('lets the commit stand when storage refuses the write', () => {
+		const storage = fakeStorage();
+		storage.setItem = () => {
+			throw new DOMException('quota', 'QuotaExceededError');
+		};
+
+		expect(() => saveAutosave(blankCanvas(), storage)).not.toThrow();
+	});
 });
 
 describe('loadAutosave', () => {
@@ -58,6 +67,37 @@ describe('loadAutosave', () => {
 		['a lane without messages', '{"version":1,"inboundCommunication":[{"collaborator":"X"}]}']
 	])('returns null when the slot holds %s', (_label, slot) => {
 		expect(loadAutosave(fakeStorage({ 'bcc.autosave': slot }))).toBeNull();
+	});
+
+	it('migrates a slot the previous deploy wrote at Canvas file v1', () => {
+		const storage = fakeStorage({
+			'bcc.autosave': JSON.stringify({
+				version: 1,
+				name: 'Orders',
+				description: 'Ships orders.',
+				strategicClassification: {},
+				domainRoles: [],
+				inboundCommunication: [
+					{
+						collaborator: 'Checkout',
+						relationship: 'customer-supplier',
+						messages: [{ type: 'command', name: 'Place Order' }]
+					}
+				],
+				ubiquitousLanguage: [],
+				businessDecisions: [],
+				outboundCommunication: [],
+				assumptions: [],
+				verificationMetrics: [],
+				openQuestions: []
+			})
+		});
+
+		const restored = loadAutosave(storage);
+
+		expect(restored?.purpose).toBe('Ships orders.');
+		expect(restored?.inboundCommunication[0].collaborator).toEqual({ name: 'Checkout' });
+		expect(restored?.inboundCommunication[0].relationship).toEqual({ ours: 'customer-supplier' });
 	});
 
 	it('fills missing section keys from the blank shape', () => {

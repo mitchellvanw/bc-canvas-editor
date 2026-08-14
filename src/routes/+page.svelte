@@ -9,6 +9,7 @@
 	import JsonView from '$lib/editor/JsonView.svelte';
 	import MarkdownView from '$lib/editor/MarkdownView.svelte';
 	import { multiTab } from '$lib/editor/multi-tab.svelte';
+	import { handleUndoShortcut } from '$lib/editor/undo';
 	import ViewSwitcher from '$lib/editor/ViewSwitcher.svelte';
 	import type { ViewKey } from '$lib/editor/views';
 	import { windowTitle } from '$lib/model/title';
@@ -36,6 +37,11 @@
 <svelte:head>
 	<title>{windowTitle(canvas.doc.name)}</title>
 </svelte:head>
+
+<!-- ⌘Z/⇧⌘Z is app history in every View, so it rides the page, not the Sheet
+     (SPEC §6.1). The handler's own guard leaves dialogs and real inputs alone,
+     which is what keeps the JSON View's textarea on native text undo. -->
+<svelte:window onkeydown={handleUndoShortcut} />
 
 <LiveRegion />
 
