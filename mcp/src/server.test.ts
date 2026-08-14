@@ -14,7 +14,7 @@
  */
 
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtempSync, readFileSync, realpathSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, readFileSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,7 +26,7 @@ const SERVER = join(PACKAGE, 'dist', 'server.js');
 const MODERN = '2026-07-28';
 
 /** The order every session's context opens with; `tools.test.ts` owns why. */
-const TOOL_ORDER = ['bcc_list_canvases', 'bcc_read_canvas', 'bcc_write_canvas', 'bcc_explain'];
+const TOOL_ORDER = ['bcc_read_canvas', 'bcc_explain'];
 
 /** The per-request envelope a 2026-07-28 client puts on every request. */
 const ENVELOPE = {
@@ -87,7 +87,7 @@ describe('the committed bundle', () => {
 });
 
 describe('the built server over stdio', () => {
-	it('answers a 2026-07-28 client with the four tools', async () => {
+	it('answers a 2026-07-28 client with the two tools', async () => {
 		const run = await drive(
 			[{ jsonrpc: '2.0', id: 1, method: 'tools/list', params: { _meta: ENVELOPE } }],
 			root
@@ -129,22 +129,34 @@ describe('the built server over stdio', () => {
 		expect(initialized.result.protocolVersion).toBe('2025-06-18');
 		expect(initialized.result.serverInfo).toMatchObject({ name: 'bc-canvas' });
 		expect(initialized.result.capabilities.tools).toBeDefined();
-		expect(initialized.result.capabilities.prompts).toBeDefined();
+		expect(initialized.result.capabilities.resources).toBeDefined();
+		// No prompts: `review-canvas` was procedure living in the server, and
+		// procedure is the plugin's half of the seam (ticket 059).
+		expect(initialized.result.capabilities.prompts).toBeUndefined();
 		expect(listed.result.tools.map((tool: { name: string }) => tool.name)).toEqual(TOOL_ORDER);
 		expect(listed.result.resultType).toBeUndefined();
 	});
 
-	it('offers review-canvas, which is what a Desktop user picks from a menu', async () => {
+	it('offers each canvas as a concrete resource, which is what a person attaches', async () => {
+		copyFileSync(
+			join(PACKAGE, '..', 'examples', 'order-fulfillment.bcc.json'),
+			join(root, 'orders.bcc.json')
+		);
+
 		const run = await drive(
-			[{ jsonrpc: '2.0', id: 1, method: 'prompts/list', params: { _meta: ENVELOPE } }],
+			[{ jsonrpc: '2.0', id: 1, method: 'resources/list', params: { _meta: ENVELOPE } }],
 			root
 		);
 
 		const [reply] = replies(run);
 		expect(reply.error).toBeUndefined();
-		expect(reply.result.prompts.map((prompt: { name: string }) => prompt.name)).toEqual([
-			'review-canvas'
-		]);
+		// Over the real wire, out of the committed bundle: the URIs are expanded,
+		// not the `bcc://canvas/{+path}` template. A host offering canvases in an
+		// `@` picker reads this list, and it is the one capability no filesystem
+		// tool substitutes for — so it is why the server survived the diet.
+		const uris = reply.result.resources.map((resource: { uri: string }) => resource.uri);
+		expect(uris.length).toBeGreaterThan(0);
+		for (const uri of uris) expect(uri).toMatch(/^bcc:\/\/canvas\/.+\.bcc\.json$/);
 	});
 
 	it('says nothing on stdout that is not an MCP message, and reports itself on stderr', async () => {

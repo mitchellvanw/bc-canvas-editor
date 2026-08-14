@@ -46,9 +46,9 @@ export type CanvasRead =
 	| { ok: false; reason: 'not-canvas'; path: string; detail?: string };
 
 /**
- * Read and parse one canvas. `input` is whatever the model named; the returned
- * `path` is the root-relative form, so results talk back in the same terms
- * `bcc_list_canvases` uses.
+ * Read and parse one canvas. `input` is whatever the caller named; the returned
+ * `path` is the root-relative form, so results talk back in the same terms a
+ * listing of the root uses.
  */
 export function readCanvas(root: CanvasRoot, input: string): CanvasRead {
 	let absolute: string;

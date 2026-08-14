@@ -2952,6 +2952,7 @@ function ls(root, out2) {
       rows.push({
         path,
         name: result.file.name === "" ? "Untitled" : result.file.name,
+        purpose: result.file.purpose,
         filled: filledCount(result.file),
         empty: emptySections(result.file)
       });
@@ -2969,10 +2970,10 @@ function ls(root, out2) {
   const total = SECTIONS.length;
   for (const row of rows) {
     const filled = `${row.filled}/${total}`.padStart(`${total}/${total}`.length);
+    const indent = `${" ".repeat(width)}  ${" ".repeat(filled.length)}  `;
     out2(`${row.path.padEnd(width)}  ${filled}  ${row.name}`);
-    if (row.empty.length > 0) {
-      out2(`${" ".repeat(width)}  ${" ".repeat(filled.length)}  empty: ${row.empty.join(", ")}`);
-    }
+    if (row.purpose !== "") out2(`${indent}${row.purpose}`);
+    if (row.empty.length > 0) out2(`${indent}empty: ${row.empty.join(", ")}`);
   }
   if (problems.length > 0) {
     out2("");

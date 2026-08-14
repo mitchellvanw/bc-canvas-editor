@@ -11,8 +11,8 @@
  * a clinic there — and never assemble into one imitable canvas. Models lift
  * proper nouns, and the cost of a plausible fiction in context is a collaborator
  * called "Order Fulfillment" turning up in somebody's payroll canvas. Anything
- * larger than a row belongs to the user's own canvases, which `bcc_list_canvases`
- * surfaces as soon as there are any.
+ * larger than a row belongs to the user's own canvases, which `bcc_read_canvas`
+ * serves as soon as there are any.
  */
 
 import { PICK_OPTIONS, TRAITS, type PickOption } from '$lib/editor/vocab';
@@ -167,9 +167,9 @@ const CANVAS_OVERVIEW = [
 	'decision someone made, and a question is the honest form of a guess.',
 	'',
 	'Call bcc_explain again with any section name for its shape, its vocabulary and',
-	'an example row. bcc_list_canvases shows the canvases already under this root —',
-	'read one before drafting, since a real neighbouring canvas calibrates better',
-	'than anything described here.',
+	'an example row. The canvases already in this project calibrate better than',
+	'anything described here, so read a neighbouring one with bcc_read_canvas',
+	'before drafting.',
 	'',
 	'Based on the Bounded Context Canvas by the ddd-crew · CC BY 4.0'
 ].join('\n');

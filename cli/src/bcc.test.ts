@@ -125,6 +125,29 @@ describe('bcc ls', () => {
 		expect(run.stdout).toContain('empty: Purpose,');
 	});
 
+	it('says what each context is for, which is how you pick which one to read', () => {
+		put('docs/orders.bcc.json', REFERENCE_FILE);
+
+		const run = bcc('ls');
+
+		// The one line `bcc_list_canvases` carried that this did not, brought
+		// across when listing moved off the server (ticket 059). Choosing a
+		// neighbouring canvas off names alone is guessing.
+		expect(run.status).toBe(0);
+		const [, purposeLine] = run.stdout.split('\n');
+		expect(purposeLine.trim()).toBe(referenceDoc().purpose);
+	});
+
+	it('leaves the line out rather than printing an empty one', () => {
+		put('docs/thin.bcc.json', canvasBytes(toCanvasFile({ ...blankCanvas(), name: 'Thin' })));
+
+		const run = bcc('ls');
+		const [row, next] = run.stdout.split('\n');
+
+		expect(row).toContain('Thin');
+		expect(next.trim()).toMatch(/^empty:/);
+	});
+
 	it('reports what it could not read and still exits 0 — ls answers what is here', () => {
 		put('broken.bcc.json', '{ not json');
 		const run = bcc('ls');

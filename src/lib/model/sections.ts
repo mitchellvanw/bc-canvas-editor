@@ -3,8 +3,7 @@
  *
  * Every surface that names sections outside the sheet walks the same table: the
  * Markdown rendering (`digest.ts`) prints it in order, and across the `$lib`
- * seam `bcc_list_canvases` reports which entries came out empty,
- * `bcc_write_canvas` names the same emptiness back, and `bcc_explain` takes its
+ * seam `bcc ls` reports which entries came out empty and `bcc_explain` takes its
  * topics from the keys. One table means they can never disagree about what a
  * section is called or when it counts as filled.
  *

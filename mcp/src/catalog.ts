@@ -1,10 +1,12 @@
 /**
  * What is under the root, summarized — and the `bcc://` URIs that name it.
  *
- * Canvases get both doors (decision 10): a templated resource the host can
- * attach, and tools the model can call unprompted. Both need the same answer
- * to "what canvases are there, and what is in them", so both get it from here
- * — a listing built twice would be a listing that disagrees with itself.
+ * This is what makes a canvas attachable. The template is registered with a
+ * `list` callback, so `resources/list` answers with concrete URIs — one per
+ * canvas — rather than the template alone, which is the difference between a
+ * host that can offer canvases in an `@` picker and one that cannot (ticket
+ * 059, measured against the committed bundle). The same summaries drive the
+ * template's path completion.
  *
  * The scheme is `bcc://` rather than `file://` because what a host attaches is
  * a derived view — a digest, or the Canvas file pulled out of an artifact —
@@ -15,7 +17,6 @@ import { UriTemplate } from '@modelcontextprotocol/server';
 import { findCanvases } from '$lib/fs/discover';
 import { readCanvas } from '$lib/fs/read';
 import type { CanvasRoot } from '$lib/fs/root';
-import { emptySections, filledCount, SECTIONS } from '$lib/model/sections';
 
 /**
  * Reserved expansion (`{+path}`) rather than plain `{path}`: canvases live in
@@ -52,62 +53,32 @@ export interface CanvasSummary {
 	name: string;
 	/** The canvas's own purpose line — the summary's one sentence of content. */
 	purpose: string;
-	/** How many of the eleven sections say something. */
-	filled: number;
-	/** The labels of the ones that don't. */
-	empty: string[];
 }
 
-export interface CanvasProblem {
-	path: string;
-	uri: string;
-	/** Why this file could not be summarized, in one sentence. */
-	problem: string;
-}
-
-export interface Catalog {
-	canvases: CanvasSummary[];
-	/** Files that look like canvases and aren't — reported, never dropped. */
-	problems: CanvasProblem[];
-	/** Directories the walk could not open, so the listing says where it stopped. */
-	unreadable: string[];
-	/** The eleven section labels, so a caller can read `empty` without guessing. */
-	sections: string[];
-}
-
-/** Every canvas under the root, summarized, in the stable order discovery gives. */
-export function catalog(root: CanvasRoot): Catalog {
+/**
+ * Every canvas under the root that can be attached, in the stable order
+ * discovery gives.
+ *
+ * A file named like a canvas that will not parse is left out rather than
+ * listed. That is a change of job, not a regression: this used to feed a tool
+ * whose whole point was reporting what is here, and it now feeds a picker
+ * whose entries are things a person is about to attach — an entry that errors
+ * on attach is worse than an absence. Naming the unreadable ones is `bcc ls`'s
+ * work now, and it does it (ticket 059).
+ */
+export function catalog(root: CanvasRoot): { canvases: CanvasSummary[] } {
 	const canvases: CanvasSummary[] = [];
-	const problems: CanvasProblem[] = [];
-	const found = findCanvases(root);
 
-	for (const path of found.paths) {
+	for (const path of findCanvases(root).paths) {
 		const result = readCanvas(root, path);
-		const uri = canvasUri(path);
-		if (result.ok) {
-			canvases.push({
-				path,
-				uri,
-				name: result.file.name,
-				purpose: result.file.purpose,
-				filled: filledCount(result.file),
-				empty: emptySections(result.file)
-			});
-		} else if (result.reason === 'newer-version') {
-			problems.push({
-				path,
-				uri,
-				problem: `written by a newer version of BC Canvas (format version ${result.version})`
-			});
-		} else {
-			problems.push({ path, uri, problem: result.detail ?? 'not a Canvas file' });
-		}
+		if (!result.ok) continue;
+		canvases.push({
+			path,
+			uri: canvasUri(path),
+			name: result.file.name,
+			purpose: result.file.purpose
+		});
 	}
 
-	return {
-		canvases,
-		problems,
-		unreadable: found.unreadable,
-		sections: SECTIONS.map((section) => section.label)
-	};
+	return { canvases };
 }

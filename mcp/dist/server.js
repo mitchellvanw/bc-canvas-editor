@@ -8,8 +8,8 @@ var __export = (target, all) => {
 // src/stderr.ts
 import { Console } from "node:console";
 globalThis.console = new Console(process.stderr);
-function fail(message3) {
-  process.stderr.write(`bc-canvas-mcp: ${message3}
+function fail(message2) {
+  process.stderr.write(`bc-canvas-mcp: ${message2}
 `);
   process.exit(1);
 }
@@ -752,8 +752,8 @@ function assert(_) {
 }
 function getEnumValues(entries) {
   const numericValues = Object.values(entries).filter((v) => typeof v === "number");
-  const values2 = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
-  return values2;
+  const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
+  return values;
 }
 function joinValues(array2, separator = "|") {
   return array2.map((val) => stringifyPrimitive(val)).join(separator);
@@ -1257,14 +1257,14 @@ function prefixIssues(path, issues) {
     return iss;
   });
 }
-function unwrapMessage(message3) {
-  return typeof message3 === "string" ? message3 : message3?.message;
+function unwrapMessage(message2) {
+  return typeof message2 === "string" ? message2 : message2?.message;
 }
 function finalizeIssue(iss, ctx, config2) {
-  const message3 = iss.message ? iss.message : unwrapMessage(iss.inst?._zod.def?.error?.(iss)) ?? unwrapMessage(ctx?.error?.(iss)) ?? unwrapMessage(config2.customError?.(iss)) ?? unwrapMessage(config2.localeError?.(iss)) ?? "Invalid input";
+  const message2 = iss.message ? iss.message : unwrapMessage(iss.inst?._zod.def?.error?.(iss)) ?? unwrapMessage(ctx?.error?.(iss)) ?? unwrapMessage(config2.customError?.(iss)) ?? unwrapMessage(config2.localeError?.(iss)) ?? "Invalid input";
   const { inst: _inst, continue: _continue, input: _input, ...rest } = iss;
   rest.path ?? (rest.path = []);
-  rest.message = message3;
+  rest.message = message2;
   if (ctx?.reportInput) {
     rest.input = _input;
   }
@@ -3413,10 +3413,10 @@ var $ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("$ZodDiscriminatedUnio
     const opts = def.options;
     const map2 = /* @__PURE__ */ new Map();
     for (const o of opts) {
-      const values2 = o._zod.propValues?.[def.discriminator];
-      if (!values2 || values2.size === 0)
+      const values = o._zod.propValues?.[def.discriminator];
+      if (!values || values.size === 0)
         throw new Error(`Invalid discriminated union option at index "${def.options.indexOf(o)}"`);
-      for (const v of values2) {
+      for (const v of values) {
         if (map2.has(v)) {
           throw new Error(`Duplicate discriminator value "${String(v)}"`);
         }
@@ -3674,11 +3674,11 @@ var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
       return payload;
     }
     const proms = [];
-    const values2 = def.keyType._zod.values;
-    if (values2) {
+    const values = def.keyType._zod.values;
+    if (values) {
       payload.value = {};
       const recordKeys = /* @__PURE__ */ new Set();
-      for (const key of values2) {
+      for (const key of values) {
         if (typeof key === "string" || typeof key === "number" || typeof key === "symbol") {
           recordKeys.add(typeof key === "number" ? key.toString() : key);
           const keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
@@ -3882,10 +3882,10 @@ function handleSetResult(result, final) {
 }
 var $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
   $ZodType.init(inst, def);
-  const values2 = getEnumValues(def.entries);
-  const valuesSet = new Set(values2);
+  const values = getEnumValues(def.entries);
+  const valuesSet = new Set(values);
   inst._zod.values = valuesSet;
-  inst._zod.pattern = new RegExp(`^(${values2.filter((k) => propertyKeyTypes.has(typeof k)).map((o) => typeof o === "string" ? escapeRegex(o) : o.toString()).join("|")})$`);
+  inst._zod.pattern = new RegExp(`^(${values.filter((k) => propertyKeyTypes.has(typeof k)).map((o) => typeof o === "string" ? escapeRegex(o) : o.toString()).join("|")})$`);
   inst._zod.parse = (payload, _ctx) => {
     const input = payload.value;
     if (valuesSet.has(input)) {
@@ -3893,7 +3893,7 @@ var $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
     }
     payload.issues.push({
       code: "invalid_value",
-      values: values2,
+      values,
       input,
       inst
     });
@@ -3905,12 +3905,12 @@ var $ZodLiteral = /* @__PURE__ */ $constructor("$ZodLiteral", (inst, def) => {
   if (def.values.length === 0) {
     throw new Error("Cannot create literal schema with no valid values");
   }
-  const values2 = new Set(def.values);
-  inst._zod.values = values2;
+  const values = new Set(def.values);
+  inst._zod.values = values;
   inst._zod.pattern = new RegExp(`^(${def.values.map((o) => typeof o === "string" ? escapeRegex(o) : o ? escapeRegex(o.toString()) : String(o)).join("|")})$`);
   inst._zod.parse = (payload, _ctx) => {
     const input = payload.value;
-    if (values2.has(input)) {
+    if (values.has(input)) {
       return payload;
     }
     payload.issues.push({
@@ -11211,8 +11211,8 @@ function _set(Class2, valueType, params) {
   });
 }
 // @__NO_SIDE_EFFECTS__
-function _enum(Class2, values2, params) {
-  const entries = Array.isArray(values2) ? Object.fromEntries(values2.map((v) => [v, v])) : values2;
+function _enum(Class2, values, params) {
+  const entries = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
   return new Class2({
     type: "enum",
     entries,
@@ -11959,12 +11959,12 @@ var dateProcessor = (_schema, ctx, _json, _params) => {
 };
 var enumProcessor = (schema, _ctx, json2, _params) => {
   const def = schema._zod.def;
-  const values2 = getEnumValues(def.entries);
-  if (values2.every((v) => typeof v === "number"))
+  const values = getEnumValues(def.entries);
+  if (values.every((v) => typeof v === "number"))
     json2.type = "number";
-  if (values2.every((v) => typeof v === "string"))
+  if (values.every((v) => typeof v === "string"))
     json2.type = "string";
-  json2.enum = values2;
+  json2.enum = values;
 };
 var literalProcessor = (schema, ctx, json2, _params) => {
   const def = schema._zod.def;
@@ -13649,9 +13649,9 @@ var ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
   inst.enum = def.entries;
   inst.options = Object.values(def.entries);
   const keys = new Set(Object.keys(def.entries));
-  inst.extract = (values2, params) => {
+  inst.extract = (values, params) => {
     const newEntries = {};
-    for (const value of values2) {
+    for (const value of values) {
       if (keys.has(value)) {
         newEntries[value] = def.entries[value];
       } else
@@ -13664,9 +13664,9 @@ var ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
       entries: newEntries
     });
   };
-  inst.exclude = (values2, params) => {
+  inst.exclude = (values, params) => {
     const newEntries = { ...def.entries };
-    for (const value of values2) {
+    for (const value of values) {
       if (keys.has(value)) {
         delete newEntries[value];
       } else
@@ -13680,8 +13680,8 @@ var ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
     });
   };
 });
-function _enum2(values2, params) {
-  const entries = Array.isArray(values2) ? Object.fromEntries(values2.map((v) => [v, v])) : values2;
+function _enum2(values, params) {
+  const entries = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
   return new ZodEnum({
     type: "enum",
     entries,
@@ -14602,7 +14602,6 @@ var CLIENT_CAPABILITIES_META_KEY = "io.modelcontextprotocol/clientCapabilities";
 var SUBSCRIPTION_ID_META_KEY = "io.modelcontextprotocol/subscriptionId";
 var LOG_LEVEL_META_KEY = "io.modelcontextprotocol/logLevel";
 var JSONRPC_VERSION = "2.0";
-var INVALID_PARAMS = -32602;
 var JSONValueSchema = lazy(() => union([
   string2(),
   number2(),
@@ -15571,8 +15570,8 @@ var OAuthError = class OAuthError2 extends Error {
     if (typeof this !== "function") throw new TypeError("isInstance must be called on the class (e.g. `SdkError.isInstance(value)`); for callbacks use `v => SdkError.isInstance(v)`");
     return brandedHasInstance(this, value);
   }
-  constructor(code, message3, errorUri) {
-    super(message3);
+  constructor(code, message2, errorUri) {
+    super(message2);
     this.code = code;
     this.errorUri = errorUri;
     this.name = "OAuthError";
@@ -15638,8 +15637,8 @@ var SdkError = class extends Error {
     if (typeof this !== "function") throw new TypeError("isInstance must be called on the class (e.g. `SdkError.isInstance(value)`); for callbacks use `v => SdkError.isInstance(v)`");
     return brandedHasInstance(this, value);
   }
-  constructor(code, message3, data) {
-    super(message3);
+  constructor(code, message2, data) {
+    super(message2);
     this.code = code;
     this.data = data;
     this.name = "SdkError";
@@ -15650,8 +15649,8 @@ var SdkHttpError = class extends SdkError {
   static {
     Object.defineProperty(this, "mcpBrand", { value: "mcp.SdkHttpError" });
   }
-  constructor(code, message3, data) {
-    super(code, message3, data);
+  constructor(code, message2, data) {
+    super(code, message2, data);
     this.name = "SdkHttpError";
   }
   get status() {
@@ -17835,8 +17834,8 @@ var ProtocolError = class ProtocolError2 extends Error {
     if (typeof this !== "function") throw new TypeError("isInstance must be called on the class (e.g. `SdkError.isInstance(value)`); for callbacks use `v => SdkError.isInstance(v)`");
     return brandedHasInstance(this, value);
   }
-  constructor(code, message3, data) {
-    super(message3);
+  constructor(code, message2, data) {
+    super(message2);
     this.code = code;
     this.data = data;
     this.name = "ProtocolError";
@@ -17845,35 +17844,35 @@ var ProtocolError = class ProtocolError2 extends Error {
   /**
   * Factory method to create the appropriate error type based on the error code and data
   */
-  static fromError(code, message3, data) {
+  static fromError(code, message2, data) {
     if (code === ProtocolErrorCode.UrlElicitationRequired && data) {
       const errorData = data;
-      if (errorData.elicitations) return new UrlElicitationRequiredError(errorData.elicitations, message3);
+      if (errorData.elicitations) return new UrlElicitationRequiredError(errorData.elicitations, message2);
     }
     if (code === ProtocolErrorCode.UnsupportedProtocolVersion && data) {
       const errorData = data;
       if (Array.isArray(errorData.supported) && typeof errorData.requested === "string") return new UnsupportedProtocolVersionError({
         supported: errorData.supported,
         requested: errorData.requested
-      }, message3);
+      }, message2);
     }
     if (code === ProtocolErrorCode.InvalidParams || code === ProtocolErrorCode.ResourceNotFound) {
       const errorData = data;
-      if (typeof errorData?.uri === "string" && (code === ProtocolErrorCode.ResourceNotFound || Object.keys(errorData).length === 1)) return new ResourceNotFoundError(errorData.uri, message3);
+      if (typeof errorData?.uri === "string" && (code === ProtocolErrorCode.ResourceNotFound || Object.keys(errorData).length === 1)) return new ResourceNotFoundError(errorData.uri, message2);
     }
     if (code === ProtocolErrorCode.MissingRequiredClientCapability && data) {
       const errorData = data;
-      if (errorData.requiredCapabilities !== null && typeof errorData.requiredCapabilities === "object" && !Array.isArray(errorData.requiredCapabilities)) return new MissingRequiredClientCapabilityError({ requiredCapabilities: errorData.requiredCapabilities }, message3);
+      if (errorData.requiredCapabilities !== null && typeof errorData.requiredCapabilities === "object" && !Array.isArray(errorData.requiredCapabilities)) return new MissingRequiredClientCapabilityError({ requiredCapabilities: errorData.requiredCapabilities }, message2);
     }
-    return new ProtocolError2(code, message3, data);
+    return new ProtocolError2(code, message2, data);
   }
 };
 var ResourceNotFoundError = class extends ProtocolError {
   static {
     Object.defineProperty(this, "mcpBrand", { value: "mcp.ResourceNotFoundError" });
   }
-  constructor(uri, message3 = `Resource not found: ${uri}`) {
-    super(ProtocolErrorCode.InvalidParams, message3, { uri });
+  constructor(uri, message2 = `Resource not found: ${uri}`) {
+    super(ProtocolErrorCode.InvalidParams, message2, { uri });
   }
   /** The URI that was requested and not found. */
   get uri() {
@@ -17884,8 +17883,8 @@ var UrlElicitationRequiredError = class extends ProtocolError {
   static {
     Object.defineProperty(this, "mcpBrand", { value: "mcp.UrlElicitationRequiredError" });
   }
-  constructor(elicitations, message3 = `URL elicitation${elicitations.length > 1 ? "s" : ""} required`) {
-    super(ProtocolErrorCode.UrlElicitationRequired, message3, { elicitations });
+  constructor(elicitations, message2 = `URL elicitation${elicitations.length > 1 ? "s" : ""} required`) {
+    super(ProtocolErrorCode.UrlElicitationRequired, message2, { elicitations });
   }
   get elicitations() {
     return this.data?.elicitations ?? [];
@@ -17895,8 +17894,8 @@ var UnsupportedProtocolVersionError = class extends ProtocolError {
   static {
     Object.defineProperty(this, "mcpBrand", { value: "mcp.UnsupportedProtocolVersionError" });
   }
-  constructor(data, message3 = `Unsupported protocol version: ${data.requested}`) {
-    super(ProtocolErrorCode.UnsupportedProtocolVersion, message3, data);
+  constructor(data, message2 = `Unsupported protocol version: ${data.requested}`) {
+    super(ProtocolErrorCode.UnsupportedProtocolVersion, message2, data);
   }
   /**
   * Protocol versions the receiver supports.
@@ -17915,8 +17914,8 @@ var MissingRequiredClientCapabilityError = class extends ProtocolError {
   static {
     Object.defineProperty(this, "mcpBrand", { value: "mcp.MissingRequiredClientCapabilityError" });
   }
-  constructor(data, message3 = `Missing required client capabilities: ${Object.keys(data.requiredCapabilities).join(", ")}`) {
-    super(ProtocolErrorCode.MissingRequiredClientCapability, message3, data);
+  constructor(data, message2 = `Missing required client capabilities: ${Object.keys(data.requiredCapabilities).join(", ")}`) {
+    super(ProtocolErrorCode.MissingRequiredClientCapability, message2, data);
   }
   /**
   * The capabilities the server requires from the client to process the
@@ -19163,17 +19162,17 @@ var RESERVED_ENVELOPE_META_KEYS = [
   LOG_LEVEL_META_KEY
 ];
 var RETRY_PARAMS_KEYS = ["inputResponses", "requestState"];
-function liftWireOnlyMaterial(message3, kind) {
-  const params = message3.params;
+function liftWireOnlyMaterial(message2, kind) {
+  const params = message2.params;
   if (!isPlainObject$1(params)) return {
-    message: message3,
+    message: message2,
     lifted: {}
   };
   const meta3 = params._meta;
   const envelopeKeys = isPlainObject$1(meta3) ? RESERVED_ENVELOPE_META_KEYS.filter((key) => key in meta3) : [];
   const retryKeys = kind === "request" ? RETRY_PARAMS_KEYS.filter((key) => key in params) : [];
   if (envelopeKeys.length === 0 && retryKeys.length === 0) return {
-    message: message3,
+    message: message2,
     lifted: {}
   };
   const lifted = {};
@@ -19196,7 +19195,7 @@ function liftWireOnlyMaterial(message3, kind) {
   }
   return {
     message: {
-      ...message3,
+      ...message2,
       params: nextParams
     },
     lifted
@@ -19324,12 +19323,12 @@ var Protocol = class {
   * byte-identical. User-supplied `_meta` keys are spread last so they win
   * over the auto-attached envelope keys.
   */
-  _envelopeOutbound(message3) {
+  _envelopeOutbound(message2) {
     const envelope = this._outboundMetaEnvelope();
-    if (envelope === void 0) return message3;
-    const params = message3.params ?? {};
+    if (envelope === void 0) return message2;
+    const params = message2.params ?? {};
     return {
-      ...message3,
+      ...message2,
       params: {
         ...params,
         _meta: {
@@ -19428,12 +19427,12 @@ var Protocol = class {
       this._onerror(error51);
     };
     const _onmessage = this._transport?.onmessage;
-    this._transport.onmessage = (message3, extra) => {
-      _onmessage?.(message3, extra);
-      if (isJSONRPCResultResponse(message3) || isJSONRPCErrorResponse(message3)) this._onresponse(message3);
-      else if (isJSONRPCRequest(message3)) this._onrequest(message3, extra);
-      else if (isJSONRPCNotification(message3)) this._onnotification(message3, extra);
-      else this._onerror(/* @__PURE__ */ new Error(`Unknown message type: ${JSON.stringify(message3)}`));
+    this._transport.onmessage = (message2, extra) => {
+      _onmessage?.(message2, extra);
+      if (isJSONRPCResultResponse(message2) || isJSONRPCErrorResponse(message2)) this._onresponse(message2);
+      else if (isJSONRPCRequest(message2)) this._onrequest(message2, extra);
+      else if (isJSONRPCNotification(message2)) this._onnotification(message2, extra);
+      else this._onerror(/* @__PURE__ */ new Error(`Unknown message type: ${JSON.stringify(message2)}`));
     };
     transport.setSupportedProtocolVersions?.(this._supportedProtocolVersions);
     await this._transport.start();
@@ -19495,13 +19494,13 @@ var Protocol = class {
       return;
     }
     const capturedTransport = this._transport;
-    const sendErrorResponse = (code, message3, data) => {
+    const sendErrorResponse = (code, message2, data) => {
       const errorResponse = {
         jsonrpc: "2.0",
         id: request.id,
         error: {
           code,
-          message: message3,
+          message: message2,
           ...data !== void 0 && { data }
         }
       };
@@ -20087,8 +20086,8 @@ var ReadBuffer = class {
 function deserializeMessage(line) {
   return JSONRPCMessageSchema.parse(JSON.parse(line));
 }
-function serializeMessage(message3) {
-  return JSON.stringify(message3) + "\n";
+function serializeMessage(message2) {
+  return JSON.stringify(message2) + "\n";
 }
 var TOOL_NAME_REGEX = /^[A-Za-z0-9._-]{1,128}$/;
 function validateToolName(name) {
@@ -20225,9 +20224,9 @@ var UriTemplate = class UriTemplate2 {
       return (part.operator === "?" ? "?" : "&") + pairs.join("&");
     }
     if (part.names.length > 1) {
-      const values2 = part.names.map((name) => variables[name]).filter((v) => v !== void 0);
-      if (values2.length === 0) return "";
-      return values2.map((v) => Array.isArray(v) ? v[0] : v).join(",");
+      const values = part.names.map((name) => variables[name]).filter((v) => v !== void 0);
+      if (values.length === 0) return "";
+      return values.map((v) => Array.isArray(v) ? v[0] : v).join(",");
     }
     const value = variables[part.name];
     if (value === void 0) return "";
@@ -20590,22 +20589,22 @@ var require_scope = /* @__PURE__ */ __commonJSMin(((exports) => {
       if (!vs) return;
       return vs.get(keyOrRef);
     }
-    scopeRefs(scopeName, values2 = this._values) {
-      return this._reduceValues(values2, (name) => {
+    scopeRefs(scopeName, values = this._values) {
+      return this._reduceValues(values, (name) => {
         if (name.scopePath === void 0) throw new Error(`CodeGen: name "${name}" has no value`);
         return (0, code_1._)`${scopeName}${name.scopePath}`;
       });
     }
-    scopeCode(values2 = this._values, usedValues, getCode) {
-      return this._reduceValues(values2, (name) => {
+    scopeCode(values = this._values, usedValues, getCode) {
+      return this._reduceValues(values, (name) => {
         if (name.value === void 0) throw new Error(`CodeGen: name "${name}" has no value`);
         return name.value.code;
       }, usedValues, getCode);
     }
-    _reduceValues(values2, valueCode, usedValues = {}, getCode) {
+    _reduceValues(values, valueCode, usedValues = {}, getCode) {
       let code = code_1.nil;
-      for (const prefix in values2) {
-        const vs = values2[prefix];
+      for (const prefix in values) {
+        const vs = values[prefix];
         if (!vs) continue;
         const nameSet = usedValues[prefix] = usedValues[prefix] || /* @__PURE__ */ new Map();
         vs.forEach((name) => {
@@ -21183,9 +21182,9 @@ var require_codegen = /* @__PURE__ */ __commonJSMin(((exports) => {
     throw(error51) {
       return this._leafNode(new Throw(error51));
     }
-    block(body3, nodeCount) {
+    block(body2, nodeCount) {
       this._blockStarts.push(this._nodes.length);
-      if (body3) this.code(body3).endBlock(nodeCount);
+      if (body2) this.code(body2).endBlock(nodeCount);
       return this;
     }
     endBlock(nodeCount) {
@@ -21541,11 +21540,11 @@ var require_errors = /* @__PURE__ */ __commonJSMin(((exports) => {
     if (schemaPath) schPath = (0, codegen_1.str)`${schPath}${(0, util_1.getErrorPath)(schemaPath, util_1.Type.Str)}`;
     return [E.schemaPath, schPath];
   }
-  function extraErrorProps(cxt, { params, message: message3 }, keyValues) {
+  function extraErrorProps(cxt, { params, message: message2 }, keyValues) {
     const { keyword, data, schemaValue, it } = cxt;
     const { opts, propertyName, topSchemaRef, schemaPath } = it;
     keyValues.push([E.keyword, keyword], [E.params, typeof params == "function" ? params(cxt) : params || (0, codegen_1._)`{}`]);
-    if (opts.messages) keyValues.push([E.message, typeof message3 == "function" ? message3(cxt) : message3]);
+    if (opts.messages) keyValues.push([E.message, typeof message2 == "function" ? message2(cxt) : message2]);
     if (opts.verbose) keyValues.push([E.schema, schemaValue], [E.parentSchema, (0, codegen_1._)`${topSchemaRef}${schemaPath}`], [names_1.default.data, data]);
     if (propertyName) keyValues.push([E.propertyName, propertyName]);
   }
@@ -22396,13 +22395,13 @@ var require_validate = /* @__PURE__ */ __commonJSMin(((exports) => {
     validateFunction(it, () => (0, boolSchema_1.topBoolOrEmptySchema)(it));
   }
   exports.validateFunctionCode = validateFunctionCode;
-  function validateFunction({ gen, validateName, schema, schemaEnv, opts }, body3) {
+  function validateFunction({ gen, validateName, schema, schemaEnv, opts }, body2) {
     if (opts.code.es5) gen.func(validateName, (0, codegen_1._)`${names_1.default.data}, ${names_1.default.valCxt}`, schemaEnv.$async, () => {
       gen.code((0, codegen_1._)`"use strict"; ${funcSourceUrl(schema, opts)}`);
       destructureValCxtES5(gen, opts);
-      gen.code(body3);
+      gen.code(body2);
     });
-    else gen.func(validateName, (0, codegen_1._)`${names_1.default.data}, ${destructureValCxt(opts)}`, schemaEnv.$async, () => gen.code(funcSourceUrl(schema, opts)).code(body3));
+    else gen.func(validateName, (0, codegen_1._)`${names_1.default.data}, ${destructureValCxt(opts)}`, schemaEnv.$async, () => gen.code(funcSourceUrl(schema, opts)).code(body2));
   }
   function destructureValCxt(opts) {
     return (0, codegen_1._)`{${names_1.default.instancePath}="", ${names_1.default.parentData}, ${names_1.default.parentDataProperty}, ${names_1.default.rootData}=${names_1.default.data}${opts.dynamicRef ? (0, codegen_1._)`, ${names_1.default.dynamicAnchors}={}` : codegen_1.nil}}={}`;
@@ -23869,9 +23868,9 @@ var require_core$3 = /* @__PURE__ */ __commonJSMin(((exports) => {
       }
       const valid = this.validate($schema, schema);
       if (!valid && throwOrLogError) {
-        const message3 = "schema is invalid: " + this.errorsText();
-        if (this.opts.validateSchema === "log") this.logger.error(message3);
-        else throw new Error(message3);
+        const message2 = "schema is invalid: " + this.errorsText();
+        if (this.opts.validateSchema === "log") this.logger.error(message2);
+        else throw new Error(message2);
       }
       return valid;
     }
@@ -27370,15 +27369,6 @@ import process3 from "node:process";
 
 // node_modules/@modelcontextprotocol/server/dist/mcp-DXXb3Vv3.mjs
 var COMPLETABLE_SYMBOL = /* @__PURE__ */ Symbol.for("mcp.completable");
-function completable(schema, complete) {
-  Object.defineProperty(schema, COMPLETABLE_SYMBOL, {
-    value: { complete },
-    enumerable: false,
-    writable: false,
-    configurable: false
-  });
-  return schema;
-}
 function isCompletable(schema) {
   return !!schema && typeof schema === "object" && COMPLETABLE_SYMBOL in schema;
 }
@@ -27420,8 +27410,8 @@ function stampSubscriptionId(notification, subscriptionId) {
     }
   };
 }
-function parseListenFilter(message3) {
-  const outcome = codecForVersion(MODERN_WIRE_REVISION).validateRequest("subscriptions/listen", message3);
+function parseListenFilter(message2) {
+  const outcome = codecForVersion(MODERN_WIRE_REVISION).validateRequest("subscriptions/listen", message2);
   return outcome.ok ? outcome.value.params?.notifications : void 0;
 }
 var CHANGE_NOTIFICATION_METHODS = /* @__PURE__ */ new Set([
@@ -27476,31 +27466,31 @@ var StdioListenRouter = class {
   * open (deliver unadvertised types); the entry guarantees capabilities are
   * set before any listen request is routed here.
   */
-  serve(message3) {
+  serve(message2) {
     if (this._serverCapabilities === void 0) throw new Error("StdioListenRouter.serve() called before setServerCapabilities(); refusing to honor a filter without capabilities");
     if (this._subs.size >= this._maxSubscriptions) return {
       jsonrpc: "2.0",
-      id: message3.id,
+      id: message2.id,
       error: {
         code: -32603,
         message: "Subscription limit reached"
       }
     };
-    const filter = parseListenFilter(message3);
+    const filter = parseListenFilter(message2);
     if (filter === void 0) return {
       jsonrpc: "2.0",
-      id: message3.id,
+      id: message2.id,
       error: {
         code: -32602,
         message: "Invalid params: 'notifications' is required and must be a valid SubscriptionFilter"
       }
     };
     const honored = honoredSubset(filter, this._serverCapabilities);
-    this._subs.set(message3.id, honored);
+    this._subs.set(message2.id, honored);
     return stampSubscriptionId({
       method: "notifications/subscriptions/acknowledged",
       params: { notifications: honored }
-    }, message3.id);
+    }, message2.id);
   }
   /**
   * Tear down one subscription (inbound `notifications/cancelled`). Returns
@@ -27519,15 +27509,15 @@ var StdioListenRouter = class {
   * - For any other outbound message, returns `'passthrough'` (the entry
   *   forwards it as-is).
   */
-  routeOutbound(message3) {
-    if (!CHANGE_NOTIFICATION_METHODS.has(message3.method)) return "passthrough";
-    const uriParam = message3.params?.["uri"];
+  routeOutbound(message2) {
+    if (!CHANGE_NOTIFICATION_METHODS.has(message2.method)) return "passthrough";
+    const uriParam = message2.params?.["uri"];
     const uri = typeof uriParam === "string" ? uriParam : void 0;
-    const event = notificationToServerEvent(message3.method, uri);
+    const event = notificationToServerEvent(message2.method, uri);
     const out = [];
     for (const [subscriptionId, filter] of this._subs) if (listenFilterAccepts(filter, event)) out.push(stampSubscriptionId({
-      method: message3.method,
-      params: message3.params ?? {}
+      method: message2.method,
+      params: message2.params ?? {}
     }, subscriptionId));
     return out;
   }
@@ -27601,15 +27591,15 @@ function syntheticElicitationId() {
   const hex3 = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
   return `${hex3.slice(0, 8)}-${hex3.slice(8, 12)}-${hex3.slice(12, 16)}-${hex3.slice(16, 20)}-${hex3.slice(20)}`;
 }
-function legacyShimFailure(method, message3) {
+function legacyShimFailure(method, message2) {
   if (method === "tools/call") return {
     content: [{
       type: "text",
-      text: message3
+      text: message2
     }],
     isError: true
   };
-  throw new ProtocolError(ProtocolErrorCode.InternalError, message3);
+  throw new ProtocolError(ProtocolErrorCode.InternalError, message2);
 }
 var LegacyInputRequiredShim = class {
   constructor(_host) {
@@ -28966,9 +28956,9 @@ var StdioServerTransport = class {
   }
   processReadBuffer() {
     while (true) try {
-      const message3 = this._readBuffer.readMessage();
-      if (message3 === null) break;
-      this.onmessage?.(message3);
+      const message2 = this._readBuffer.readMessage();
+      if (message2 === null) break;
+      this.onmessage?.(message2);
     } catch (error51) {
       this.onerror?.(error51);
     }
@@ -28983,10 +28973,10 @@ var StdioServerTransport = class {
     this._readBuffer.clear();
     this.onclose?.();
   }
-  send(message3) {
+  send(message2) {
     if (this._closed) return Promise.reject(/* @__PURE__ */ new Error("StdioServerTransport is closed"));
     return new Promise((resolve2, reject) => {
-      const json2 = serializeMessage(message3);
+      const json2 = serializeMessage(message2);
       let settled = false;
       const onError = (error51) => {
         if (settled) return;
@@ -29028,27 +29018,27 @@ var StdioConnectionChannel = class {
   }
   async start() {
   }
-  async send(message3, options) {
-    if (isJSONRPCResultResponse(message3) || isJSONRPCErrorResponse(message3)) {
-      const { id } = message3;
+  async send(message2, options) {
+    if (isJSONRPCResultResponse(message2) || isJSONRPCErrorResponse(message2)) {
+      const { id } = message2;
       if (id !== void 0) this._settle(id);
     }
     if (this._closed) return;
-    if (this._outboundIntercept?.(message3) === "handled") return;
-    return this._wire.send(message3, options);
+    if (this._outboundIntercept?.(message2) === "handled") return;
+    return this._wire.send(message2, options);
   }
   setProtocolVersion = (version2) => {
     this._wire.setProtocolVersion?.(version2);
   };
   /** Forwards one inbound message to the connected instance. */
-  deliver(message3, extra) {
+  deliver(message2, extra) {
     if (this._closed) return;
-    if (isJSONRPCRequest(message3)) this._pendingRequests.add(message3.id);
-    else if (isJSONRPCNotification(message3) && message3.method === "notifications/cancelled") {
-      const cancelledId = message3.params?.requestId;
+    if (isJSONRPCRequest(message2)) this._pendingRequests.add(message2.id);
+    else if (isJSONRPCNotification(message2) && message2.method === "notifications/cancelled") {
+      const cancelledId = message2.params?.requestId;
       if (cancelledId !== void 0) this._settle(cancelledId);
     }
-    this.onmessage?.(message3, extra);
+    this.onmessage?.(message2, extra);
   }
   /**
   * Resolves once every request delivered to the instance has been answered
@@ -29094,9 +29084,9 @@ var StdioConnectionChannel = class {
     for (const waiter of waiters) waiter();
   }
 };
-function classifyOpeningMessage(message3) {
-  const params = message3.params;
-  if (message3.method === "initialize" && !carriesValidModernEnvelopeClaim(params)) {
+function classifyOpeningMessage(message2) {
+  const params = message2.params;
+  if (message2.method === "initialize" && !carriesValidModernEnvelopeClaim(params)) {
     const requestedVersion = params !== null && typeof params === "object" && typeof params.protocolVersion === "string" ? params.protocolVersion : void 0;
     return {
       kind: "legacy",
@@ -29141,19 +29131,19 @@ function serveStdio(factory, options = {}) {
     } catch {
     }
   };
-  const writeErrorResponse = (id, code, message3, data) => wire.send({
+  const writeErrorResponse = (id, code, message2, data) => wire.send({
     jsonrpc: "2.0",
     id,
     error: {
       code,
-      message: message3,
+      message: message2,
       ...data !== void 0 && { data }
     }
   }).catch((error51) => reportError(toError(error51)));
   const listenRouter = new StdioListenRouter(options.maxSubscriptions ?? DEFAULT_MAX_SUBSCRIPTIONS);
-  const modernOutboundIntercept = (message3) => {
-    if (!isJSONRPCNotification(message3)) return void 0;
-    const routed = listenRouter.routeOutbound(message3);
+  const modernOutboundIntercept = (message2) => {
+    if (!isJSONRPCNotification(message2)) return void 0;
+    const routed = listenRouter.routeOutbound(message2);
     if (routed === "passthrough") return void 0;
     for (const stamped of routed) wire.send({
       jsonrpc: "2.0",
@@ -29161,18 +29151,18 @@ function serveStdio(factory, options = {}) {
     }).catch((error51) => reportError(toError(error51)));
     return "handled";
   };
-  const tryServeListen = async (message3) => {
-    if (isJSONRPCRequest(message3) && message3.method === "subscriptions/listen") {
-      const meta3 = requestMetaOf(message3.params);
-      const issue2 = hasEnvelopeClaim(message3.params) ? (meta3 === void 0 ? [] : validateEnvelopeMeta(meta3))[0] : {
+  const tryServeListen = async (message2) => {
+    if (isJSONRPCRequest(message2) && message2.method === "subscriptions/listen") {
+      const meta3 = requestMetaOf(message2.params);
+      const issue2 = hasEnvelopeClaim(message2.params) ? (meta3 === void 0 ? [] : validateEnvelopeMeta(meta3))[0] : {
         key: "_meta",
         problem: "the per-request envelope is required on protocol revision 2026-07-28"
       };
-      const claimedVersion = envelopeClaimVersion(message3.params);
+      const claimedVersion = envelopeClaimVersion(message2.params);
       let reply;
       if (issue2 !== void 0) reply = {
         jsonrpc: "2.0",
-        id: message3.id,
+        id: message2.id,
         error: {
           code: -32602,
           message: `Invalid _meta envelope: ${issue2.key}: ${issue2.problem}`
@@ -29185,14 +29175,14 @@ function serveStdio(factory, options = {}) {
         });
         reply = {
           jsonrpc: "2.0",
-          id: message3.id,
+          id: message2.id,
           error: {
             code: error51.code,
             message: error51.message,
             data: error51.data
           }
         };
-      } else reply = listenRouter.serve(message3);
+      } else reply = listenRouter.serve(message2);
       await wire.send("error" in reply ? reply : {
         jsonrpc: "2.0",
         method: reply.method,
@@ -29200,8 +29190,8 @@ function serveStdio(factory, options = {}) {
       }).catch((error51) => reportError(toError(error51)));
       return true;
     }
-    if (isJSONRPCNotification(message3) && message3.method === "notifications/cancelled") {
-      const cancelledId = message3.params?.requestId;
+    if (isJSONRPCNotification(message2) && message2.method === "notifications/cancelled") {
+      const cancelledId = message2.params?.requestId;
       if (cancelledId !== void 0 && listenRouter.cancel(cancelledId)) return true;
     }
     return false;
@@ -29247,43 +29237,43 @@ function serveStdio(factory, options = {}) {
       discarding = void 0;
     }
   };
-  const processMessage = async (message3) => {
+  const processMessage = async (message2) => {
     if (state.phase === "closed") return;
     if (state.phase === "pinned") {
-      if (state.era === "modern" && isJSONRPCRequest(message3) && message3.method === "initialize" && !carriesValidModernEnvelopeClaim(message3.params)) {
-        await answerLegacyRejection(message3, "initialize", message3.params !== null && typeof message3.params === "object" && typeof message3.params.protocolVersion === "string" ? message3.params.protocolVersion : void 0);
+      if (state.era === "modern" && isJSONRPCRequest(message2) && message2.method === "initialize" && !carriesValidModernEnvelopeClaim(message2.params)) {
+        await answerLegacyRejection(message2, "initialize", message2.params !== null && typeof message2.params === "object" && typeof message2.params.protocolVersion === "string" ? message2.params.protocolVersion : void 0);
         return;
       }
-      if (state.era === "modern" && await tryServeListen(message3)) return;
-      state.instance.channel.deliver(message3);
+      if (state.era === "modern" && await tryServeListen(message2)) return;
+      state.instance.channel.deliver(message2);
       return;
     }
-    if (!isJSONRPCRequest(message3) && !isJSONRPCNotification(message3)) {
+    if (!isJSONRPCRequest(message2) && !isJSONRPCNotification(message2)) {
       reportError(/* @__PURE__ */ new Error("Discarded a JSON-RPC response received before the connection negotiated an era"));
       return;
     }
-    const opening = classifyOpeningMessage(message3);
+    const opening = classifyOpeningMessage(message2);
     switch (opening.kind) {
       case "invalid-envelope": {
         const detail = `Invalid _meta envelope for protocol revision 2026-07-28: ${opening.issue.key}: ${opening.issue.problem}`;
-        if (isJSONRPCRequest(message3)) await writeErrorResponse(message3.id, ProtocolErrorCode.InvalidParams, detail, { envelope: opening.issue });
+        if (isJSONRPCRequest(message2)) await writeErrorResponse(message2.id, ProtocolErrorCode.InvalidParams, detail, { envelope: opening.issue });
         else reportError(/* @__PURE__ */ new Error(`Discarded a notification with a malformed envelope: ${detail}`));
         return;
       }
       case "unsupported-revision":
-        if (isJSONRPCRequest(message3)) {
+        if (isJSONRPCRequest(message2)) {
           const error51 = new UnsupportedProtocolVersionError({
             supported: [...SUPPORTED_MODERN_PROTOCOL_VERSIONS],
             requested: opening.requested
           });
           reportError(error51);
-          await writeErrorResponse(message3.id, error51.code, error51.message, error51.data);
+          await writeErrorResponse(message2.id, error51.code, error51.message, error51.data);
         } else reportError(/* @__PURE__ */ new Error(`Discarded a notification claiming unsupported protocol revision ${opening.requested}`));
         return;
       case "modern":
-        if (isJSONRPCRequest(message3) && message3.method === "server/discover") {
+        if (isJSONRPCRequest(message2) && message2.method === "server/discover") {
           if (state.phase === "probe") {
-            state.instance.channel.deliver(message3, { classification: opening.classification });
+            state.instance.channel.deliver(message2, { classification: opening.classification });
             return;
           }
           const instance = await connectInstance("modern", opening.revision);
@@ -29295,12 +29285,12 @@ function serveStdio(factory, options = {}) {
             phase: "probe",
             instance
           };
-          instance.channel.deliver(message3, { classification: opening.classification });
+          instance.channel.deliver(message2, { classification: opening.classification });
           return;
         }
         if (state.phase === "probe") {
-          if (isJSONRPCNotification(message3)) {
-            state.instance.channel.deliver(message3, { classification: opening.classification });
+          if (isJSONRPCNotification(message2)) {
+            state.instance.channel.deliver(message2, { classification: opening.classification });
             return;
           }
           state = {
@@ -29320,12 +29310,12 @@ function serveStdio(factory, options = {}) {
             instance
           };
         }
-        if (await tryServeListen(message3)) return;
-        state.instance.channel.deliver(message3, { classification: opening.classification });
+        if (await tryServeListen(message2)) return;
+        state.instance.channel.deliver(message2, { classification: opening.classification });
         return;
       case "legacy": {
         if (legacyMode === "reject") {
-          if (isJSONRPCRequest(message3)) await answerLegacyRejection(message3, opening.reason, opening.requestedVersion);
+          if (isJSONRPCRequest(message2)) await answerLegacyRejection(message2, opening.reason, opening.requestedVersion);
           return;
         }
         if (state.phase === "probe") {
@@ -29343,7 +29333,7 @@ function serveStdio(factory, options = {}) {
           era: "legacy",
           instance
         };
-        state.instance.channel.deliver(message3);
+        state.instance.channel.deliver(message2);
         return;
       }
     }
@@ -29355,11 +29345,11 @@ function serveStdio(factory, options = {}) {
     pumping = true;
     try {
       while (queue.length > 0) {
-        const message3 = queue.shift();
+        const message2 = queue.shift();
         try {
-          await processMessage(message3);
+          await processMessage(message2);
         } catch (error51) {
-          if (isJSONRPCRequest(message3)) await writeErrorResponse(message3.id, ProtocolErrorCode.InternalError, "Internal server error");
+          if (isJSONRPCRequest(message2)) await writeErrorResponse(message2.id, ProtocolErrorCode.InternalError, "Internal server error");
           reportError(toError(error51));
         }
       }
@@ -29376,8 +29366,8 @@ function serveStdio(factory, options = {}) {
     if (current.phase === "probe" || current.phase === "pinned") await current.instance.product.close().catch((error51) => reportError(toError(error51)));
     await wire.close().catch((error51) => reportError(toError(error51)));
   };
-  wire.onmessage = (message3) => {
-    queue.push(message3);
+  wire.onmessage = (message2) => {
+    queue.push(message2);
     pump();
   };
   wire.onerror = (error51) => {
@@ -29864,12 +29854,6 @@ function sectionByKey(key) {
   if (!section) throw new Error(`no such section: ${key}`);
   return section;
 }
-function emptySections(file2) {
-  return SECTIONS.filter((section) => !section.filled(file2)).map((section) => section.label);
-}
-function filledCount(file2) {
-  return SECTIONS.filter((section) => section.filled(file2)).length;
-}
 
 // ../src/lib/model/digest.ts
 function classification(file2) {
@@ -29886,22 +29870,22 @@ function message(row) {
   const detail = row.description === void 0 || row.description === "" ? "" : ` \u2014 ${row.description}`;
   return `${row.type} ${row.name}${detail}`;
 }
-function relationshipLine(lane2) {
-  const present2 = (end) => end !== void 0 && end !== "";
-  const theirs = lane2.relationship?.theirs;
-  const ours = lane2.relationship?.ours;
-  if (present2(theirs) && present2(ours)) return `Collaborator: ${theirs} \u2192 this context: ${ours}`;
-  if (present2(theirs)) return `Collaborator: ${theirs} \u2192`;
-  if (present2(ours)) return `\u2192 this context: ${ours}`;
+function relationshipLine(lane) {
+  const present = (end) => end !== void 0 && end !== "";
+  const theirs = lane.relationship?.theirs;
+  const ours = lane.relationship?.ours;
+  if (present(theirs) && present(ours)) return `Collaborator: ${theirs} \u2192 this context: ${ours}`;
+  if (present(theirs)) return `Collaborator: ${theirs} \u2192`;
+  if (present(ours)) return `\u2192 this context: ${ours}`;
   return void 0;
 }
 function lanes(rows) {
-  return rows.flatMap((lane2, index) => {
-    const kind = lane2.collaborator.kind;
-    const head = `### ${lane2.collaborator.name}${kind === void 0 ? "" : ` \u2014 ${kind}`}`;
-    const relationship = relationshipLine(lane2);
+  return rows.flatMap((lane, index) => {
+    const kind = lane.collaborator.kind;
+    const head = `### ${lane.collaborator.name}${kind === void 0 ? "" : ` \u2014 ${kind}`}`;
+    const relationship = relationshipLine(lane);
     const block = relationship === void 0 ? [head] : [head, "", relationship];
-    const messages = lane2.messages.length === 0 ? [] : ["", ...lane2.messages.map(message)];
+    const messages = lane.messages.length === 0 ? [] : ["", ...lane.messages.map(message)];
     return index === 0 ? [...block, ...messages] : ["", ...block, ...messages];
   });
 }
@@ -30004,93 +29988,17 @@ function pathFromUri(uri) {
 }
 function catalog(root2) {
   const canvases = [];
-  const problems = [];
-  const found = findCanvases(root2);
-  for (const path of found.paths) {
+  for (const path of findCanvases(root2).paths) {
     const result = readCanvas(root2, path);
-    const uri = canvasUri(path);
-    if (result.ok) {
-      canvases.push({
-        path,
-        uri,
-        name: result.file.name,
-        purpose: result.file.purpose,
-        filled: filledCount(result.file),
-        empty: emptySections(result.file)
-      });
-    } else if (result.reason === "newer-version") {
-      problems.push({
-        path,
-        uri,
-        problem: `written by a newer version of BC Canvas (format version ${result.version})`
-      });
-    } else {
-      problems.push({ path, uri, problem: result.detail ?? "not a Canvas file" });
-    }
+    if (!result.ok) continue;
+    canvases.push({
+      path,
+      uri: canvasUri(path),
+      name: result.file.name,
+      purpose: result.file.purpose
+    });
   }
-  return {
-    canvases,
-    problems,
-    unreadable: found.unreadable,
-    sections: SECTIONS.map((section) => section.label)
-  };
-}
-
-// src/prompt.ts
-function body2(path) {
-  return [
-    "Review the canvas above the way a facilitator would: by asking, not by filling in.",
-    "",
-    "Say back:",
-    "",
-    "- What this context is responsible for, in one sentence drawn only from what the canvas says. If that sentence will not come out, say so \u2014 the canvas has not yet settled what the context is for.",
-    "- Which sections are empty, and which of those matter for a context like this one. An empty section is a question nobody has answered yet.",
-    "- Where the canvas disagrees with itself: a business decision nothing inbound triggers, an outbound event no collaborator consumes, a word the description leans on that the ubiquitous language never defines.",
-    "- The questions the canvas raises, alongside the ones already under Open questions.",
-    "",
-    "Leave the questions open. Do not answer them and do not draft the rows that are missing: the answers belong to the people who own this context, and an invented collaborator is harder to get out of a canvas than a blank line is to fill.",
-    "",
-    `Call bcc_read_canvas with view: 'json' if you need the exact file, and bcc_write_canvas back to ${path} once those questions have been answered.`
-  ].join("\n");
-}
-function registerReviewPrompt(server, root2) {
-  server.registerPrompt(
-    "review-canvas",
-    {
-      title: "Review a canvas",
-      description: "Read a Bounded Context Canvas and ask back what it leaves open, rather than filling it in.",
-      argsSchema: external_exports.object({
-        path: completable(
-          external_exports.string().describe("The canvas to review \u2014 root-relative, as bcc_list_canvases reports it."),
-          (value) => catalog(root2).canvases.map((summary) => summary.path).filter((candidate) => candidate.startsWith(value))
-        )
-      })
-    },
-    ({ path }) => {
-      const result = readCanvas(root2, path);
-      if (!result.ok) throw new ProtocolError(INVALID_PARAMS, readProblem(result));
-      return {
-        description: `Review ${result.file.name === "" ? result.path : result.file.name}`,
-        messages: [
-          {
-            role: "user",
-            content: {
-              type: "resource",
-              resource: {
-                uri: canvasUri(result.path),
-                mimeType: "text/markdown",
-                text: canvasDigest(result.file)
-              }
-            }
-          },
-          {
-            role: "user",
-            content: { type: "text", text: body2(result.path) }
-          }
-        ]
-      };
-    }
-  );
+  return { canvases };
 }
 
 // src/resource.ts
@@ -30135,96 +30043,17 @@ function registerCanvasResource(server, root2) {
   );
 }
 
-// src/tools.ts
-import { existsSync, mkdirSync, statSync as statSync2 } from "node:fs";
-import { dirname as dirname3 } from "node:path";
-
-// ../src/lib/fs/write.ts
-import { renameSync, rmSync, writeFileSync } from "node:fs";
-import { dirname as dirname2, join as join3 } from "node:path";
-var sequence = 0;
-function writeAtomic(path, text) {
-  const temporary = join3(dirname2(path), `.${process.pid}-${sequence++}.bcc-tmp`);
-  try {
-    writeFileSync(temporary, text, "utf8");
-    renameSync(temporary, path);
-  } catch (error51) {
-    rmSync(temporary, { force: true });
-    throw error51;
-  }
+// src/errors.ts
+function refuse(...lines) {
+  const text = lines.filter((line) => line !== "").join(" ");
+  return { content: [{ type: "text", text }], isError: true };
 }
-
-// ../src/lib/model/serialize.ts
-function present(value) {
-  return value !== void 0 && value !== "";
-}
-function fileMessage(message3) {
-  return {
-    type: message3.type,
-    name: message3.name,
-    ...present(message3.description) && { description: message3.description }
-  };
-}
-function fileCollaborator(collaborator) {
-  return {
-    name: collaborator.name,
-    ...collaborator.kind !== void 0 && { kind: collaborator.kind }
-  };
-}
-function fileRelationship(relationship) {
-  if (relationship === void 0) return {};
-  const kept = {
-    ...present(relationship.theirs) && { theirs: relationship.theirs },
-    ...present(relationship.ours) && { ours: relationship.ours }
-  };
-  return Object.keys(kept).length === 0 ? {} : { relationship: kept };
-}
-function fileLane(lane2) {
-  return {
-    collaborator: fileCollaborator(lane2.collaborator),
-    ...fileRelationship(lane2.relationship),
-    messages: lane2.messages.map(fileMessage)
-  };
-}
-function fileClassification(sc) {
-  return {
-    ...present(sc.domain) && { domain: sc.domain },
-    ...present(sc.businessModel) && { businessModel: sc.businessModel },
-    ...present(sc.evolution) && { evolution: sc.evolution }
-  };
-}
-function toCanvasFile(doc) {
-  return {
-    version: doc.version,
-    name: doc.name,
-    purpose: doc.purpose,
-    strategicClassification: fileClassification(doc.strategicClassification),
-    domainRoles: doc.domainRoles.map((role) => ({ name: role.name })),
-    inboundCommunication: doc.inboundCommunication.map(fileLane),
-    ubiquitousLanguage: doc.ubiquitousLanguage.map(
-      (row) => ({
-        term: row.term,
-        ...present(row.definition) && { definition: row.definition }
-      })
-    ),
-    businessDecisions: doc.businessDecisions.map(
-      (row) => ({
-        name: row.name,
-        ...present(row.description) && { description: row.description }
-      })
-    ),
-    outboundCommunication: doc.outboundCommunication.map(fileLane),
-    assumptions: [...doc.assumptions],
-    verificationMetrics: [...doc.verificationMetrics],
-    openQuestions: [...doc.openQuestions]
-  };
-}
-function serializeCanvasFile(file2) {
-  return JSON.stringify(toCanvasFile(file2), null, 2).replaceAll("<", "\\u003c");
-}
-function canvasBytes(file2) {
-  return `${serializeCanvasFile(file2)}
-`;
+function readRefusal(result) {
+  return result.reason === "not-canvas" ? refuse(
+    readProblem(result),
+    "A Canvas file is the eleven-section document bcc_explain describes;",
+    "call it for what belongs in each section."
+  ) : refuse(readProblem(result));
 }
 
 // ../src/lib/editor/vocab.ts
@@ -30360,67 +30189,6 @@ var CAUTION_TRAITS = new Set(
   TRAITS.filter((trait) => trait.caution).map((trait) => trait.value)
 );
 
-// src/custom.ts
-function known(options, value) {
-  return options.some((option) => option.value === value);
-}
-function note(value, what, options) {
-  const curated = options.map((option) => option.value).join(", ");
-  return `"${value}" is a custom ${what}, kept as written. The curated ones are: ${curated}.`;
-}
-function axisNotes(file2) {
-  const { domain: domain2, businessModel, evolution } = file2.strategicClassification;
-  const axes = [
-    [domain2, "domain", PICK_OPTIONS.domain],
-    [businessModel, "business model", PICK_OPTIONS.businessModel],
-    [evolution, "evolution stage", PICK_OPTIONS.evolution]
-  ];
-  return axes.filter(([value, , options]) => value !== void 0 && value !== "" && !known(options, value)).map(([value, what, options]) => note(value, what, options));
-}
-function relationshipNotes(lanes2) {
-  return lanes2.flatMap((lane2) => [lane2.relationship?.theirs, lane2.relationship?.ours]).filter(
-    (value) => value !== void 0 && value !== "" && !known(PICK_OPTIONS.relationship, value)
-  ).map((value) => note(value, "relationship pattern", PICK_OPTIONS.relationship));
-}
-function customValueNotes(file2) {
-  const notes = [
-    ...axisNotes(file2),
-    ...file2.domainRoles.filter((role) => role.name !== "" && !known(TRAITS, role.name)).map((role) => note(role.name, "domain-role trait", TRAITS)),
-    ...relationshipNotes(file2.inboundCommunication),
-    ...relationshipNotes(file2.outboundCommunication)
-  ];
-  return [...new Set(notes)];
-}
-
-// src/errors.ts
-function refuse(...lines) {
-  const text = lines.filter((line) => line !== "").join(" ");
-  return { content: [{ type: "text", text }], isError: true };
-}
-function readRefusal(result) {
-  switch (result.reason) {
-    case "outside-root":
-      return refuse(result.detail, "Call bcc_list_canvases to see the canvases it does cover.");
-    case "unreadable":
-      return refuse(
-        `${result.path}: could not be read (${result.detail}).`,
-        "Call bcc_list_canvases for the canvases that are there."
-      );
-    case "newer-version":
-      return refuse(
-        `${result.path}: written by a newer version of BC Canvas (format version ${result.version});`,
-        `this server reads up to version ${CANVAS_VERSION}. Nothing was read, and nothing was changed.`
-      );
-    case "not-canvas":
-      return refuse(
-        `${result.path}: not a Canvas file.`,
-        result.detail ?? "",
-        "A Canvas file is the eleven-section document bcc_write_canvas takes;",
-        "call bcc_explain for what belongs in each section."
-      );
-  }
-}
-
 // src/explain.ts
 var TOPICS = [
   "canvas",
@@ -30540,9 +30308,9 @@ var CANVAS_OVERVIEW = [
   "decision someone made, and a question is the honest form of a guess.",
   "",
   "Call bcc_explain again with any section name for its shape, its vocabulary and",
-  "an example row. bcc_list_canvases shows the canvases already under this root \u2014",
-  "read one before drafting, since a real neighbouring canvas calibrates better",
-  "than anything described here.",
+  "an example row. The canvases already in this project calibrate better than",
+  "anything described here, so read a neighbouring one with bcc_read_canvas",
+  "before drafting.",
   "",
   "Based on the Bounded Context Canvas by the ddd-crew \xB7 CC BY 4.0"
 ].join("\n");
@@ -30557,230 +30325,35 @@ function explain(topic) {
   return lines.join("\n");
 }
 
-// src/schema.ts
-function values(options) {
-  return options.map((option) => option.value).join(", ");
-}
-function oneLiners(options) {
-  return options.map((option) => `${option.value} \u2014 ${option.description ?? ""}`.trim()).join(" \xB7 ");
-}
-var CUSTOM_OK2 = "Any other value is kept as written and noted in the result.";
-var axis = (what, options) => external_exports.string().optional().describe(`${what} One of: ${values(options)}. ${CUSTOM_OK2} Omit if unpicked.`);
-var message2 = external_exports.object({
-  type: external_exports.enum(["command", "query", "event"]).describe(
-    "What kind of message this is. A command asks the receiver to do something, a query asks it a question, an event reports something that already happened. The only closed set on the canvas."
-  ),
-  name: external_exports.string().describe('The message itself, as the business says it: "Place Order".'),
-  description: external_exports.string().optional().describe("One line on what it carries or when it fires. Omit rather than sending an empty string.")
-});
-var relationshipEnd = (whose) => external_exports.string().optional().describe(`${whose} One of: ${values(PICK_OPTIONS.relationship)}. ${CUSTOM_OK2} Omit if undecided.`);
-var lane = (direction) => external_exports.object({
-  collaborator: external_exports.object({
-    name: external_exports.string().describe(`The other context or system ${direction}. Its name, not its role.`),
-    kind: external_exports.enum(["bounded-context", "external-system", "frontend", "user"]).optional().describe(
-      "What kind of collaborator this is. Omit if unstated \u2014 an absent kind means unclassified, not bounded-context. The only other closed set on the canvas."
-    )
-  }).describe(`The other party ${direction}.`),
-  relationship: external_exports.object({
-    theirs: relationshipEnd("The collaborator's side of the boundary."),
-    ours: relationshipEnd("This context's side of the boundary.")
-  }).optional().describe(
-    `The context-mapping pattern, read from each end of the boundary \u2014 a pairing, not a duplicate field: send both ends only when each side's stance is actually known. The patterns: ${oneLiners(PICK_OPTIONS.relationship)}. Omit the whole object if it hasn't been decided.`
-  ),
-  messages: external_exports.array(message2).describe("What crosses this boundary, in the order it makes sense in.")
-});
-var CANVAS_SHAPE = external_exports.object({
-  name: external_exports.string().describe("The bounded context this canvas is about."),
-  purpose: external_exports.string().describe(
-    "What the context exists to do, in a few sentences of business language \u2014 not implementation. Empty string if not yet written."
-  ),
-  strategicClassification: external_exports.object({
-    domain: axis("How much of the business advantage lives here.", PICK_OPTIONS.domain),
-    businessModel: axis("How the context pays for itself.", PICK_OPTIONS.businessModel),
-    evolution: axis("How settled the thing being built is.", PICK_OPTIONS.evolution)
-  }).describe("Three independent axes. Send an empty object if none has been picked."),
-  domainRoles: external_exports.array(external_exports.object({ name: external_exports.string() })).describe(
-    `What kind of context this is \u2014 usually one to three traits. From the ddd-crew model-traits worksheet, plus one local addition: ${oneLiners(TRAITS)}. ${CUSTOM_OK2}`
-  ),
-  inboundCommunication: external_exports.array(lane("that sends to this context")).describe("Who sends this context commands, queries or events \u2014 one entry per collaborator."),
-  ubiquitousLanguage: external_exports.array(
-    external_exports.object({
-      term: external_exports.string().describe("A word that means something precise inside this context."),
-      definition: external_exports.string().optional().describe("What it means here, in one line.")
-    })
-  ).describe("The words this context insists on, and what they mean inside its boundary."),
-  businessDecisions: external_exports.array(
-    external_exports.object({
-      name: external_exports.string().describe("The rule, stated as a rule."),
-      description: external_exports.string().optional().describe("One line on the detail or the exception.")
-    })
-  ).describe("The policies and rules this context enforces \u2014 the reason it owns its data."),
-  outboundCommunication: external_exports.array(lane("that consumes what this context emits")).describe("Who consumes what this context emits \u2014 one entry per collaborator."),
-  assumptions: external_exports.array(external_exports.string()).describe("What the design takes to be true, each on its own."),
-  verificationMetrics: external_exports.array(external_exports.string()).describe("What would show the design is working \u2014 measurable where possible."),
-  openQuestions: external_exports.array(external_exports.string()).describe("What is still unresolved, phrased as questions.")
-});
-var WRITE_INPUT = external_exports.object({
-  path: external_exports.string().describe(
-    "Where to write it, relative to the canvas root. Must end in .bcc.json. Directories are the repo's business, not the server's \u2014 put it next to the code it describes."
-  ),
-  version: external_exports.number().int().optional().describe(
-    'The Canvas file format version. Omit it \u2014 the server stamps the current one either way. It is accepted only so a document read with view: "json" can be handed straight back. Only a document already at the current version can be; an older one is refused, naming each field that has to change.'
-  ),
-  canvas: CANVAS_SHAPE.describe(
-    "The whole canvas. Every section is required; a section with nothing in it is an empty array or an empty string, and the result names which ones came out that way."
-  )
-});
-
 // src/tools.ts
-var CANVAS_EXTENSION = ".bcc.json";
-function summaryLines(summary) {
-  const lines = [`${summary.path} \u2014 ${summary.name === "" ? "Untitled" : summary.name}`];
-  if (summary.purpose !== "") lines.push(`  ${summary.purpose}`);
-  lines.push(`  ${summary.filled} of ${SECTIONS.length} sections filled.`);
-  if (summary.empty.length > 0) lines.push(`  Nothing yet under: ${summary.empty.join(", ")}.`);
-  lines.push(`  ${summary.uri}`);
-  return lines;
-}
-function listCanvases(server, root2) {
-  server.registerTool(
-    "bcc_list_canvases",
-    {
-      title: "List canvases",
-      description: "Every Bounded Context Canvas under this project, with how far along each one is. Start here: a canvas from this codebase calibrates a new one better than any example, and reading a neighbouring context is usually how you learn what this one is not responsible for.",
-      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false }
-    },
-    async () => {
-      const found = catalog(root2);
-      const lines = [];
-      if (found.canvases.length === 0) {
-        lines.push(
-          `No canvases under ${root2.path} yet. Hidden and generated directories were not searched \u2014 any name starting with a dot, plus node_modules, dist and build. A canvas is a ${CANVAS_EXTENSION} file, or a .bcc.html artifact carrying one; bcc_write_canvas creates the first.`
-        );
-      } else {
-        lines.push(
-          `${found.canvases.length} ${found.canvases.length === 1 ? "canvas" : "canvases"} under ${root2.path}:`,
-          ""
-        );
-        for (const summary of found.canvases) lines.push(...summaryLines(summary), "");
-      }
-      if (found.problems.length > 0) {
-        lines.push("Files that look like canvases and could not be read:", "");
-        for (const problem of found.problems) lines.push(`${problem.path} \u2014 ${problem.problem}`);
-        lines.push("");
-      }
-      if (found.unreadable.length > 0) {
-        lines.push(
-          `${found.unreadable.length === 1 ? "One directory" : `${found.unreadable.length} directories`} could not be opened, so a canvas under ${found.unreadable.length === 1 ? "it" : "them"} would not appear above: ${found.unreadable.join(", ")}.`
-        );
-      }
-      return { content: [{ type: "text", text: lines.join("\n").trimEnd() }] };
-    }
-  );
-}
 function readCanvasTool(server, root2) {
   server.registerTool(
     "bcc_read_canvas",
     {
       title: "Read a canvas",
-      description: "One canvas, either as prose or as its exact file bytes. Read it as a digest to understand the context or to model a new canvas on it; read it as json when you are about to rewrite it, since bcc_write_canvas takes the whole document back.",
+      description: "One canvas as prose: the sheet in words, a third to a half shorter than the file. Read it to understand what a context is responsible for, or to model a new canvas on a neighbouring one. It reads a .bcc.json or the canvas embedded in a .bcc.html artifact, and a canvas written by an older version is brought up to date on the way through.",
       inputSchema: external_exports.object({
-        path: external_exports.string().describe("Root-relative path, as bcc_list_canvases reports it."),
-        view: external_exports.enum(["digest", "json"]).default("digest").describe(
-          "digest is the sheet in words, a third to a half shorter than the file \u2014 least on a canvas with everything filled in. json is the Canvas file itself, byte for byte \u2014 take this one when you intend to write it back."
+        path: external_exports.string().describe(
+          "Where the canvas is, relative to the project root \u2014 docs/contexts/shipping.bcc.json."
         )
       }),
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false }
     },
-    async ({ path, view }) => {
+    async ({ path }) => {
       const result = readCanvas(root2, path);
       if (!result.ok) return readRefusal(result);
-      const uri = canvasUri(result.path);
       return {
         content: [
-          {
-            type: "text",
-            text: view === "json" ? result.text : canvasDigest(result.file)
-          },
+          { type: "text", text: canvasDigest(result.file) },
           {
             type: "resource_link",
-            uri,
+            uri: canvasUri(result.path),
             name: result.file.name === "" ? result.path : result.file.name,
-            mimeType: view === "json" ? "application/json" : "text/markdown",
+            mimeType: "text/markdown",
             description: `The ${result.path} canvas, so it can be kept in view.`
           }
         ]
       };
-    }
-  );
-}
-function writeCanvasTool(server, root2) {
-  server.registerTool(
-    "bcc_write_canvas",
-    {
-      title: "Write a canvas",
-      description: "Write a whole canvas to a .bcc.json file, in the exact form the BC Canvas editor reads. Whole document every time \u2014 send every section, including the ones with nothing in them, and the result names which came out empty so a section is never dropped by accident. Call bcc_explain first if you are unsure what belongs in one.",
-      inputSchema: WRITE_INPUT,
-      annotations: {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: true,
-        openWorldHint: false
-      }
-    },
-    async ({ path, version: version2, canvas }) => {
-      if (!path.endsWith(CANVAS_EXTENSION)) {
-        return refuse(
-          `${path}: a canvas file has to end in ${CANVAS_EXTENSION}.`,
-          "That extension is what bcc_list_canvases looks for and what the editor's Import\u2026 accepts,",
-          "so a canvas under any other name is invisible to both.",
-          `Try ${path.replace(/(\.[^./]*)?$/, CANVAS_EXTENSION)}.`
-        );
-      }
-      if (version2 !== void 0 && version2 !== CANVAS_VERSION) {
-        return refuse(
-          `version ${version2}: this server writes Canvas file format version ${CANVAS_VERSION}, and only that.`,
-          "Leave version out \u2014 it is stamped for you. Nothing was written."
-        );
-      }
-      let absolute;
-      try {
-        absolute = root2.resolve(path);
-      } catch (error51) {
-        if (error51 instanceof OutsideRoot) return refuse(error51.message, "Nothing was written.");
-        throw error51;
-      }
-      const parsed = parseCanvasFile(JSON.stringify({ version: CANVAS_VERSION, ...canvas }));
-      if (!parsed.ok) {
-        return refuse(
-          `${path}: this is not yet a Canvas file, so nothing was written.`,
-          parsed.reason === "newer-version" ? "" : parsed.detail ?? "",
-          "Paths are into the canvas object; call bcc_explain for what a section holds."
-        );
-      }
-      if (existsSync(absolute) && statSync2(absolute).isDirectory()) {
-        return refuse(`${path}: that is a directory. Nothing was written.`);
-      }
-      const created = !existsSync(absolute);
-      try {
-        mkdirSync(dirname3(absolute), { recursive: true });
-        writeAtomic(absolute, canvasBytes(parsed.file));
-      } catch (error51) {
-        return refuse(
-          `${path}: could not be written (${error51 instanceof Error ? error51.message : String(error51)}).`
-        );
-      }
-      const written = root2.relative(absolute);
-      const empty = emptySections(parsed.file);
-      const warnings = customValueNotes(parsed.file);
-      const lines = [
-        `${created ? "Wrote" : "Replaced"} ${written} \u2014 ${parsed.file.name === "" ? "Untitled" : parsed.file.name}.`
-      ];
-      lines.push(
-        empty.length === 0 ? "All eleven sections have something in them." : `Nothing came out under: ${empty.join(", ")}.`
-      );
-      if (warnings.length > 0) lines.push(...warnings);
-      return { content: [{ type: "text", text: lines.join(" ") }] };
     }
   );
 }
@@ -30801,9 +30374,7 @@ function explainTool(server) {
   );
 }
 function registerTools(server, root2) {
-  listCanvases(server, root2);
   readCanvasTool(server, root2);
-  writeCanvasTool(server, root2);
   explainTool(server);
 }
 
@@ -30811,11 +30382,10 @@ function registerTools(server, root2) {
 var SERVER_INFO = { name: "bc-canvas", version: "0.0.1" };
 function buildServer(root2) {
   const server = new McpServer(SERVER_INFO, {
-    capabilities: { tools: {}, resources: {}, prompts: {}, completions: {} }
+    capabilities: { tools: {}, resources: {}, completions: {} }
   });
   registerTools(server, root2);
   registerCanvasResource(server, root2);
-  registerReviewPrompt(server, root2);
   return server;
 }
 

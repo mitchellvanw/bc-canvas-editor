@@ -1,19 +1,23 @@
 /**
- * The four tools and the canvas resource, driven through a real client.
+ * The two tools and the canvas resource, driven through a real client.
  *
  * Everything here goes over the protocol rather than into a handler, because
  * the failures worth catching live in the gap between the two. A Zod schema
  * that converts into JSON Schema a host quietly rejects produces no error a
- * unit test can see — it produces a server that "just doesn't work" in Claude
- * Desktop, with protocol logging deprecated and nothing to read. A client on
- * the other end of an in-memory transport is the cheapest thing that notices.
+ * unit test can see — it produces a server that "just doesn't work" in a host,
+ * with protocol logging deprecated and nothing to read. A client on the other
+ * end of an in-memory transport is the cheapest thing that notices.
  *
- * The crown jewel is the round trip: every committed example read out through
- * `bcc_read_canvas` and written back through `bcc_write_canvas` has to land on
- * disk byte for byte as it started. That property is the destination of this
- * whole effort — the app's exports open unchanged in the server, and the
- * server's writes open unchanged in the app — and it holds only if the digest,
- * the schema, the parser and the serializer all agree.
+ * What used to be the crown jewel here — every committed example read out and
+ * written back byte for byte — went with the write tool (ticket 059). The
+ * property did not: `bcc fmt --check` runs it over `examples/` in
+ * `cli/src/bcc.test.ts`, and `parse.test.ts` holds export → import → export at
+ * the model layer. It is tested where the writing now happens.
+ *
+ * The load-bearing test in this file is now the resource listing. Concrete
+ * URIs in `resources/list` are what let a host offer canvases in a picker; a
+ * server that answered with the template alone would leave every canvas
+ * unattachable, which is the one capability the diet kept the server for.
  */
 
 import {
@@ -21,7 +25,6 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
-	readdirSync,
 	realpathSync,
 	writeFileSync
 } from 'node:fs';
@@ -36,7 +39,6 @@ import { openRoot } from '$lib/fs/root';
 import { buildServer } from './server';
 
 const EXAMPLES = fileURLToPath(new URL('../../examples/', import.meta.url));
-const EXAMPLE_FILES = readdirSync(EXAMPLES).filter((name) => name.endsWith('.bcc.json'));
 
 let base: string;
 let client: Client;
@@ -81,12 +83,7 @@ describe('tools/list', () => {
 	it('is well-formed, and in the order it will be in tomorrow', async () => {
 		const { tools } = await client.listTools();
 
-		expect(tools.map((tool) => tool.name)).toEqual([
-			'bcc_list_canvases',
-			'bcc_read_canvas',
-			'bcc_write_canvas',
-			'bcc_explain'
-		]);
+		expect(tools.map((tool) => tool.name)).toEqual(['bcc_read_canvas', 'bcc_explain']);
 		for (const tool of tools) {
 			expect(tool.description, `${tool.name} has no description`).toBeTruthy();
 			expect(tool.inputSchema.type).toBe('object');
@@ -94,30 +91,24 @@ describe('tools/list', () => {
 		}
 	});
 
-	it('carries the vocabularies into the write schema, one-liners and all', async () => {
+	it('offers no way to write, which is the diet', async () => {
 		const { tools } = await client.listTools();
-		const write = tools.find((tool) => tool.name === 'bcc_write_canvas');
-		const schema = JSON.stringify(write?.inputSchema);
 
-		// Generated from vocab.ts, so the values and their teaching arrive
-		// whether or not the model thought to ask bcc_explain first.
-		expect(schema).toContain('anticorruption-layer');
-		expect(schema).toContain('A translation layer at the boundary');
-		expect(schema).toContain('octopus enforcer');
-		// Only the genuinely closed sets are enums; everything else is a string
-		// with an escape hatch, per SPEC §4.
-		const canvas = (write?.inputSchema as any).properties.canvas.properties;
-		const lane = canvas.inboundCommunication.items.properties;
-		expect(lane.messages.items.properties.type.enum).toEqual(['command', 'query', 'event']);
-		expect(lane.collaborator.properties.kind.enum).toEqual([
-			'bounded-context',
-			'external-system',
-			'frontend',
-			'user'
-		]);
-		expect(lane.relationship.properties.theirs.enum).toBeUndefined();
-		expect(lane.relationship.properties.ours.enum).toBeUndefined();
-		expect(canvas.strategicClassification.properties.domain.enum).toBeUndefined();
+		// The server reads; `bcc` writes (ticket 059). A write tool reappearing
+		// here is the change that has to argue for itself, so it fails first.
+		for (const tool of tools) {
+			expect(tool.annotations?.readOnlyHint, `${tool.name} is not read-only`).toBe(true);
+		}
+	});
+
+	it('stays small, because it is paid for once per session whether or not it is used', async () => {
+		const { tools } = await client.listTools();
+
+		// `tools/list` cost 3,526 tokens before the diet, 85% of it the write
+		// tool's generated vocabularies. This is a floor against that coming back
+		// by accretion — a rough proxy, deliberately loose, and four times the
+		// measured size of what is here.
+		expect(JSON.stringify(tools).length).toBeLessThan(8000);
 	});
 
 	it('declares no output schema on any tool, so the prose is the result', async () => {
@@ -132,21 +123,17 @@ describe('tools/list', () => {
 	});
 });
 
-describe('the round trip', () => {
-	it.each(EXAMPLE_FILES)('%s survives read-then-write byte for byte', async (name) => {
-		const committed = readFileSync(join(EXAMPLES, name), 'utf8');
-		put(`docs/contexts/${name}`, committed);
+describe('bcc_read_canvas', () => {
+	it('reads the sheet in words', async () => {
+		put(
+			'docs/orders.bcc.json',
+			readFileSync(join(EXAMPLES, 'order-fulfillment.bcc.json'), 'utf8')
+		);
 
-		const read = await call('bcc_read_canvas', { path: `docs/contexts/${name}`, view: 'json' });
-		expect(read.isError).toBeFalsy();
-		expect(text(read)).toBe(committed);
+		const result = await call('bcc_read_canvas', { path: 'docs/orders.bcc.json' });
 
-		const { version, ...canvas } = JSON.parse(text(read));
-		expect(version).toBe(CANVAS_VERSION);
-
-		const written = await call('bcc_write_canvas', { path: `out/${name}`, canvas });
-		expect(written.isError).toBeFalsy();
-		expect(readFileSync(join(base, 'out', name), 'utf8')).toBe(committed);
+		expect(result.isError).toBeFalsy();
+		expect(text(result)).toContain('# Order Fulfillment');
 	});
 
 	it('reads a canvas back out of an HTML artifact', async () => {
@@ -156,50 +143,23 @@ describe('the round trip', () => {
 			`<!doctype html><title>x</title>\n<script type="application/json" data-canvas-file>\n${committed.trimEnd()}\n</script>\n<p>the rendered sheet</p>\n`
 		);
 
-		const read = await call('bcc_read_canvas', {
-			path: 'artifacts/notifications.bcc.html',
-			view: 'json'
+		const result = await call('bcc_read_canvas', {
+			path: 'artifacts/notifications.bcc.html'
 		});
 
-		// The Canvas file the artifact carries, not the HTML that carries it.
-		expect(text(read).trimEnd()).toBe(committed.trimEnd());
-	});
-});
-
-describe('bcc_list_canvases', () => {
-	it('says what is there, how far along, and where to read it', async () => {
-		put('docs/contexts/orders.bcc.json', readFileSync(join(EXAMPLES, 'order-fulfillment.bcc.json'), 'utf8'));
-		put('docs/contexts/half.bcc.json', readFileSync(join(EXAMPLES, 'royalty-distribution.bcc.json'), 'utf8'));
-
-		const result = await call('bcc_list_canvases');
-		const body = text(result);
-
-		expect(body).toContain('2 canvases under');
-		expect(body).toContain('docs/contexts/orders.bcc.json — Order Fulfillment');
-		// Sorted by path, so the listing reads the same tomorrow.
-		expect(body.indexOf('half.bcc.json')).toBeLessThan(body.indexOf('orders.bcc.json'));
-		expect(body).toMatch(/\d+ of 11 sections filled\./);
-		expect(body).toContain('bcc://canvas/docs/contexts/orders.bcc.json');
+		// The canvas the artifact carries, not the HTML that carries it.
+		expect(result.isError).toBeFalsy();
+		expect(text(result)).toContain('# Notifications');
 	});
 
-	it('reports a file it cannot read rather than dropping it', async () => {
-		put('broken.bcc.json', '{"version":1,"name":42}');
+	it('takes a path and nothing else', async () => {
+		const { tools } = await client.listTools();
+		const read = tools.find((tool) => tool.name === 'bcc_read_canvas');
 
-		const result = await call('bcc_list_canvases');
-		const body = text(result);
-
-		expect(body).toContain('Files that look like canvases and could not be read:');
-		expect(body).toContain('broken.bcc.json — name: expected a string, got a number.');
-	});
-
-	it('tells the model what to do when there is nothing there, and where it did not look', async () => {
-		// A canvas sitting in a skipped directory is the one case where an empty
-		// listing misleads, so the empty listing is where the skip rule is spent.
-		put('.scratch/hidden.bcc.json', '{}');
-
-		const body = text(await call('bcc_list_canvases'));
-		expect(body).toContain('bcc_write_canvas creates the first');
-		expect(body).toContain('Hidden and generated directories were not searched');
+		// `view` went with the write tool it existed for: reading bytes in order
+		// to hand them back is not a thing this server does any more, and a host
+		// with a filesystem has its own way to read a file.
+		expect(Object.keys((read?.inputSchema as any).properties)).toEqual(['path']);
 	});
 });
 
@@ -211,20 +171,7 @@ describe('refusals that teach', () => {
 
 		expect(result.isError).toBe(true);
 		expect(text(result)).toContain('format version 9');
-		expect(text(result)).toContain('reads up to version 2');
-		expect(text(result)).toContain('nothing was changed');
-	});
-
-	it('will not write a version it does not emit, and writes nothing', async () => {
-		const result = await call('bcc_write_canvas', {
-			path: 'later.bcc.json',
-			version: 9,
-			canvas: blank()
-		});
-
-		expect(result.isError).toBe(true);
-		expect(text(result)).toContain('Nothing was written');
-		expect(readdirSync(base)).toEqual([]);
+		expect(text(result)).toContain(`version ${CANVAS_VERSION} is the newest that can be read here`);
 	});
 
 	it('refuses a path that leaves the root, naming the root', async () => {
@@ -235,49 +182,25 @@ describe('refusals that teach', () => {
 		expect(text(result)).toContain(base);
 	});
 
-	it('refuses to write outside the root, and writes nothing', async () => {
-		const result = await call('bcc_write_canvas', {
-			path: '../escape.bcc.json',
-			canvas: blank()
-		});
-
-		expect(result.isError).toBe(true);
-		expect(text(result)).toContain('outside the canvas root');
-		expect(readdirSync(base)).toEqual([]);
-	});
-
-	it('insists on the extension the listing and the editor both look for', async () => {
-		const result = await call('bcc_write_canvas', { path: 'shipping.json', canvas: blank() });
-
-		expect(result.isError).toBe(true);
-		expect(text(result)).toContain('has to end in .bcc.json');
-		expect(text(result)).toContain('Try shipping.bcc.json.');
-	});
-
-	it('names the field and the legal values when a message type is invented', async () => {
-		const result = await call('bcc_write_canvas', {
-			path: 'bad.bcc.json',
-			canvas: {
-				...blank(),
-				inboundCommunication: [
-					{ collaborator: { name: 'Checkout' }, messages: [{ type: 'shout', name: 'Hi' }] }
-				]
-			}
-		});
-
-		// `message.type` is the one hard enum, so the schema refuses it before the
-		// handler runs — which is the whole reason nothing else is an enum: the
-		// same treatment of `relationship` would refuse a legitimate custom value.
-		expect(result.isError).toBe(true);
-		expect(text(result)).toContain('canvas.inboundCommunication.0.messages.0.type');
-		expect(text(result)).toContain('"command"');
-		expect(readdirSync(base)).toEqual([]);
-	});
-
 	it('names the field on a file that is not a Canvas file, wherever it is read from', async () => {
+		// Whole and legal but for one row, so the parser reaches domainRoles
+		// rather than stopping at the first missing section.
 		put(
 			'docs/broken.bcc.json',
-			JSON.stringify({ version: 1, ...blank(), name: 'X', domainRoles: [{}] })
+			JSON.stringify({
+				version: 1,
+				name: 'X',
+				purpose: '',
+				strategicClassification: {},
+				domainRoles: [{}],
+				inboundCommunication: [],
+				ubiquitousLanguage: [],
+				businessDecisions: [],
+				outboundCommunication: [],
+				assumptions: [],
+				verificationMetrics: [],
+				openQuestions: []
+			})
 		);
 
 		const result = await call('bcc_read_canvas', { path: 'docs/broken.bcc.json' });
@@ -290,73 +213,22 @@ describe('refusals that teach', () => {
 		expect(text(result)).toContain('bcc_explain');
 	});
 
-	it('says which canvases exist when the path names one that does not', async () => {
+	it('stops at the problem when no tool here fixes it', async () => {
 		const result = await call('bcc_read_canvas', { path: 'nope.bcc.json' });
 
+		// This used to end at `bcc_list_canvases`. Listing is `bcc ls` now, and
+		// the server cannot name a command it has no way of knowing is installed
+		// (ticket 059), so the refusal stops after the problem rather than
+		// sending the model somewhere that may not be there.
 		expect(result.isError).toBe(true);
-		expect(text(result)).toContain('bcc_list_canvases');
-	});
-});
-
-describe('bcc_write_canvas', () => {
-	it('names what came out empty, which is the only guard against a dropped section', async () => {
-		const result = await call('bcc_write_canvas', {
-			path: 'thin.bcc.json',
-			canvas: { ...blank(), name: 'Thin', purpose: 'Barely started.' }
-		});
-
-		expect(result.isError).toBeFalsy();
-		const body = text(result);
-		expect(body).toContain('Wrote thin.bcc.json — Thin.');
-		expect(body).toMatch(/Nothing came out under: .*Open questions/);
-		expect(body).not.toContain('Name');
-	});
-
-	it('notes a custom vocabulary value instead of refusing it', async () => {
-		const result = await call('bcc_write_canvas', {
-			path: 'custom.bcc.json',
-			canvas: {
-				...blank(),
-				name: 'Legacy Bridge',
-				domainRoles: [{ name: 'strangler' }],
-				outboundCommunication: [
-					{ collaborator: { name: 'Mainframe' }, relationship: { ours: 'strangler-fig' }, messages: [] }
-				]
-			}
-		});
-
-		expect(result.isError).toBeFalsy();
-		const body = text(result);
-		expect(body).toContain('"strangler" is a custom domain-role trait, kept as written');
-		expect(body).toContain('"strangler-fig" is a custom relationship pattern');
-		expect(body).toContain('anticorruption-layer');
-		// And the custom values are in the file, unchanged.
-		expect(readFileSync(join(base, 'custom.bcc.json'), 'utf8')).toContain('strangler-fig');
-	});
-
-	it('replaces an existing canvas and says so', async () => {
-		await call('bcc_write_canvas', { path: 'x.bcc.json', canvas: { ...blank(), name: 'One' } });
-		const again = await call('bcc_write_canvas', {
-			path: 'x.bcc.json',
-			canvas: { ...blank(), name: 'Two' }
-		});
-
-		expect(text(again)).toContain('Replaced x.bcc.json — Two.');
-	});
-
-	it('makes the directory a canvas is filed into', async () => {
-		const result = await call('bcc_write_canvas', {
-			path: 'docs/contexts/new.bcc.json',
-			canvas: { ...blank(), name: 'New' }
-		});
-
-		expect(result.isError).toBeFalsy();
-		expect(readFileSync(join(base, 'docs/contexts/new.bcc.json'), 'utf8')).toContain('"New"');
+		expect(text(result)).toContain('could not be read');
+		expect(text(result)).not.toContain('bcc ls');
+		expect(text(result)).not.toContain('bcc_list_canvases');
 	});
 });
 
 describe('bcc_explain', () => {
-	it('asks the section its own question, in the sheet\'s words', async () => {
+	it("asks the section its own question, in the sheet's words", async () => {
 		const roles = text(await call('bcc_explain', { topic: 'domainRoles' }));
 
 		expect(roles).toContain('# Domain roles');
@@ -382,6 +254,18 @@ describe('bcc_explain', () => {
 		expect(inbound).not.toContain('Any other value is accepted');
 	});
 
+	it('carries the vocabularies the write schema used to', async () => {
+		const roles = text(await call('bcc_explain', { topic: 'domainRoles' }));
+		const inbound = text(await call('bcc_explain', { topic: 'inboundCommunication' }));
+
+		// Generated from vocab.ts. This was the write schema's job, where it was
+		// unskippable and cost ~1,340 tokens every session; here it is asked for
+		// and costs nothing until it is (ticket 059).
+		expect(inbound).toContain('anticorruption-layer');
+		expect(inbound).toContain('A translation layer at the boundary');
+		expect(roles).toContain('octopus enforcer');
+	});
+
 	it('describes the method as eleven questions, and credits it', async () => {
 		const canvas = text(await call('bcc_explain', { topic: 'canvas' }));
 
@@ -397,6 +281,14 @@ describe('bcc_explain', () => {
 		expect(canvas).toContain('business judgments a codebase cannot answer');
 		expect(canvas).toContain('verification metrics');
 		expect(canvas).toContain('under Open questions');
+	});
+
+	it('points at a neighbouring canvas without naming a tool that left', async () => {
+		const canvas = text(await call('bcc_explain', { topic: 'canvas' }));
+
+		expect(canvas).toContain('calibrate better than');
+		expect(canvas).toContain('bcc_read_canvas');
+		expect(canvas).not.toContain('bcc_list_canvases');
 	});
 
 	it('covers the canvas and all eleven sections', async () => {
@@ -420,13 +312,35 @@ describe('the canvas resource', () => {
 		copyFileSync(join(EXAMPLES, 'order-fulfillment.bcc.json'), join(base, 'docs/orders.bcc.json'));
 	});
 
-	it('lists the same canvases the tool does', async () => {
+	it('lists concrete URIs, which is what makes a canvas attachable', async () => {
 		const { resources } = await client.listResources();
 
+		// Not the template — a host that only got `bcc://canvas/{+path}` back
+		// could not offer any of these in a picker, and attaching one is the
+		// capability the whole server now exists for (ticket 059).
 		expect(resources.map((resource) => resource.uri)).toEqual([
 			'bcc://canvas/docs/orders.bcc.json',
 			'bcc://canvas/notifications.bcc.json'
 		]);
+	});
+
+	it('names each one by what the context is for, so a person can choose', async () => {
+		const { resources } = await client.listResources();
+		const orders = resources.find((r) => r.uri === 'bcc://canvas/docs/orders.bcc.json');
+
+		expect(orders?.title).toBe('Order Fulfillment');
+		expect(orders?.description).toContain('picking, packing and shipping');
+	});
+
+	it('leaves out a file it cannot read, rather than offering an entry that errors', async () => {
+		writeFileSync(join(base, 'broken.bcc.json'), '{"version":1,"name":42}');
+
+		const { resources } = await client.listResources();
+
+		// The listing feeds a picker now, not a report. `bcc ls` is what names
+		// the unreadable ones (ticket 059).
+		expect(resources.map((resource) => resource.uri)).not.toContain('bcc://canvas/broken.bcc.json');
+		expect(resources).toHaveLength(2);
 	});
 
 	it('serves the digest and the exact file under one URI', async () => {
@@ -457,20 +371,3 @@ describe('the canvas resource', () => {
 		expect(link.name).toBe('Order Fulfillment');
 	});
 });
-
-/** The eleven sections, all empty — what a caller sends before it knows anything. */
-function blank() {
-	return {
-		name: '',
-		purpose: '',
-		strategicClassification: {},
-		domainRoles: [],
-		inboundCommunication: [],
-		ubiquitousLanguage: [],
-		businessDecisions: [],
-		outboundCommunication: [],
-		assumptions: [],
-		verificationMetrics: [],
-		openQuestions: []
-	};
-}

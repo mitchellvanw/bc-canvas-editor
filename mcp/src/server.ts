@@ -12,7 +12,6 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/server';
-import { registerReviewPrompt } from './prompt';
 import { registerCanvasResource } from './resource';
 import type { CanvasRoot } from '$lib/fs/root';
 import { registerTools } from './tools';
@@ -21,14 +20,16 @@ export const SERVER_INFO = { name: 'bc-canvas', version: '0.0.1' } as const;
 
 export function buildServer(root: CanvasRoot): McpServer {
 	// Capabilities are declared rather than inferred from what is registered,
-	// so what the server claims to be does not drift with its contents.
+	// so what the server claims to be does not drift with its contents. No
+	// `prompts`: `review-canvas` was fourteen lines of facilitation procedure
+	// living in the server, and procedure is the plugin's half of the seam
+	// (ticket 059) — `canvas-reviewer` is the same stance in the right place.
 	const server = new McpServer(SERVER_INFO, {
-		capabilities: { tools: {}, resources: {}, prompts: {}, completions: {} }
+		capabilities: { tools: {}, resources: {}, completions: {} }
 	});
 
 	registerTools(server, root);
 	registerCanvasResource(server, root);
-	registerReviewPrompt(server, root);
 
 	return server;
 }

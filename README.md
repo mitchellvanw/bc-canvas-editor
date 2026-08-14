@@ -19,14 +19,16 @@ Each canvas has a `.bcc.svg` beside it — the sheet as one self-contained image
 
 ## MCP server
 
-`mcp/` is a local stdio MCP server over the canvas files in a project — listing them, reading them as prose or as bytes, and writing them back in the form this editor imports. It ships as the **bc-canvas** plugin (`/plugin marketplace add mitchellvanw/bc-canvas-editor`), which adds a facilitated workshop skill, a draft-from-code skill, and a reviewer agent beside the server. See [`mcp/README.md`](mcp/README.md) for both hosts.
+`mcp/` is a local stdio MCP server over the canvas files in a project: it reads one as prose, explains what each section is for, and offers every canvas as a resource a conversation can attach. It does not write — that is `bcc`, below — which makes the split the plugin is built on: **the server is how a canvas gets into a conversation, the command line is how one changes on disk.**
+
+It ships as the **bc-canvas** plugin (`/plugin marketplace add mitchellvanw/bc-canvas-editor`), which adds a facilitated workshop skill, a draft-from-code skill, and a reviewer agent beside the server. See [`mcp/README.md`](mcp/README.md).
 
 ## Command line
 
 `bcc` (`cli/`) is the same canvases from a terminal. **In this checkout it runs through npm**, because npm does not link a package's own bin:
 
 ```sh
-npm run bcc -- ls                        # what canvases are here, and how full each one is
+npm run bcc -- ls                        # what canvases are here, what each is for, how full each one is
 npm run bcc -- check                     # do they all still read, and are the images beside them current
 npm run bcc -- fmt                       # canonical bytes, in place
 npm run bcc -- render orders.bcc.json    # the HTML artifact, beside the canvas

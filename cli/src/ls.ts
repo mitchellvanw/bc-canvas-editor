@@ -20,6 +20,8 @@ import { findCanvases } from '$lib/fs/discover';
 interface Row {
 	path: string;
 	name: string;
+	/** The canvas's own purpose line — what it says it is for. */
+	purpose: string;
 	filled: number;
 	empty: string[];
 }
@@ -39,6 +41,7 @@ export function ls(root: CanvasRoot, out: (line: string) => void): number {
 			rows.push({
 				path,
 				name: result.file.name === '' ? 'Untitled' : result.file.name,
+				purpose: result.file.purpose,
 				filled: filledCount(result.file),
 				empty: emptySections(result.file)
 			});
@@ -59,12 +62,15 @@ export function ls(root: CanvasRoot, out: (line: string) => void): number {
 	const total = SECTIONS.length;
 	for (const row of rows) {
 		const filled = `${row.filled}/${total}`.padStart(`${total}/${total}`.length);
+		const indent = `${' '.repeat(width)}  ${' '.repeat(filled.length)}  `;
 		out(`${row.path.padEnd(width)}  ${filled}  ${row.name}`);
+		// A name says which canvas; the purpose says which one you want. Reading a
+		// neighbouring context is how you learn what this one is not responsible
+		// for, and choosing that neighbour off a list of names alone is guessing.
+		if (row.purpose !== '') out(`${indent}${row.purpose}`);
 		// The count says how full; this says where the holes are, which is what
 		// anyone reading a listing of canvases is actually looking for.
-		if (row.empty.length > 0) {
-			out(`${' '.repeat(width)}  ${' '.repeat(filled.length)}  empty: ${row.empty.join(', ')}`);
-		}
+		if (row.empty.length > 0) out(`${indent}empty: ${row.empty.join(', ')}`);
 	}
 
 	if (problems.length > 0) {

@@ -14,8 +14,8 @@
  *
  * No subscriptions and no `listChanged`. Files change under this server all the
  * time — a git checkout rewrites half of them — and a notification stream about
- * that would be a second, worse way of knowing what `bcc_list_canvases` says on
- * demand.
+ * that would be a second, worse way of knowing what the next `resources/list`
+ * says on demand.
  */
 
 import { ResourceTemplate, type McpServer } from '@modelcontextprotocol/server';
