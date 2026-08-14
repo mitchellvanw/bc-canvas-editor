@@ -119,6 +119,8 @@ npm install
 npm run dev
 ```
 
+Node 26 or newer. `engine-strict` is on, so an older Node refuses at `npm install` rather than failing somewhere later.
+
 ## Building
 
 ```sh
@@ -139,4 +141,4 @@ Run it after changing `CanvasSheet.svelte`, `web/src/app.css` or anything under 
 
 ## License & attribution
 
-The Bounded Context Canvas is by the [ddd-crew](https://github.com/ddd-crew/bounded-context-canvas), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The example canvases are invented domains, published under the same attribution.
+The code is [MIT](LICENSE). The Bounded Context Canvas is by the [ddd-crew](https://github.com/ddd-crew/bounded-context-canvas), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The example canvases are invented domains, published under the same attribution.

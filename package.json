@@ -2,6 +2,15 @@
 	"name": "bc-canvas-editor",
 	"private": true,
 	"version": "0.0.1",
+	"description": "Editor, CLI, MCP server and fence adapters for the Bounded Context Canvas",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mitchellvanw/bc-canvas-editor.git"
+	},
+	"engines": {
+		"node": ">=26"
+	},
 	"type": "module",
 	"bin": {
 		"bcc": "./cli/dist/bcc.js"
