@@ -1,2 +1,12 @@
+# Everything the site serves. The editor runs entirely client-side over
+# localStorage, so there is no frame-embedding story to support and nothing
+# downstream that needs a referrer. A full CSP is deliberately not here: the
+# SvelteKit init script is inline, so a real policy is its own considered
+# change, not a header to sprinkle.
+/*
+  x-content-type-options: nosniff
+  x-frame-options: DENY
+  referrer-policy: strict-origin-when-cross-origin
+
 /_app/immutable/*
   cache-control: public, max-age=31536000, immutable
