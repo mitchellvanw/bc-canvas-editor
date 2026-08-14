@@ -54,6 +54,18 @@
 		]
 	}));
 
+	// The tools grid: one card per tool, each linking to its section of the
+	// docs. The dots reuse the journey's station colors, so the grid reads
+	// as the index of the story above it.
+	const tools = [
+		{ href: '/docs#editor', dot: 'bg-event border-event-ink', name: 'The editor', text: 'The sheet, edited in place in the browser. Nothing leaves the machine until you export.' },
+		{ href: '/docs#cli', dot: 'bg-ink border-ink', name: 'The command line', text: 'bcc lists, checks, formats and renders the canvases in a repo — through npx, nothing to install.' },
+		{ href: '/docs#fence', dot: 'bg-term border-term-ink', name: 'The bcc fence', text: 'One fence, one path: the sheet drawn inside any markdown file that gets built or previewed.' },
+		{ href: '/docs#remark', dot: 'bg-query border-query-ink', name: 'The remark plugin', text: 'Draws the fence when a site builds — Astro, Docusaurus, anything on unified.' },
+		{ href: '/docs#vscode', dot: 'bg-policy border-policy-ink', name: 'The VS Code extension', text: 'Draws the fence in the markdown preview, and redraws it the moment the canvas changes.' },
+		{ href: '/docs#mcp', dot: 'bg-collaborator border-collaborator-ink', name: 'The MCP server & plugin', text: 'Reads a canvas into a conversation; the plugin adds the workshop, the drafting pass and a reviewer.' }
+	];
+
 	// Confetti for the finale: the palette as little chips around the heading.
 	const CONFETTI = [
 		{ c: 'bg-command', x: '8%', y: '-0.4rem', r: -18, d: 0 },
@@ -181,9 +193,12 @@
 <div class="mx-auto max-w-6xl px-5 pt-6 sm:px-8">
 	<header class="flex items-baseline justify-between">
 		<span class="text-lg font-bold tracking-tight">BC Canvas</span>
-		<a href="/edit" onclick={openEditor} class="rounded-[4px] border border-line bg-sheet px-3 py-1.5 text-sm font-medium hover:bg-paper">
-			Open the editor
-		</a>
+		<div class="flex items-baseline gap-5">
+			<a href="/docs" class="text-sm font-medium text-ink-soft hover:text-ink">Docs</a>
+			<a href="/edit" onclick={openEditor} class="rounded-[4px] border border-line bg-sheet px-3 py-1.5 text-sm font-medium hover:bg-paper">
+				Open the editor
+			</a>
+		</div>
 	</header>
 
 	<!-- The wall: headline left, the chip stack right. -->
@@ -393,6 +408,36 @@
 					</p>
 				</div>
 			</div>
+		</div>
+	</section>
+
+	<!-- The tools: the journey's stations as an index, each card a door
+	     into its section of the docs. -->
+	<section use:reveal class="mt-32">
+		<p class="text-sm font-semibold tracking-[0.08em] uppercase text-ink-soft">The tools</p>
+		<p class="mt-4 max-w-2xl font-serif text-lg leading-relaxed">
+			Each station above is a tool you can pick up on its own. <a href="/docs" class="underline underline-offset-2">The docs</a>
+			cover every one end to end — install, the day-to-day commands, and the edges where it stops.
+		</p>
+
+		<div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+			{#each tools as tool (tool.href)}
+				<a
+					href={tool.href}
+					class="group flex flex-col border border-line bg-sheet p-5 transition-transform duration-200 hover:-translate-y-0.5"
+				>
+					<div class="flex items-center gap-2.5">
+						<span class="h-2.5 w-2.5 border {tool.dot}" aria-hidden="true"></span>
+						<h3 class="font-semibold">{tool.name}</h3>
+					</div>
+					<p class="mt-2 flex-1 font-serif text-sm leading-relaxed text-ink-soft">
+						{tool.text}
+					</p>
+					<span class="mt-4 text-sm font-medium text-ink-soft group-hover:text-ink">
+						Read the docs <span aria-hidden="true">→</span>
+					</span>
+				</a>
+			{/each}
 		</div>
 	</section>
 
