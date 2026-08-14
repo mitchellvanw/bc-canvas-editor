@@ -3,7 +3,7 @@ name: webkit-svg-stacks
 title: "Task: the committed image in Safari — four sections vanish at README scale"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
