@@ -12,7 +12,7 @@ import Chrome from '$lib/chrome/Chrome.svelte';
 import { renderKeys } from '$lib/chrome/reference';
 import { canvas } from '$lib/editor/document.svelte';
 import { FLASH_CLASS } from '$lib/editor/undo';
-import Page from '../../routes/+page.svelte';
+import Page from '../../routes/edit/+page.svelte';
 import { stampIds } from '$lib/model/canvas';
 import { parseCanvasFile } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';

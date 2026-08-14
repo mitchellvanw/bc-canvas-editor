@@ -28,7 +28,7 @@ import { canvasDigest } from '$lib/model/digest';
 import { parseCanvasFile } from '$lib/model/parse';
 import { REFERENCE_FILE } from '$lib/model/reference.fixture';
 import { serializeCanvas, toCanvasFile } from '$lib/model/serialize';
-import Page from '../../routes/+page.svelte';
+import Page from '../../routes/edit/+page.svelte';
 
 // Neither jsdom 30 nor Node's experimental stub provides a working
 // localStorage; the autosave pipeline needs a real Storage global under test.

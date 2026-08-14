@@ -19,5 +19,7 @@ export default defineConfig({
 
 	// `mcp/` is a separate package — its own build, its own node_modules, and
 	// no part of the site. The dev server has no business watching it.
-	server: { watch: { ignored: ['**/mcp/**'] } }
+	// `examples/` is served in dev because the homepage imports the committed
+	// example SVGs as assets; the build inlines them either way.
+	server: { watch: { ignored: ['**/mcp/**'] }, fs: { allow: ['examples'] } }
 });
