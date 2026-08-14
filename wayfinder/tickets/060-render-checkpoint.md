@@ -3,7 +3,7 @@ name: render-checkpoint
 title: "Task: the gate — one renderer, two surfaces, and the sheet that cannot drift"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [bcc-cli, committed-images, committed-images-build, remark-plugin, vscode-extension, mcp-diet]
 ---
 
