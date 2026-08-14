@@ -3,7 +3,7 @@ name: cli-refusal-register
 title: "Task: OutsideRoot from --out crashes raw instead of refusing in the CLI's voice"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
