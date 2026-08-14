@@ -14,7 +14,7 @@
 	 * braces lives in template-literal consts so the template never escapes
 	 * a `{`.
 	 */
-	import orderSvg from '../../../examples/order-fulfillment.bcc.svg?url';
+	import orderSvg from '../../../../examples/order-fulfillment.bcc.svg?url';
 
 	const REPO = 'https://github.com/mitchellvanw/bc-canvas-editor';
 

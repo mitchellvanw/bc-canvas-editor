@@ -13,13 +13,15 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			adapter: adapter()
+			// The site's project root is `web/`, but Cloudflare Pages builds from
+			// the repo root with its output dir set to `build` — so the adapter
+			// keeps writing there.
+			adapter: adapter({ pages: '../build', assets: '../build' })
 		})
 	],
 
-	// `mcp/` is a separate package — its own build, its own node_modules, and
-	// no part of the site. The dev server has no business watching it.
-	// `examples/` is served in dev because the homepage imports the committed
-	// example SVGs as assets; the build inlines them either way.
-	server: { watch: { ignored: ['**/mcp/**'] }, fs: { allow: ['examples'] } }
+	// `examples/` lives at the repo root, outside this project's root. It is
+	// served in dev because the homepage imports the committed example SVGs as
+	// assets; the build inlines them either way.
+	server: { fs: { allow: ['../examples'] } }
 });

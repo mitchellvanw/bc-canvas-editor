@@ -40,7 +40,7 @@ Editing the canvas re-draws the preview. It is a different file from the one the
 
 ## Developing
 
-`src/extension.ts` is the whole adapter, and deliberately small: the fence's grammar, resolution, placeholder and preamble are `src/lib/fence/fence.ts` in the repo root, shared with the [remark plugin](../README.md#in-a-markdown-file). What lives here is the markdown-it rule, the per-render preamble hoist, the file watcher, and the two CSS rules a live pane needs that a file does not.
+`src/extension.ts` is the whole adapter, and deliberately small: the fence's grammar, resolution, placeholder and preamble are `web/src/lib/fence/fence.ts` in the repo, shared with the [remark plugin](../README.md#in-a-markdown-file). What lives here is the markdown-it rule, the per-render preamble hoist, the file watcher, and the two CSS rules a live pane needs that a file does not.
 
 `dist/extension.js` is committed and a test fails if it is stale. Run the extension against a scratch workspace with:
 

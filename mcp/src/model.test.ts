@@ -1,11 +1,11 @@
 /**
  * The claim this package rests on: the app's model layer is plain TypeScript
- * that bundles through the `$lib` alias and runs in Node, with `src/lib`
+ * that bundles through the `$lib` alias and runs in Node, with `web/src/lib`
  * untouched.
  *
- * Worth proving rather than assuming, because `src/lib/editor/vocab.ts` — the
+ * Worth proving rather than assuming, because `web/src/lib/editor/vocab.ts` — the
  * source of the curated vocabularies, and load-bearing for the write schema —
- * type-imports `PickKind` from `src/lib/sheet/pick-slots.ts`, which type-imports
+ * type-imports `PickKind` from `web/src/lib/sheet/pick-slots.ts`, which type-imports
  * back from `model/canvas`. Type-only, so it should erase; this runs the built
  * bundle in a real Node process and looks at what comes out.
  */

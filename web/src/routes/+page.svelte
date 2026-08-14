@@ -19,7 +19,7 @@
 	import { EXAMPLES, type ExampleEntry } from '$lib/chrome/examples';
 	import { canvas } from '$lib/editor/document.svelte';
 	import { blankCanvas, stampIds, type CanvasDoc } from '$lib/model/canvas';
-	import orderSvg from '../../examples/order-fulfillment.bcc.svg?url';
+	import orderSvg from '../../../examples/order-fulfillment.bcc.svg?url';
 
 	// The chip stack: the palette legend doubling as the pitch. A tidy column
 	// beside the headline from md up; below that, a loose two-column wall

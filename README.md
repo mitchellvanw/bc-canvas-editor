@@ -57,7 +57,7 @@ A **`bcc` fence** points at a canvas, and the sheet is drawn there when the site
 
 One path, resolved relative to the markdown file holding it. `../` is fine; a leading `/` is not, because it reads as the repo root to some tools and as a filesystem path to others. Nothing else goes in the fence — no JSON, no options.
 
-Two adapters draw it, over one shared contract (`src/lib/fence/fence.ts`), so a fence means the same thing on both.
+Two adapters draw it, over one shared contract (`web/src/lib/fence/fence.ts`), so a fence means the same thing on both.
 
 ### In VS Code, while you write
 
@@ -127,7 +127,7 @@ npm run build
 
 Preview the production build with `npm run preview`. Pushes to `main` deploy to Cloudflare Pages.
 
-`src/lib/render/dist/render.js` is a committed build artifact: the quiet sheet compiled for the server, plus the design tokens and fonts read off disk, so that a canvas can be drawn in plain Node with no browser. The editor's HTML export imports it, and so does every surface outside the browser. `cli/dist/bcc.js`, `remark/dist/plugin.js` and `vscode/dist/extension.js` are committed for a different reason — an install (or a `.vsix`) runs no build step — and all three inline that renderer rather than compiling the sheet a second time, which is what keeps every surface drawing one sheet. `remark/dist/sheet.css` falls out of the same build, so the stylesheet a site imports cannot describe a sheet that is no longer the one being drawn.
+`web/src/lib/render/dist/render.js` is a committed build artifact: the quiet sheet compiled for the server, plus the design tokens and fonts read off disk, so that a canvas can be drawn in plain Node with no browser. The editor's HTML export imports it, and so does every surface outside the browser. `cli/dist/bcc.js`, `remark/dist/plugin.js` and `vscode/dist/extension.js` are committed for a different reason — an install (or a `.vsix`) runs no build step — and all three inline that renderer rather than compiling the sheet a second time, which is what keeps every surface drawing one sheet. `remark/dist/sheet.css` falls out of the same build, so the stylesheet a site imports cannot describe a sheet that is no longer the one being drawn.
 
 So they rebuild in order, and `npm run build:bundles` is that order:
 
@@ -135,7 +135,7 @@ So they rebuild in order, and `npm run build:bundles` is that order:
 npm run build:bundles   # build:render, then build:cli, build:remark, build:vscode
 ```
 
-Run it after changing `CanvasSheet.svelte`, `src/app.css` or anything under `cli/src/`, `remark/src/` or `vscode/src/`. `npm test` fails if you forget — each bundle is diffed against a fresh build of itself.
+Run it after changing `CanvasSheet.svelte`, `web/src/app.css` or anything under `cli/src/`, `remark/src/` or `vscode/src/`. `npm test` fails if you forget — each bundle is diffed against a fresh build of itself.
 
 ## License & attribution
 

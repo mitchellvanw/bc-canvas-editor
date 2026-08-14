@@ -7,7 +7,7 @@
  * through it, so the same `npx` invocation would behave differently on two npm
  * versions. A committed bundle behaves the same on both.
  *
- * **The renderer is inlined from `src/lib/render/dist/render.js`, never
+ * **The renderer is inlined from `web/src/lib/render/dist/render.js`, never
  * re-derived from `CanvasSheet.svelte`** (ticket 051 decision 5). That is the
  * whole of what makes "the sheet `bcc` renders and the sheet the editor exports
  * are the same sheet" a structural property rather than a tested-for one: a

@@ -10,7 +10,7 @@
  *
  * Nothing is external. A remark plugin runs inside somebody else's build, and
  * the one thing that build must not have to know about is our dependency tree
- * — so the renderer is inlined from `src/lib/render/dist/render.js` exactly as
+ * — so the renderer is inlined from `web/src/lib/render/dist/render.js` exactly as
  * the CLI inlines it, never re-derived from `CanvasSheet.svelte`. That is what
  * keeps "the sheet a fence draws and the sheet the editor exports are the same
  * sheet" structural. It costs a third committed copy of the ~200 KB of base64
@@ -26,7 +26,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { build } from 'esbuild';
-import { fontFaceCss, renderSheetParts } from '../src/lib/render/dist/render.js';
+import { fontFaceCss, renderSheetParts } from '../web/src/lib/render/dist/render.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outfile = path.resolve(process.argv[2] ?? path.join(here, 'dist/plugin.js'));
@@ -44,7 +44,7 @@ const outfile = path.resolve(process.argv[2] ?? path.join(here, 'dist/plugin.js'
  * Written from the renderer rather than kept beside it: it is `fontFaceCss()`
  * and `renderSheetParts()`'s own bytes, so it cannot describe a sheet that is
  * no longer the one being drawn. Which canvas draws it does not matter — the
- * CSS is identical whatever the content, which `src/lib/fence/fence.test.ts`
+ * CSS is identical whatever the content, which `web/src/lib/fence/fence.test.ts`
  * pins — and a committed example is used rather than a blank literal here so
  * that a schema change reaches this file through the same migration and
  * pinning test as everything else.

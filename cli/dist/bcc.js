@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// ../src/lib/fs/root.ts
+// ../web/src/lib/fs/root.ts
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { realpathSync, statSync } from "node:fs";
 var OutsideRoot = class extends Error {
@@ -107,10 +107,10 @@ function parseOptions(argv, spec) {
 // src/check.ts
 import { readFileSync as readFileSync2 } from "node:fs";
 
-// ../src/lib/fs/read.ts
+// ../web/src/lib/fs/read.ts
 import { readFileSync } from "node:fs";
 
-// ../src/lib/model/canvas.ts
+// ../web/src/lib/model/canvas.ts
 var CANVAS_VERSION = 2;
 function newId() {
   return crypto.randomUUID();
@@ -140,7 +140,7 @@ function stampIds(file) {
   };
 }
 
-// ../src/lib/model/embed.ts
+// ../web/src/lib/model/embed.ts
 var OPEN = '<script type="application/json" data-canvas-file>';
 var CLOSE = "</script>";
 function embeddedCanvasBlock(json) {
@@ -157,7 +157,7 @@ function extractEmbeddedCanvas(text) {
   return text.slice(start, close).trim();
 }
 
-// ../src/lib/model/parse.ts
+// ../web/src/lib/model/parse.ts
 function notCanvas(detail) {
   return { ok: false, reason: "not-canvas", detail: /[.!?]$/.test(detail) ? detail : `${detail}.` };
 }
@@ -406,7 +406,7 @@ function parseCanvasImport(text) {
   return direct.detail?.startsWith(NOT_JSON) ? notCanvas(NEITHER_FORM) : direct;
 }
 
-// ../src/lib/fs/read.ts
+// ../web/src/lib/fs/read.ts
 function readCanvas(root, input) {
   let absolute;
   try {
@@ -453,7 +453,7 @@ function readProblem(result, disclosure = {}) {
 // src/image.ts
 import { extname } from "node:path";
 
-// ../src/lib/render/dist/render.js
+// ../web/src/lib/render/dist/render.js
 var UNINITIALIZED = /* @__PURE__ */ Symbol("uninitialized");
 var ATTR_REGEX = /[&"<]/g;
 var CONTENT_REGEX = /[&<]/g;
@@ -2634,7 +2634,7 @@ ${css}
 `;
 }
 
-// ../src/lib/render/index.ts
+// ../web/src/lib/render/index.ts
 var SCOPE_CLASS2 = SCOPE_CLASS;
 var CREDIT_COMMENT2 = CREDIT_COMMENT;
 var renderSheetParts2 = renderSheetParts;
@@ -2642,7 +2642,7 @@ var fontFaceCss2 = fontFaceCss;
 var sheetDocument2 = sheetDocument;
 var sheetSvg2 = sheetSvg;
 
-// ../src/lib/render/metrics.ts
+// ../web/src/lib/render/metrics.ts
 var SHEET_WIDTH2 = 1440;
 var SHEET_MARGIN = 40;
 
@@ -2706,7 +2706,7 @@ function check(root, paths) {
   return report;
 }
 
-// ../src/lib/fs/write.ts
+// ../web/src/lib/fs/write.ts
 import { renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname as dirname2, join as join2 } from "node:path";
 var sequence = 0;
@@ -2721,7 +2721,7 @@ function writeAtomic(path, text) {
   }
 }
 
-// ../src/lib/model/serialize.ts
+// ../web/src/lib/model/serialize.ts
 function present(value) {
   return value !== void 0 && value !== "";
 }
@@ -2797,7 +2797,7 @@ function canvasBytes(file) {
 `;
 }
 
-// ../src/lib/fs/discover.ts
+// ../web/src/lib/fs/discover.ts
 import { readdirSync } from "node:fs";
 import { join as join3 } from "node:path";
 var SKIPPED = /* @__PURE__ */ new Set(["node_modules", "dist", "build"]);
@@ -2873,7 +2873,7 @@ function fmt(root, paths, options) {
   return report;
 }
 
-// ../src/lib/model/sections.ts
+// ../web/src/lib/model/sections.ts
 function nonEmpty(value) {
   return value !== void 0 && value.trim() !== "";
 }
@@ -3047,14 +3047,14 @@ async function openMeasurer() {
   };
 }
 
-// ../src/lib/editor/views.ts
+// ../web/src/lib/editor/views.ts
 var VIEWS = [
   { key: "sheet", label: "Sheet" },
   { key: "json", label: "JSON" },
   { key: "markdown", label: "Markdown" }
 ];
 
-// ../src/lib/model/digest.ts
+// ../web/src/lib/model/digest.ts
 function classification(file) {
   const { domain, businessModel, evolution } = file.strategicClassification;
   const picked = [
@@ -3133,13 +3133,13 @@ function canvasDigest(file) {
 `;
 }
 
-// ../src/lib/model/title.ts
+// ../web/src/lib/model/title.ts
 function windowTitle2(name) {
   const trimmed = name.trim();
   return `${trimmed === "" ? "Untitled" : trimmed} \u2014 BC Canvas`;
 }
 
-// ../src/lib/artifact/html.ts
+// ../web/src/lib/artifact/html.ts
 var STACK_BREAKPOINT = 760;
 var ARTIFACT_CSS = `
 /* The sheet at the editor's fixed desktop metrics, centered on the paper ground. */

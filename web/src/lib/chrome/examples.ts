@@ -9,10 +9,10 @@
 
 import type { CanvasFile } from '$lib/model/canvas';
 import { parseCanvasImport } from '$lib/model/parse';
-import appointmentScheduling from '../../../examples/appointment-scheduling.bcc.json?raw';
-import notifications from '../../../examples/notifications.bcc.json?raw';
-import orderFulfillment from '../../../examples/order-fulfillment.bcc.json?raw';
-import royaltyDistribution from '../../../examples/royalty-distribution.bcc.json?raw';
+import appointmentScheduling from '../../../../examples/appointment-scheduling.bcc.json?raw';
+import notifications from '../../../../examples/notifications.bcc.json?raw';
+import orderFulfillment from '../../../../examples/order-fulfillment.bcc.json?raw';
+import royaltyDistribution from '../../../../examples/royalty-distribution.bcc.json?raw';
 
 export interface ExampleEntry {
 	/** The canvas's own name — the file is the source, never a second copy. */

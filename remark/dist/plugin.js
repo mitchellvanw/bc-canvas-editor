@@ -1,4 +1,4 @@
-// ../src/lib/fs/root.ts
+// ../web/src/lib/fs/root.ts
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { realpathSync, statSync } from "node:fs";
 var OutsideRoot = class extends Error {
@@ -55,13 +55,13 @@ function openRoot(input) {
   };
 }
 
-// ../src/lib/fence/fence.ts
+// ../web/src/lib/fence/fence.ts
 import { relative, resolve as resolve2 } from "node:path";
 
-// ../src/lib/fs/read.ts
+// ../web/src/lib/fs/read.ts
 import { readFileSync } from "node:fs";
 
-// ../src/lib/model/canvas.ts
+// ../web/src/lib/model/canvas.ts
 var CANVAS_VERSION = 2;
 function newId() {
   return crypto.randomUUID();
@@ -91,7 +91,7 @@ function stampIds(file) {
   };
 }
 
-// ../src/lib/model/embed.ts
+// ../web/src/lib/model/embed.ts
 var OPEN = '<script type="application/json" data-canvas-file>';
 var CLOSE = "</script>";
 function extractEmbeddedCanvas(text) {
@@ -103,7 +103,7 @@ function extractEmbeddedCanvas(text) {
   return text.slice(start, close).trim();
 }
 
-// ../src/lib/model/parse.ts
+// ../web/src/lib/model/parse.ts
 function notCanvas(detail) {
   return { ok: false, reason: "not-canvas", detail: /[.!?]$/.test(detail) ? detail : `${detail}.` };
 }
@@ -352,7 +352,7 @@ function parseCanvasImport(text) {
   return direct.detail?.startsWith(NOT_JSON) ? notCanvas(NEITHER_FORM) : direct;
 }
 
-// ../src/lib/fs/read.ts
+// ../web/src/lib/fs/read.ts
 function readCanvas(root, input) {
   let absolute;
   try {
@@ -396,7 +396,7 @@ function readProblem(result, disclosure = {}) {
   }
 }
 
-// ../src/lib/render/dist/render.js
+// ../web/src/lib/render/dist/render.js
 var UNINITIALIZED = /* @__PURE__ */ Symbol("uninitialized");
 var ATTR_REGEX = /[&"<]/g;
 var CONTENT_REGEX = /[&<]/g;
@@ -2531,11 +2531,11 @@ function fontFaceCss() {
 var FRAME_CSS = `body { margin: 0; }
 main { max-width: ${SHEET_WIDTH}px; margin: 0 auto; padding: 40px; }`;
 
-// ../src/lib/render/index.ts
+// ../web/src/lib/render/index.ts
 var renderSheetParts2 = renderSheetParts;
 var fontFaceCss2 = fontFaceCss;
 
-// ../src/lib/fence/fence.ts
+// ../web/src/lib/fence/fence.ts
 var FENCE_LANG = "bcc";
 function fencePreamble(css) {
   return `<style>${fontFaceCss2()}</style>

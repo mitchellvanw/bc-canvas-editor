@@ -11,11 +11,12 @@
 		"skipLibCheck": true,
 		"verbatimModuleSyntax": true,
 		"forceConsistentCasingInFileNames": true,
-		// The one seam into the app: `src/lib/model/*` and `src/lib/editor/vocab.ts`
-		// stay exactly where they are and are pulled in through this alias, which
-		// esbuild resolves at build time from this same file.
+		// The one seam into the app: `web/src/lib/model/*` and
+		// `web/src/lib/editor/vocab.ts` stay exactly where they are and are pulled
+		// in through this alias, which esbuild resolves at build time from this
+		// same file.
 		"paths": {
-			"$lib/*": ["../src/lib/*"]
+			"$lib/*": ["../web/src/lib/*"]
 		}
 	},
 	"include": ["src/**/*.ts", "build.js", "vitest.config.ts"]

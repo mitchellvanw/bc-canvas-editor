@@ -23,7 +23,7 @@ import { toCanvasFile } from '$lib/model/serialize';
 
 function example(name: string): CanvasFile {
 	const text = readFileSync(
-		fileURLToPath(new URL(`../../../examples/${name}.bcc.json`, import.meta.url)),
+		fileURLToPath(new URL(`../../../../examples/${name}.bcc.json`, import.meta.url)),
 		'utf8'
 	);
 	const parsed = parseCanvasFile(text);

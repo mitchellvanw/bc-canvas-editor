@@ -41,7 +41,7 @@ import {
 import { SHEET_WIDTH } from './metrics';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const repo = path.resolve(here, '../../..');
+const root = path.resolve(here, '../../..');
 
 function referenceDoc() {
 	const result = parseCanvasFile(REFERENCE_FILE);
@@ -57,7 +57,7 @@ describe('the committed module', () => {
 		const scratch = mkdtempSync(path.join(tmpdir(), 'bcc-render-'));
 		try {
 			const rebuilt = path.join(scratch, 'render.js');
-			execFileSync('node', [path.join(here, 'build.js'), rebuilt], { cwd: repo });
+			execFileSync('node', [path.join(here, 'build.js'), rebuilt], { cwd: root });
 			expect(readFileSync(rebuilt)).toEqual(readFileSync(path.join(here, 'dist/render.js')));
 		} finally {
 			rmSync(scratch, { recursive: true, force: true });
@@ -115,8 +115,8 @@ describe('renderSheetParts', () => {
 });
 
 describe('the tokens crossing out of app.css', () => {
-	const appCss = readFileSync(path.join(repo, 'src/app.css'), 'utf8');
-	const sheet = readFileSync(path.join(repo, 'src/lib/sheet/CanvasSheet.svelte'), 'utf8');
+	const appCss = readFileSync(path.join(root, 'src/app.css'), 'utf8');
+	const sheet = readFileSync(path.join(root, 'src/lib/sheet/CanvasSheet.svelte'), 'utf8');
 
 	/** Names declared inside the sheet's own rules — its private locals. */
 	const local = new Set(
@@ -154,7 +154,7 @@ describe('fontFaceCss', () => {
 		// no WOFF2-capable browser will ever ask for. Authoring the rules from
 		// the files on disk simply never writes one.
 		const css = fontFaceCss();
-		const imports = [...readFileSync(path.join(repo, 'src/app.css'), 'utf8').matchAll(
+		const imports = [...readFileSync(path.join(root, 'src/app.css'), 'utf8').matchAll(
 			/@import\s+'@fontsource\//g
 		)];
 		expect(css.match(/@font-face/g)).toHaveLength(imports.length);

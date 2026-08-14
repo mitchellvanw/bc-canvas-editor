@@ -126,11 +126,11 @@ npm run build     # refresh dist/server.js after changing src/
 
 `dist/server.js` is committed, because a plugin install copies files as they sit in the repo and runs no build step. It inlines everything but Node itself. The suite diffs the committed bytes against a fresh build, so a bundle left stale after a source change fails the tests instead of shipping.
 
-Read-then-write byte identity — the property that a canvas survives a round trip unchanged — is tested where the writing happens: `bcc fmt --check` over `examples/` in the root suite, and export → import → export in `src/lib/model/parse.test.ts`.
+Read-then-write byte identity — the property that a canvas survives a round trip unchanged — is tested where the writing happens: `bcc fmt --check` over `examples/` in the root suite, and export → import → export in `web/src/lib/model/parse.test.ts`.
 
-The server reuses `src/lib/model/*` and `src/lib/fs/*` from the app unchanged, through a `$lib/*` path mapping. That is deliberate: one parser decides what a Canvas file is, so what this server reads and what the editor exports are the same document. `src/lib/fs/*` is the same story one layer out — the root and its containment rule, the walk that finds canvases, and reading one through the parser — so that a path means the same thing to everything that reads a canvas off disk, not just to this server.
+The server reuses `web/src/lib/model/*` and `web/src/lib/fs/*` from the app unchanged, through a `$lib/*` path mapping. That is deliberate: one parser decides what a Canvas file is, so what this server reads and what the editor exports are the same document. `web/src/lib/fs/*` is the same story one layer out — the root and its containment rule, the walk that finds canvases, and reading one through the parser — so that a path means the same thing to everything that reads a canvas off disk, not just to this server.
 
-Only `src/` is shared, and only in that direction: nothing in the app imports out of `mcp/`.
+Only `web/src/` is shared, and only in that direction: nothing in the app imports out of `mcp/`.
 
 ## License & attribution
 

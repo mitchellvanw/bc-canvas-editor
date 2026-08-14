@@ -10,7 +10,7 @@ import { canvasBytes, serializeCanvas, serializeCanvasFile } from '$lib/model/se
 // the fixture is a string in the repo, and the trailing newline is exactly the
 // difference between the two.
 const EXAMPLE = fileURLToPath(
-	new URL('../../../examples/order-fulfillment.bcc.json', import.meta.url)
+	new URL('../../../../examples/order-fulfillment.bcc.json', import.meta.url)
 );
 
 function referenceFile(): CanvasFile {

@@ -22,11 +22,11 @@
 		"skipLibCheck": true,
 		"verbatimModuleSyntax": true,
 		"forceConsistentCasingInFileNames": true,
-		// The one seam `mcp/`, `cli/` and `remark/` also declare: `src/lib/*`
+		// The one seam `mcp/`, `cli/` and `remark/` also declare: `web/src/lib/*`
 		// stays where it is and is pulled in through this alias, which esbuild
 		// resolves at build time from this same file.
 		"paths": {
-			"$lib/*": ["../src/lib/*"]
+			"$lib/*": ["../web/src/lib/*"]
 		}
 	},
 	"include": ["src/**/*.ts", "build.mjs"]

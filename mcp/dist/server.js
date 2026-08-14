@@ -29397,7 +29397,7 @@ function toError(value) {
   return value instanceof Error ? value : new Error(String(value));
 }
 
-// ../src/lib/fs/root.ts
+// ../web/src/lib/fs/root.ts
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { realpathSync, statSync } from "node:fs";
 var OutsideRoot = class extends Error {
@@ -29459,13 +29459,13 @@ function openRoot(input) {
   };
 }
 
-// ../src/lib/fs/read.ts
+// ../web/src/lib/fs/read.ts
 import { readFileSync } from "node:fs";
 
-// ../src/lib/model/canvas.ts
+// ../web/src/lib/model/canvas.ts
 var CANVAS_VERSION = 2;
 
-// ../src/lib/model/embed.ts
+// ../web/src/lib/model/embed.ts
 var OPEN = '<script type="application/json" data-canvas-file>';
 var CLOSE = "</script>";
 function extractEmbeddedCanvas(text) {
@@ -29477,7 +29477,7 @@ function extractEmbeddedCanvas(text) {
   return text.slice(start, close).trim();
 }
 
-// ../src/lib/model/parse.ts
+// ../web/src/lib/model/parse.ts
 function notCanvas(detail) {
   return { ok: false, reason: "not-canvas", detail: /[.!?]$/.test(detail) ? detail : `${detail}.` };
 }
@@ -29726,7 +29726,7 @@ function parseCanvasImport(text) {
   return direct.detail?.startsWith(NOT_JSON) ? notCanvas(NEITHER_FORM) : direct;
 }
 
-// ../src/lib/fs/read.ts
+// ../web/src/lib/fs/read.ts
 function readCanvas(root2, input) {
   let absolute;
   try {
@@ -29770,7 +29770,7 @@ function readProblem(result, disclosure = {}) {
   }
 }
 
-// ../src/lib/model/sections.ts
+// ../web/src/lib/model/sections.ts
 function nonEmpty(value) {
   return value !== void 0 && value.trim() !== "";
 }
@@ -29855,7 +29855,7 @@ function sectionByKey(key) {
   return section;
 }
 
-// ../src/lib/model/digest.ts
+// ../web/src/lib/model/digest.ts
 function classification(file2) {
   const { domain: domain2, businessModel, evolution } = file2.strategicClassification;
   const picked = [
@@ -29934,7 +29934,7 @@ function canvasDigest(file2) {
 `;
 }
 
-// ../src/lib/fs/discover.ts
+// ../web/src/lib/fs/discover.ts
 import { readdirSync } from "node:fs";
 import { join as join2 } from "node:path";
 var SKIPPED = /* @__PURE__ */ new Set(["node_modules", "dist", "build"]);
@@ -30056,7 +30056,7 @@ function readRefusal(result) {
   ) : refuse(readProblem(result));
 }
 
-// ../src/lib/editor/vocab.ts
+// ../web/src/lib/editor/vocab.ts
 var PICK_OPTIONS = {
   domain: [{ value: "core" }, { value: "supporting" }, { value: "generic" }],
   businessModel: [

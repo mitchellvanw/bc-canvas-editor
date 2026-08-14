@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config';
 // at the app's model layer exactly as the bundle resolves it.
 export default defineConfig({
 	resolve: {
-		alias: { $lib: fileURLToPath(new URL('../src/lib', import.meta.url)) }
+		alias: { $lib: fileURLToPath(new URL('../web/src/lib', import.meta.url)) }
 	},
 	test: {
 		include: ['src/**/*.test.ts'],

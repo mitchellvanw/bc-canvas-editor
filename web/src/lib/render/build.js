@@ -34,11 +34,18 @@ import path from 'node:path';
 // check for a difference nobody made.
 process.env.NODE_ENV = 'production';
 
+const here = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(here, '../../..');
+
+// Also before Vite loads, and for the same reason: the bundle's `//#region`
+// comments and the sheet's scoped-CSS hash both derive from paths relative to
+// the working directory — which `vite-plugin-svelte` captures at import time —
+// and the committed bytes must not depend on where the build was invoked from.
+process.chdir(root);
+
 const { svelte } = await import('@sveltejs/vite-plugin-svelte');
 const { build } = await import('vite');
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, '../../..');
 const appCss = readFileSync(path.join(root, 'src/app.css'), 'utf8');
 
 /** `@theme`'s body is already plain `--name: value;` declarations. */
@@ -69,7 +76,8 @@ function groundRule() {
 function fontFaceCss() {
 	const faces = [];
 	for (const match of appCss.matchAll(/@import\s+'(@fontsource\/[^']+)';/g)) {
-		const cssPath = path.join(root, 'node_modules', match[1]);
+		// `root` is the web project (`web/`); the repo's node_modules sits one up.
+		const cssPath = path.join(root, '../node_modules', match[1]);
 		const source = readFileSync(cssPath, 'utf8');
 		const family = source.match(/font-family:\s*('[^']*'|"[^"]*"|[^;]+);/);
 		const style = source.match(/font-style:\s*([^;]+);/);

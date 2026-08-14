@@ -10,7 +10,7 @@
  * extension under the same staleness test as its two siblings, which is the
  * only thing that keeps three adapters drawing one sheet.
  *
- * **The renderer is inlined from `src/lib/render/dist/render.js`**, reached
+ * **The renderer is inlined from `web/src/lib/render/dist/render.js`**, reached
  * through `$lib/render/index.ts` exactly as the CLI and the remark plugin reach
  * it, so following the imports is all esbuild has to do. The rebuild order is
  * `render` then `cli` then `remark` then `vscode`, which `npm run build:bundles`

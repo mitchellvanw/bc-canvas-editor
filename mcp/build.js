@@ -1,7 +1,7 @@
 /**
  * One bundle, `dist/server.js`, executable, committed, and pointed at by `bin`.
  *
- * Bundling is what lets the server reuse `src/lib/model/*` unchanged: esbuild
+ * Bundling is what lets the server reuse `web/src/lib/model/*` unchanged: esbuild
  * reads the `$lib/*` mapping out of `tsconfig.json` and inlines those modules,
  * so nothing in the app moves and nothing at runtime has to resolve an alias.
  * Dependencies are inlined too, because the bundle is what a plugin install
