@@ -1,0 +1,30 @@
+Leg 1 — identity: the sheet the CLI renders IS the sheet the editor exports
+(2026-08-14, identity.mjs on Playwright WebKit against vite preview :4173)
+
+None of the four committed examples contains a `<`, `>` or `&` — the exact
+gap views-checkpoint hit — so the fifth specimen is 048's own edge canvas
+("Angle & Script <edge>": ampersand, angle brackets, a literal </script>,
+a literal &amp; to catch a double-unescape), run through bcc fmt first so
+its bytes are canonical (fmt stores `<` as < per the serializer).
+
+For each of the five: Import… into the live editor (real browser, real
+import path), Export → HTML artifact, download bytes captured through the
+page; compared against the .bcc.html `bcc render` wrote from the same file:
+
+  IDENTICAL  appointment-scheduling   222,174 B both ways
+  IDENTICAL  edge-canvas              216,684 B both ways
+  IDENTICAL  notifications            214,966 B both ways
+  IDENTICAL  order-fulfillment        226,257 B both ways
+  IDENTICAL  royalty-distribution     214,856 B both ways
+
+Byte-identity held on every specimen including the escaping one, so the
+"pixel comparison where bytes legitimately cannot be equal" clause was never
+needed — the editor's export goes through the same committed render module,
+and the bytes prove it end to end. (headless-renderer's single-example
+225,907 B figure is superseded by content edits since; the property, not the
+number, is what carried.)
+
+The edge canvas also drew correctly on screen: the H1 read
+"Angle & Script <edge>" — serializer escaping round-trips visually too.
+
+Raw exports under evidence/exports/.

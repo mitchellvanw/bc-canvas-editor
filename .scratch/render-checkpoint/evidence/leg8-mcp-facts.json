@@ -1,0 +1,25 @@
+{
+  "tools": [
+    {
+      "name": "bcc_read_canvas",
+      "chars": 735,
+      "tokensApprox": 184
+    },
+    {
+      "name": "bcc_explain",
+      "chars": 819,
+      "tokensApprox": 205
+    }
+  ],
+  "toolsListChars": 1557,
+  "toolsListTokensApprox": 389,
+  "resourceUris": [
+    "bcc://canvas/docs/appointment-scheduling.bcc.json",
+    "bcc://canvas/docs/notifications.bcc.json",
+    "bcc://canvas/docs/order-fulfillment.bcc.json",
+    "bcc://canvas/docs/royalty-distribution.bcc.json"
+  ],
+  "resourceReadOk": true,
+  "resourceReadBytes": 1754,
+  "prompts": []
+}

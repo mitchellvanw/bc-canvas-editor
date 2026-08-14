@@ -1,0 +1,35 @@
+Leg 5 — no browser in the chain (2026-08-14)
+
+Setup: `npm pack` → bc-canvas-editor-0.0.1.tgz installed into a bare project
+OUTSIDE the repo (a first attempt inside .scratch/ was contaminated: Node's
+resolution walked up and found the repo's own playwright-core). The install
+carries zero dependencies — node_modules holds exactly bc-canvas-editor and
+the bcc bin symlink. No Playwright, no Chromium reachable.
+
+With node alone, on the four committed examples:
+  bcc check                       → "4 canvases check out. 4 images match the
+                                     canvas beside them."  (redraws each
+                                     committed .bcc.svg at its declared height
+                                     and byte-diffs — in plain Node)
+  bcc render                      → four .bcc.html written
+                                     (222174 / 214966 / 226257 / 214856 bytes)
+  bcc render --svg --height <declared> → byte-IDENTICAL to the committed
+                                     .bcc.svg, all four (1344/1107/1292/1193)
+  bcc render --svg (no --height)  → clean refusal, no crash:
+    "measuring a sheet needs playwright-core, which is not installed here.
+     Install it beside a desktop Chrome (npm install playwright-core), or
+     pass --height <pixels> and skip the measurement."
+
+Bonus (run where playwright-core WAS reachable): bcc render --svg without
+--height launched the installed Chrome, measured, and produced bytes
+IDENTICAL to the committed order-fulfillment.bcc.svg — the browser-measured
+height agrees with the declared one.
+
+Bonus 2: Mitchell's shell aliases bcc to `npx --yes github:mitchellvanw/
+bc-canvas-editor`; run through that alias (the git install of pushed main),
+check and all four --height renders came back identical too.
+
+Incidental finding (not a leg): `--out` resolving outside the root dies as an
+uncaught OutsideRoot with a full Node stack trace, on both the npx build and
+the current local bundle — the refusal sentence exists inside the error object
+but never reaches the CLI's register. Handed back at resolution.

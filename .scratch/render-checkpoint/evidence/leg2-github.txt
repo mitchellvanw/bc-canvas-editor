@@ -1,0 +1,41 @@
+Leg 2 — GitHub, the real surface (2026-08-14, github-live.mjs + probes)
+
+GREEN on the surface the map names, in Chrome:
+- github.com/mitchellvanw/bc-canvas-editor README: the Order Fulfillment
+  image paints (naturalWidth 1440 × naturalHeight 1292 — 062's measured
+  height), rendered at 758px in the README column.
+- The bytes GitHub serves (raw/main URL, content-type image/svg+xml) are
+  byte-identical to the committed examples/order-fulfillment.bcc.svg,
+  206,623 B — the file on the surface is the file in the repo.
+- Fonts drew (Archivo/Plex Mono/Source Serif, not Times); the collaborator-
+  kind glyphs drew — 056's nested-<svg> xmlns fix, live on github.com.
+- origin/main and local examples/ are identical, so the probed surface is
+  the tested state. Screenshot: leg2-github-order-fulfillment.png.
+
+RED RIDER — WebKit (Safari), downscaled display only:
+- In WebKit the same image at README size renders Business Decisions,
+  Assumptions, Verification Metrics and Open Questions as EMPTY panels, and
+  the masthead paints name-above-eyebrow. At 1440px (natural size) WebKit
+  renders everything correctly. Chrome is correct at every size.
+  (First seen on github.com itself: github-live.mjs drove WebKit, so
+  leg2-github-order-fulfillment.png shows the empty panels on the real
+  surface. Locally isolated in leg2-webkit-img-758.png vs
+  leg2-webkit-img-1440.png; leg2-local-chrome.png is the correct render.)
+- Bisected: not the hydration comments, not the @container tiers, not
+  display:list-item, not font size (chips render smaller text fine).
+- Minimal repro (leg2-minrepro-scaled.png, webkit-min-repro.mjs family):
+  a foreignObject containing <li style="position:relative;padding-left">
+  paints UNSCALED when the <img> displays below natural size — the text
+  draws at full size and escapes the image's box, while sibling <p>/<div>/
+  plain <li> scale correctly. `.stack li { position: relative }` is exactly
+  the sheet's rule for the four dead sections (CanvasSheet.svelte:975).
+- Canvas drawImage() of the same image rasterizes correctly at every size —
+  the defect is WebKit's display path only.
+
+Verdict: the committed image is fully correct on GitHub in Chromium-family
+readers; in Safari the four .stack sections vanish at README scale. Goes
+back to the map (owner: committed-images / committed-images-build): the
+plausible fix direction is laying out .stack li without position:relative
+(the marker via ::marker or an inline glyph instead of an absolutely
+positioned ::before against a relative li), then re-rendering the four
+images — but that is the owning ticket's call, not the checkpoint's.

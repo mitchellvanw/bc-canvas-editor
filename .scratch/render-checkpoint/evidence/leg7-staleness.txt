@@ -1,0 +1,22 @@
+Leg 7 — staleness, failed on purpose (2026-08-14)
+
+In the zero-dependency foreign install (outside the repo), on the four
+committed examples:
+
+1. Edited notifications.bcc.json (appended a sentence to purpose), did NOT
+   regenerate the image.
+2. bcc check →
+     "notifications.bcc.svg: does not match notifications.bcc.json as it
+      stands. Redraw it with bcc render --svg notifications.bcc.json."
+     "4 canvases check out. 3 images match the canvas beside them."
+   exit 1.
+3. bcc render --svg --height 1107 notifications.bcc.json, then bcc check →
+   "4 images match" — exit 0.
+4. bcc check --definitely-not-a-flag → exit 2.
+
+The three-exit-code contract observed live: 0 clean, 1 a finding (the stale
+image), 2 a mistyped flag — a hook can tell them apart.
+
+Note for the record: regenerating WITH --height at the old declared height
+turns the diff green by construction — the escape hatch escapes the measure,
+as designed; the normal authoring path measures in Chrome.

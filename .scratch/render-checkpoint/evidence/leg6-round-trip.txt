@@ -1,0 +1,25 @@
+Leg 6 — round trip, CLI ↔ editor (2026-08-14, identity.mjs + import-clean.mjs)
+
+CLI → editor: all five fmt-canonical canvases open clean — heading right,
+no "Unexported changes", Undo disabled (import-clean.mjs, WebKit). The
+canvas is unchanged by the crossing.
+
+Editor → CLI: all five editor Canvas-file exports pass `bcc check`
+("5 canvases check out") and re-import to the identical canvas.
+
+ONE-BYTE FINDING, both directions, every specimen: the editor's Canvas-file
+download is `serializeCanvas` — no trailing newline — while the disk-side
+canonical form is `canvasBytes` = the same plus '\n' (its doc comment calls
+the newline "part of what the file format is", SPEC §3.5 says committed
+examples are "serializer-canonical bytes plus a trailing newline", and
+examples.test.ts:96 pins exactly that shape). So:
+  - a CLI-written file, imported and re-exported, comes back one byte short;
+  - an editor-exported file, committed as-is, is rewritten by `bcc fmt`
+    (the newline added) — a fmt-clean CI hook would flag every
+    editor-exported file once, until fmt touches it.
+
+Canvas-level the round trip is perfect; byte-level the newline flips at the
+download boundary, every time. Not patched here per the checkpoint habit —
+recorded as a finding for Mitchell: the candidate fix is one line
+(the download blob gains '\n'), but the download's bytes were never pinned
+by any test and the choice is a product call on a shipped surface.

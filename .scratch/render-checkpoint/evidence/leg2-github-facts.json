@@ -1,0 +1,13 @@
+{
+  "facts": {
+    "src": "https://github.com/mitchellvanw/bc-canvas-editor/raw/main/examples/order-fulfillment.bcc.svg",
+    "naturalWidth": 1440,
+    "naturalHeight": 1292,
+    "renderedWidth": 758,
+    "renderedHeight": 680.09375,
+    "complete": true
+  },
+  "servedContentType": "image/svg+xml",
+  "servedBytes": 206623,
+  "byteIdentical": true
+}

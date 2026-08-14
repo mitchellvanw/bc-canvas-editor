@@ -1,0 +1,32 @@
+Leg 8 — the MCP surface after the diet (2026-08-14)
+
+Measured (drive-mcp.mjs — the committed mcp/dist/server.js over real stdio,
+mcp-hosts-checkpoint's method, root on a tmpdir with the four examples):
+- tools/list answers exactly two tools: bcc_read_canvas (735 chars),
+  bcc_explain (819 chars). Serialized tools/list: 1,557 chars ≈ 389 tokens
+  at chars/4 — the diet's 433 ballpark, an order of magnitude under the old
+  3,915; nothing has crept back.
+- resources/list answers four CONCRETE URIs (bcc://canvas/docs/*.bcc.json),
+  not the template — the @-mention path the server survives on, still true.
+- resources/read on the first URI returns content (1,754 chars). No prompts
+  capability advertised — the workshop lives in the plugin skill now.
+  Facts: leg8-mcp-facts.json.
+
+Driven once in Claude Code (headless `claude -p --plugin-dir mcp/`, scratch
+project with src/payment-reminders.ts + one neighbouring canvas, bcc on
+PATH from the zero-dep tarball install):
+- The draft-canvas-from-code skill ran end to end with ZERO tool errors:
+  bcc_explain called 7× (the agenda call plus per-section), bcc_read_canvas
+  2× (the neighbouring canvas as prose), `bcc ls` for neighbours, Write,
+  then `bcc fmt docs/payment-reminders.bcc.json` — every tool the skills
+  name exists and answers. The judgment sections came back as open
+  questions, not filled — the skill's teaching held under a real run.
+- The draft passes `bcc check` (2 canvases check out).
+- Static cross-check: the three plugin docs (two SKILL.md + canvas-reviewer
+  agent) name only bcc_explain, bcc_read_canvas, bcc ls, bcc fmt — no
+  departed tool (bcc_write_canvas, bcc_list_canvases, review-canvas) is
+  instructed anywhere.
+- MCP tool names resolve under the plugin prefix
+  mcp__plugin_bc-canvas_bc-canvas__* — recorded because a first run
+  allowlisted "mcp__bc-canvas" and got permission-denied (the denial itself
+  proved existence; the re-run proved the loop).

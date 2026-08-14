@@ -1,0 +1,15 @@
+Leg 4 — the remark plugin on two unified-based targets, from a real build
+(2026-08-14; 057's scratch sites, reinstalled from TODAY's `npm pack` tarball
+and rebuilt, then served over HTTP and read back in Chrome via shoot.mjs)
+
+- Astro 5 (zero config): build green; the page draws the whole sheet —
+  1424×1191, Archivo title at 38.4px, uppercase panel labels, paper ground
+  rgb(234,231,222); page font stays Times (sheet leaks nothing out), sheet
+  fonts compute (host strips nothing in). The page's second, deliberately
+  broken fence draws 052's placeholder: "This bcc fence didn't render. /
+  canvases/nowhere.bcc.json: could not be read." — visible, preamble-free.
+- Docusaurus 3 (rehype-raw + passthrough config, per 057): build green for
+  .md AND .mdx pages; sheet 823×1525 — the @container tiers reflowing to the
+  docs column, same fonts/ground, same isolation.
+
+Screenshots: astro.png, docusaurus-md.png, docusaurus-mdx.png (evidence/).

@@ -1,0 +1,24 @@
+Leg 3 — the bcc fence in VS Code's markdown preview (2026-08-14)
+
+Driven on 058's harness: the extension development host (`code
+--extensionDevelopmentPath` on vscode/ with the committed dist bundle, clean
+--user-data-dir), the real workspace/ project with five fences, queried over
+the Chromium devtools protocol (eval.mjs).
+
+- Two sheets and three placeholders draw in the preview of docs/guide.md
+  (my selector counted 4 placeholder nodes: 3 placeholders + a wrapper).
+- container-type computes inline-size (the @container tiers are armed),
+  6 of 8 font faces report loaded from data: URIs alone (058's number — the
+  other two have no glyph on the page), and #code-csp-warning is absent.
+- The watcher, both ways as 058 decided:
+  - editing canvases/order-fulfillment.bcc.json on disk (name → "Order
+    Fulfillment EDITED LIVE") redrew the sheet WITHOUT touching the
+    markdown — captured in leg3-vscode-preview.png;
+  - creating the missing canvases/nowhere.bcc.json healed its placeholder
+    into a third sheet (sheets 2 → 3), the FenceResult-path-on-failure
+    mechanism observed live.
+- Workspace restored afterwards (edit reverted, nowhere.bcc.json removed).
+
+Harness note for the next session: a dev host launched from a foreground
+shell command dies when the command's process tree is reaped — launch it
+with --wait from a long-lived task.
