@@ -3,7 +3,7 @@ name: mcp-diet
 title: "Grilling: what is left for the server once the filesystem has a CLI?"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [workshop-drive, bcc-cli]
 ---
 
