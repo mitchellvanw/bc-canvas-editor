@@ -3,7 +3,13 @@
 	 * App chrome (SPEC §10): Undo/Redo, Import…, the Examples menu, the Export
 	 * menu, New canvas, the quiet Unexported-changes indicator, and the
 	 * Reference control at the far end. File verbs are Import/Export, never
-	 * Open/Save. Owns the confirmation dialogs, file-refusal notices, and the
+	 * Open/Save. Visually the band reads left to right as identity, history,
+	 * file: the wordmark (the way back to /), Undo/Redo as an icon pair, the
+	 * three file verbs fused into one segmented group, and Export alone in
+	 * filled ink — the single primary, since it is the only verb that gets
+	 * work out of the machine. Undo/Redo and Reference carry their SPEC names
+	 * as sr-only text, so the accessible name and the §10 copy stay one
+	 * string. Owns the confirmation dialogs, file-refusal notices, and the
 	 * Reference dialog with its global ⌘/ shortcut (SPEC §12). Import… takes
 	 * both importable forms — `.bcc.json` and `.bcc.html` — through the one
 	 * parseCanvasImport path (SPEC §9.1); opening an example is an import
@@ -50,6 +56,12 @@
 
 	const chromeButton =
 		'rounded-[4px] border border-line bg-sheet px-3 py-1.5 text-sm font-medium whitespace-nowrap hover:bg-paper disabled:opacity-40 disabled:hover:bg-sheet';
+	// The band's two segmented groups (history, file verbs): the group div
+	// carries the border and sheet fill, members carry hover and the dividers.
+	const groupItem =
+		'px-3 py-1.5 text-sm font-medium whitespace-nowrap hover:bg-paper disabled:opacity-40 disabled:hover:bg-sheet';
+	const iconItem =
+		'flex h-8 w-9 items-center justify-center hover:bg-paper disabled:opacity-40 disabled:hover:bg-sheet';
 	const menuItem =
 		'block w-full px-4 py-1.5 text-left text-sm hover:bg-paper focus:bg-paper focus:outline-none';
 
@@ -259,73 +271,126 @@
 <header
 	class="mx-auto flex max-w-[1440px] flex-wrap items-center justify-end gap-2 px-4 pt-6 sm:px-6 lg:px-10"
 >
-	<button
-		type="button"
-		class="{chromeButton} mr-1"
-		title="Undo ({renderKeys('⌘Z')})"
-		disabled={!canvas.canUndo}
-		onclick={() => performUndo()}
-	>
-		Undo
-	</button>
-	<button
-		type="button"
-		class="{chromeButton} mr-auto"
-		title="Redo ({renderKeys('⇧⌘Z')})"
-		disabled={!canvas.canRedo}
-		onclick={() => performRedo()}
-	>
-		Redo
-	</button>
+	<a href="/" class="mr-2 text-lg font-bold tracking-tight whitespace-nowrap hover:opacity-70">
+		BC Canvas
+	</a>
 
-	<button type="button" class={chromeButton} onclick={() => fileInput.click()}>Import…</button>
-
-	<div class="relative" onfocusout={closeExamplesMenu}>
+	<div class="mr-auto flex rounded-[4px] border border-line bg-sheet">
 		<button
 			type="button"
-			class={chromeButton}
-			aria-haspopup="menu"
-			aria-expanded={examplesMenuOpen}
-			bind:this={examplesButton}
-			onclick={(event) => {
-				event.stopPropagation();
-				examplesMenuOpen = !examplesMenuOpen;
-			}}
-			onkeydown={(event) => {
-				if (event.key === 'Escape') examplesMenuOpen = false;
-			}}
+			class="{iconItem} rounded-l-[3px]"
+			title="Undo ({renderKeys('⌘Z')})"
+			disabled={!canvas.canUndo}
+			onclick={() => performUndo()}
 		>
-			Examples
-		</button>
-		{#if examplesMenuOpen}
-			<div
-				role="menu"
-				class="absolute right-0 z-10 mt-1 w-80 rounded-[6px] border border-line bg-sheet py-1 shadow-md"
+			<svg
+				class="h-4 w-4"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.75"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
 			>
-				{#each EXAMPLES as entry (entry.name)}
-					<button
-						type="button"
-						role="menuitem"
-						class="block w-full px-4 py-2 text-left hover:bg-paper focus:bg-paper focus:outline-none"
-						onclick={() => openExample(entry)}
-						onkeydown={closeExamplesMenuOnEscape}
-					>
-						<span class="block text-sm font-medium">{entry.name}</span>
-						<span class="block text-xs leading-snug text-ink-soft">{entry.description}</span>
-					</button>
-				{/each}
-			</div>
-		{/if}
+				<path d="M9 14 4 9l5-5" />
+				<path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+			</svg>
+			<span class="sr-only">Undo</span>
+		</button>
+		<button
+			type="button"
+			class="{iconItem} rounded-r-[3px] border-l border-line"
+			title="Redo ({renderKeys('⇧⌘Z')})"
+			disabled={!canvas.canRedo}
+			onclick={() => performRedo()}
+		>
+			<svg
+				class="h-4 w-4"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.75"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="m15 14 5-5-5-5" />
+				<path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+			</svg>
+			<span class="sr-only">Redo</span>
+		</button>
+	</div>
+
+	<div class="flex rounded-[4px] border border-line bg-sheet">
+		<button type="button" class="{groupItem} rounded-l-[3px]" onclick={() => fileInput.click()}>
+			Import…
+		</button>
+		<div class="relative border-l border-line" onfocusout={closeExamplesMenu}>
+			<button
+				type="button"
+				class="{groupItem} flex items-center gap-1.5"
+				aria-haspopup="menu"
+				aria-expanded={examplesMenuOpen}
+				bind:this={examplesButton}
+				onclick={(event) => {
+					event.stopPropagation();
+					examplesMenuOpen = !examplesMenuOpen;
+				}}
+				onkeydown={(event) => {
+					if (event.key === 'Escape') examplesMenuOpen = false;
+				}}
+			>
+				Examples
+				<svg
+					class="h-3 w-3 text-ink-faint"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="m6 9 6 6 6-6" />
+				</svg>
+			</button>
+			{#if examplesMenuOpen}
+				<div
+					role="menu"
+					class="absolute right-0 z-10 mt-2 w-80 rounded-[6px] border border-line bg-sheet py-1 shadow-[2px_3px_0_rgb(26_30_32/0.10)]"
+				>
+					{#each EXAMPLES as entry (entry.name)}
+						<button
+							type="button"
+							role="menuitem"
+							class="block w-full px-4 py-2 text-left hover:bg-paper focus:bg-paper focus:outline-none"
+							onclick={() => openExample(entry)}
+							onkeydown={closeExamplesMenuOnEscape}
+						>
+							<span class="block text-sm font-medium">{entry.name}</span>
+							<span class="block text-xs leading-snug text-ink-soft">{entry.description}</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
+		</div>
+		<button type="button" class="{groupItem} rounded-r-[3px] border-l border-line" onclick={newCanvas}>
+			New canvas
+		</button>
 	</div>
 
 	{#if canvas.unexported}
-		<span class="mx-1 text-xs text-ink/55">Unexported changes</span>
+		<span class="mx-1 flex items-center gap-1.5 text-xs text-ink/55">
+			<span class="h-1.5 w-1.5 rounded-full bg-hotspot" aria-hidden="true"></span>
+			Unexported changes
+		</span>
 	{/if}
 
 	<div class="relative" onfocusout={closeExportMenu}>
 		<button
 			type="button"
-			class={chromeButton}
+			class="flex items-center gap-1.5 rounded-[4px] bg-ink px-3.5 py-[7px] text-sm font-medium whitespace-nowrap text-sheet hover:bg-ink/85"
 			aria-haspopup="menu"
 			aria-expanded={exportMenuOpen}
 			bind:this={exportButton}
@@ -338,11 +403,23 @@
 			}}
 		>
 			Export
+			<svg
+				class="h-3 w-3 opacity-70"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="m6 9 6 6 6-6" />
+			</svg>
 		</button>
 		{#if exportMenuOpen}
 			<div
 				role="menu"
-				class="absolute right-0 z-10 mt-1 min-w-max rounded-[6px] border border-line bg-sheet py-1 shadow-md"
+				class="absolute right-0 z-10 mt-1 min-w-max rounded-[6px] border border-line bg-sheet py-1 shadow-[2px_3px_0_rgb(26_30_32/0.10)]"
 			>
 				<button
 					type="button"
@@ -395,15 +472,26 @@
 		{/if}
 	</div>
 
-	<button type="button" class={chromeButton} onclick={newCanvas}>New canvas</button>
-
 	<button
 		type="button"
-		class={chromeButton}
+		class="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] border border-line bg-sheet hover:bg-paper"
 		title="Reference ({renderKeys('⌘/')})"
 		onclick={(event) => openReference(event.currentTarget)}
 	>
-		Reference
+		<svg
+			class="h-4 w-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="1.75"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+		>
+			<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+			<path d="M12 17h.01" />
+		</svg>
+		<span class="sr-only">Reference</span>
 	</button>
 
 	<input

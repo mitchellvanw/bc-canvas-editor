@@ -378,6 +378,8 @@ Canonical home: `wayfinder/tickets/011-ui-copy.md`. Register: calm and documenta
 - Undo/Redo with shortcut in tooltip: `Undo (⌘Z)` / `Redo (⇧⌘Z)`.
 - **Reference** at the far end of the chrome, tooltip `Reference (⌘/)` (§12).
 
+Undo/Redo and Reference are drawn as icons; every other control prints its name in the band. Drawing displaces nothing above: each name stays the control's accessible name and leads its tooltip, so this section's strings hold whether the band prints a name or draws it.
+
 **Unexported-changes indicator:** dirty state shows the two words **Unexported changes**, small, near the Export control. Clean state shows nothing.
 
 **Confirmation dialogs** (two buttons only; unnamed canvas substitutes "this canvas" for the name):
