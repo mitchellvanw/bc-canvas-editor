@@ -3,7 +3,7 @@ name: export-trailing-newline
 title: "Task: the editor's Canvas-file download is one byte short of canonical"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: []
 ---
 
