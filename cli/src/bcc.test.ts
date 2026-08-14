@@ -13,7 +13,15 @@
  */
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import {
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	realpathSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -223,6 +231,7 @@ describe("bcc check's image leg", () => {
 	it('says nothing about a canvas with no image beside it', () => {
 		const run = bcc('check');
 		expect(run.status).toBe(0);
+		expect(run.stdout.trim()).toBe('1 canvas checks out.');
 		expect(run.stdout).not.toContain('image');
 	});
 
@@ -374,6 +383,39 @@ describe('bcc render', () => {
 		const several = bcc('render', '--out', 'sheet.html');
 		expect(several.status).toBe(2);
 		expect(several.stderr).toContain('--out names one file, and 2 canvases are in reach.');
+	});
+
+	it('refuses a sibling target that is a symlink out of the root, and renders on', () => {
+		// The other face of ticket 065's class: the target here is derived from
+		// the canvas's own name, so no flag check can catch it, and before the
+		// fix it escaped run() as the same raw stack --out died with.
+		const outside = mkdtempSync(path.join(tmpdir(), 'bcc-outside-'));
+		try {
+			put('orders.bcc.json', REFERENCE_FILE);
+			put('other.bcc.json', REFERENCE_FILE);
+			writeFileSync(path.join(outside, 'orders.bcc.html'), 'elsewhere');
+			symlinkSync(path.join(outside, 'orders.bcc.html'), path.join(root, 'orders.bcc.html'));
+
+			const run = bcc('render');
+			expect(run.status).toBe(1);
+			expect(run.stderr).toContain('orders.bcc.html: outside the canvas root');
+			expect(run.stderr).not.toMatch(/^\s+at /m);
+			// The finding is the one canvas's; the walk still rendered the other.
+			expect(run.stdout.trim()).toBe('other.bcc.html');
+			expect(readFileSync(path.join(outside, 'orders.bcc.html'), 'utf8')).toBe('elsewhere');
+		} finally {
+			rmSync(outside, { recursive: true, force: true });
+		}
+	});
+
+	it('refuses --out outside the root as a caller mistake, not a crash', () => {
+		// Ticket 065: this died as an uncaught OutsideRoot — full stack trace —
+		// with the refusal sentence sitting unread in the error object.
+		put('orders.bcc.json', REFERENCE_FILE);
+		const run = bcc('render', '--out', '../elsewhere.html', 'orders.bcc.json');
+		expect(run.status).toBe(2);
+		expect(run.stderr).toContain('--out ../elsewhere.html: outside the canvas root');
+		expect(run.stderr).not.toMatch(/^\s+at /m);
 	});
 });
 

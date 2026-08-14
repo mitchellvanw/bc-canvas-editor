@@ -3397,7 +3397,14 @@ async function render2(root, paths, options) {
         continue;
       }
       const target = options.out ?? outputPath(result.path, options.kind);
-      const absolute = root.resolve(target);
+      let absolute;
+      try {
+        absolute = root.resolve(target);
+      } catch (error) {
+        if (!(error instanceof OutsideRoot)) throw error;
+        report.problems.push(error.message);
+        continue;
+      }
       if (absolute === root.resolve(result.path)) {
         report.problems.push(
           `${result.path}: rendering it as ${options.kind.toUpperCase()} would overwrite the file it was read from. Name --out <file>, or render the .bcc.json it was exported from.`
@@ -3535,7 +3542,9 @@ async function run(command2, argv, usage2) {
     if (found.paths.length === 0) return nothingFound(root, found, 0);
     const report2 = check(root, found.paths);
     for (const line of report2.problems) problem(line);
-    if (report2.canvases > 0) out(`${plural2(report2.canvases, "canvas", "canvases")} check out.`);
+    if (report2.canvases > 0) {
+      out(`${plural2(report2.canvases, "canvas checks", "canvases check")} out.`);
+    }
     if (report2.images > 0) {
       const beside = report2.images === 1 ? "it" : "them";
       out(`${plural2(report2.images, "image matches", "images match")} the canvas beside ${beside}.`);
@@ -3563,6 +3572,15 @@ async function run(command2, argv, usage2) {
   const height = options.values.has("height") ? positiveInteger(options.values.get("height"), "--height") : void 0;
   if (height !== void 0 && kind === "html") {
     throw new UsageError("--height sizes an SVG viewport, and the HTML artifact has none.");
+  }
+  const outValue = options.values.get("out");
+  if (outValue !== void 0) {
+    try {
+      root.resolve(outValue);
+    } catch (error) {
+      if (error instanceof OutsideRoot) throw new UsageError(`--out ${error.message}`);
+      throw error;
+    }
   }
   const paths = found.walked ? canvasFiles(found.paths) : found.paths;
   if (paths.length === 0) return nothingFound(root, found, found.paths.length);
@@ -3605,6 +3623,10 @@ try {
 } catch (error) {
   if (error instanceof UsageError) unusable(error.message, usage);
   if (error instanceof NoBrowser) {
+    problem(error.message);
+    process.exit(1);
+  }
+  if (error instanceof OutsideRoot) {
     problem(error.message);
     process.exit(1);
   }

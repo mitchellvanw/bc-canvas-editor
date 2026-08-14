@@ -23,7 +23,7 @@
  */
 
 import { readCanvas, readProblem } from '$lib/fs/read';
-import type { CanvasRoot } from '$lib/fs/root';
+import { OutsideRoot, type CanvasRoot } from '$lib/fs/root';
 import { writeAtomic } from '$lib/fs/write';
 import { stampIds } from '$lib/model/canvas';
 import { artifactDocument } from '$lib/artifact/html';
@@ -63,7 +63,17 @@ export async function render(
 			}
 
 			const target = options.out ?? outputPath(result.path, options.kind);
-			const absolute = root.resolve(target);
+			// The canvas was read inside the root, but the target is derived — a
+			// sibling that is a symlink pointing out resolves outside it. That is a
+			// finding about this canvas, not a reason to drop the rest of the walk.
+			let absolute: string;
+			try {
+				absolute = root.resolve(target);
+			} catch (error) {
+				if (!(error instanceof OutsideRoot)) throw error;
+				report.problems.push(error.message);
+				continue;
+			}
 			if (absolute === root.resolve(result.path)) {
 				report.problems.push(
 					`${result.path}: rendering it as ${options.kind.toUpperCase()} would overwrite the file ` +

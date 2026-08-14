@@ -16,7 +16,7 @@
  * Results go to stdout one path per line so they pipe; refusals go to stderr.
  */
 
-import { openRoot, whyUnservable, type CanvasRoot } from '$lib/fs/root';
+import { openRoot, OutsideRoot, whyUnservable, type CanvasRoot } from '$lib/fs/root';
 import { parseOptions, UsageError } from './args';
 import { check } from './check';
 import { fmt } from './fmt';
@@ -149,7 +149,9 @@ async function run(command: string, argv: readonly string[], usage: string): Pro
 		if (found.paths.length === 0) return nothingFound(root, found, 0);
 		const report = check(root, found.paths);
 		for (const line of report.problems) problem(line);
-		if (report.canvases > 0) out(`${plural(report.canvases, 'canvas', 'canvases')} check out.`);
+		if (report.canvases > 0) {
+			out(`${plural(report.canvases, 'canvas checks', 'canvases check')} out.`);
+		}
 		if (report.images > 0) {
 			const beside = report.images === 1 ? 'it' : 'them';
 			out(`${plural(report.images, 'image matches', 'images match')} the canvas beside ${beside}.`);
@@ -182,6 +184,19 @@ async function run(command: string, argv: readonly string[], usage: string): Pro
 		: undefined;
 	if (height !== undefined && kind === 'html') {
 		throw new UsageError('--height sizes an SVG viewport, and the HTML artifact has none.');
+	}
+
+	// Containment on --out is the flag's own business, checked here with the
+	// flag's other refusals — inside render() it would surface as a finding
+	// about a canvas, exit 1, when it is the command that was typed wrong.
+	const outValue = options.values.get('out');
+	if (outValue !== undefined) {
+		try {
+			root.resolve(outValue);
+		} catch (error) {
+			if (error instanceof OutsideRoot) throw new UsageError(`--out ${error.message}`);
+			throw error;
+		}
 	}
 
 	const paths = found.walked ? canvasFiles(found.paths) : found.paths;
@@ -242,6 +257,13 @@ try {
 } catch (error) {
 	if (error instanceof UsageError) unusable(error.message, usage);
 	if (error instanceof NoBrowser) {
+		problem(error.message);
+		process.exit(1);
+	}
+	// A containment refusal no site caught — a symlink that leaves the root, a
+	// path a command derived rather than was given. The sentence is the
+	// refusal; a stack trace would be the program's problem wearing the path's.
+	if (error instanceof OutsideRoot) {
 		problem(error.message);
 		process.exit(1);
 	}
