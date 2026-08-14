@@ -9,7 +9,7 @@
 
 import { loadAutosave, saveAutosave } from '$lib/model/autosave';
 import { blankCanvas, type CanvasDoc } from '$lib/model/canvas';
-import { serializeCanvas } from '$lib/model/serialize';
+import { canvasBytes, serializeCanvas } from '$lib/model/serialize';
 import { jsonBuffer } from './json-buffer.svelte';
 import { changedRegion, type Region } from './regions';
 
@@ -117,10 +117,15 @@ class CanvasEditor {
 		this.unexported = false;
 	}
 
-	/** Serialize for a re-importable export; exporting clears unexported changes. */
+	/**
+	 * The download is the on-disk canonical form, trailing newline included
+	 * (SPEC §3.5) — an exported file commits as-is, with nothing left for
+	 * `bcc fmt` to rewrite. Exporting clears unexported changes; the baseline
+	 * stays `serializeCanvas`, the newline being the file's, not the canvas's.
+	 */
 	exportCanvasFile(): string {
 		this.markExported();
-		return this.#exported;
+		return canvasBytes(this.doc);
 	}
 
 	/**

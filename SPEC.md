@@ -94,6 +94,7 @@ The Canvas file is the portable, re-importable serialization: flat camelCase JSO
 - **No row ids** — the file is pure content; runtime keys are ephemeral (§6.1). No metadata envelope: no timestamps, no generator string.
 - **Presence:** all eleven section keys always present (empty arrays/strings, never missing). Optional fields (`description`, `definition`, `kind`, `relationship` and each of its ends, unset classification axes) are omitted entirely, never `null`.
 - **Deterministic serialization:** 2-space indent, fixed key order — an unchanged canvas serializes byte-identically.
+- **One on-disk form:** a `.bcc.json` is the serializer's bytes plus a trailing newline, wherever it comes from — `bcc fmt`, the committed examples (§3.5), and the editor's Canvas-file export all produce it. The editor download commits as-is with nothing for `fmt` to rewrite (ticket 064).
 
 ### 3.3 Versioning & migration
 

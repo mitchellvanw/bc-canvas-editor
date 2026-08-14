@@ -100,6 +100,19 @@ describe('the committed example files (SPEC §3.5)', () => {
 		}
 	);
 
+	it('re-exports a committed file byte-identically — the download is canonical (ticket 064)', () => {
+		// The editor's download and the file format the rest of the system
+		// defines are the same shape: a CLI-written file imported and exported
+		// again comes back with its trailing newline, so committing the download
+		// as-is leaves nothing for `bcc fmt` to rewrite.
+		const raw = committedBytes('Order Fulfillment');
+		const result = parseCanvasImport(raw);
+		if (!result.ok) throw new Error(`example refused: ${result.reason}`);
+		canvas.replace(stampIds(result.file));
+		expect(canvas.exportCanvasFile()).toBe(raw);
+		expect(canvas.unexported).toBe(false);
+	});
+
 	it('carries the ratified chooser one-liners, mid-workshop flag on Royalty Distribution', () => {
 		expect(EXAMPLES.map((entry) => [entry.name, entry.description])).toEqual([
 			['Order Fulfillment', 'Coordinates picking, packing and shipping once an order is paid.'],
