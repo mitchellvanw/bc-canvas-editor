@@ -368,11 +368,12 @@ function readCanvas(root, input) {
   try {
     raw = readFileSync(absolute, "utf8");
   } catch (error) {
+    const code = error instanceof Error ? error.code : void 0;
     return {
       ok: false,
       reason: "unreadable",
       path,
-      detail: error instanceof Error ? error.message : String(error)
+      detail: code === "EISDIR" ? "a directory, not a file" : error instanceof Error ? error.message : String(error)
     };
   }
   const parsed = parseCanvasImport(raw);

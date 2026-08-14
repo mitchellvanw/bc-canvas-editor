@@ -29742,11 +29742,12 @@ function readCanvas(root2, input) {
   try {
     raw = readFileSync(absolute, "utf8");
   } catch (error51) {
+    const code = error51 instanceof Error ? error51.code : void 0;
     return {
       ok: false,
       reason: "unreadable",
       path,
-      detail: error51 instanceof Error ? error51.message : String(error51)
+      detail: code === "EISDIR" ? "a directory, not a file" : error51 instanceof Error ? error51.message : String(error51)
     };
   }
   const parsed = parseCanvasImport(raw);

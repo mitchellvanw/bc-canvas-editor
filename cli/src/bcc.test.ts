@@ -188,6 +188,17 @@ describe('bcc check', () => {
 		expect(run.stdout).toContain('4 images match the canvas beside them.');
 	});
 
+	it('refuses a directory operand in prose, not an errno', () => {
+		// `bcc check lanes` — naming the folder instead of `--root lanes` — is a
+		// plausible slip, and the sentence for it comes from `readCanvas`'s
+		// closed set, not from libuv.
+		put('lanes/orders.bcc.json', canonicalReference());
+		const run = bcc('check', 'lanes');
+		expect(run.status).toBe(1);
+		expect(run.stderr).toContain('lanes: could not be read (a directory, not a file).');
+		expect(run.stderr).not.toContain('EISDIR');
+	});
+
 	it('migrates a version-1 file rather than refusing it', () => {
 		// The gate is one-sided by design: older is read forward through the
 		// ordered migrations, newer is refused before anything looks at it.

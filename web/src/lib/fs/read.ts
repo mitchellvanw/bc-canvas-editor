@@ -67,11 +67,22 @@ export function readCanvas(root: CanvasRoot, input: string): CanvasRead {
 	try {
 		raw = readFileSync(absolute, 'utf8');
 	} catch (error) {
+		// Naming a directory is the one filesystem mistake a reader makes on
+		// purpose — `bcc check examples`, a fence pointing at a folder — so it
+		// gets prose instead of libuv's EISDIR sentence. The rest stay verbatim:
+		// they name conditions (permissions, missing mounts) the system's own
+		// words describe best.
+		const code = error instanceof Error ? (error as NodeJS.ErrnoException).code : undefined;
 		return {
 			ok: false,
 			reason: 'unreadable',
 			path,
-			detail: error instanceof Error ? error.message : String(error)
+			detail:
+				code === 'EISDIR'
+					? 'a directory, not a file'
+					: error instanceof Error
+						? error.message
+						: String(error)
 		};
 	}
 
