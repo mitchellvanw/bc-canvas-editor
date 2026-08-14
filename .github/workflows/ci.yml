@@ -1,0 +1,38 @@
+# The gate Cloudflare Pages doesn't provide: Pages only runs `npm run build`,
+# while the invariants this repo leans on — the four committed bundles diffed
+# against fresh builds of themselves, the examples held byte-exact through the
+# parse path — live in the test suites. This is where they run on the way to
+# production instead of only on a laptop.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # `.nvmrc` is the one place the Node version lives; `engine-strict`
+          # in .npmrc turns a mismatch into an install-time refusal.
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            mcp/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run check:cli
+      - run: npm run check:remark
+      - run: npm run check:vscode
+      - run: npm test
+      # mcp/ is its own package with its own lockfile and suite.
+      - run: npm ci --prefix mcp
+      - run: npm run check --prefix mcp
+      - run: npm test --prefix mcp
+      # The same build Pages runs, so a deploy-breaking change fails here first.
+      - run: npm run build
