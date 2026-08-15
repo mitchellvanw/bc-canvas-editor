@@ -3,7 +3,7 @@ name: docs-stylesheet-scoping
 title: "Decision: where the docs stylesheet lives once the prose leaves the template"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [docs-furniture-boundary]
 ---
 
