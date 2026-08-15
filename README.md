@@ -1,6 +1,6 @@
 # BC Canvas
 
-A client-side editor for the [ddd-crew Bounded Context Canvas](https://github.com/ddd-crew/bounded-context-canvas), live at [bc-canvas.pages.dev](https://bc-canvas.pages.dev). Edits happen inline on the rendered sheet; the canvas stays on your machine until you export it as a re-importable Canvas file (`.bcc.json`), a self-contained HTML artifact (`.bcc.html`), a PNG or SVG image, or Markdown (`.bcc.md`, one-way). `SPEC.md` is the full specification.
+A client-side editor for the [ddd-crew Bounded Context Canvas](https://github.com/ddd-crew/bounded-context-canvas), live at [bc-canvas.pages.dev](https://bc-canvas.pages.dev) — the editor at [/edit](https://bc-canvas.pages.dev/edit), every tool's documentation at [/docs](https://bc-canvas.pages.dev/docs). Edits happen inline on the rendered sheet; the canvas stays on your machine until you export it as a re-importable Canvas file (`.bcc.json`), a self-contained HTML artifact (`.bcc.html`), a PNG or SVG image, or Markdown (`.bcc.md`, one-way). `SPEC.md` is the full specification.
 
 ## Examples
 

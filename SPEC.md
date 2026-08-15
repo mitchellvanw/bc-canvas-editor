@@ -32,6 +32,7 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 ## 2. Stack & deployment
 
 - **SvelteKit** (TypeScript) + **Tailwind CSS v4**, `adapter-static`, deployed to **Cloudflare Pages**. Strictly client-side; no server code.
+- **Site shell:** three prerendered pages and a static 404. The editor — everything this spec describes — lives at `/edit`; `/` is a documentary homepage; `/docs` collects every tool's documentation on one page under eight anchored sections (`#editor`, `#canvas-file`, `#exports`, `#cli`, `#fence`, `#remark`, `#vscode`, `#mcp`) the homepage links into, which makes those ids a contract. The homepage and docs prose rearranges facts recorded here and in the READMEs and makes no claims of its own; that copy is outside this spec.
 - Fonts self-hosted same-origin: **Archivo** (structure/labels), **Source Serif 4** (user prose), **IBM Plex Mono** (identifiers) — latin subsets, WOFF2.
 - PNG capture: **`@zumer/snapdom`** (see §9).
 - License: the canvas is CC BY 4.0 — ddd-crew attribution appears in the app footer and in every artifact (see §10, §11).
