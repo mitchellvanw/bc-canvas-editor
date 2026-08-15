@@ -48,5 +48,6 @@ export default defineConfig({
 	// `examples/` lives at the repo root, outside this project's root. It is
 	// served in dev because the homepage imports the committed example SVGs as
 	// assets; the build inlines them either way.
-	server: { fs: { allow: ['../examples'] } }
+	// `../docs-proto` is PROTOTYPE (ticket 066) and goes with the branch.
+	server: { fs: { allow: ['../examples', '../docs-proto'] } }
 });
