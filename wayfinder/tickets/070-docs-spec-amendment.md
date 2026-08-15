@@ -3,7 +3,7 @@ name: docs-spec-amendment
 title: "Decision: what SPEC.md says, and what exactly is handed off"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [docs-css-section-marker, docs-source-set, docs-markdown-read-shape, docs-stylesheet-scoping, docs-directive-vocabulary]
 ---
 
