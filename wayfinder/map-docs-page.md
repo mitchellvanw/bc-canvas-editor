@@ -1,0 +1,44 @@
+---
+name: bc-canvas-docs-page-map
+title: "Wayfinder map: the docs page, rebuilt"
+labels: [wayfinder:map]
+---
+
+# Wayfinder map: the docs page, rebuilt
+
+## Destination
+
+`/docs` rebuilt on two decisions: its running prose becomes committed Markdown rendered at build time, and the page ships **no client JavaScript**. The map is done when every decision behind those two is made and `SPEC.md` §2 is amended to state them — with the eight anchor ids restated as the contract that survives the move. The Markdown authoring and the pipeline code are the **hand-off**, not the destination.
+
+## Notes
+
+- **This map decides; it does not build.** Explicitly reversing the habit of the last four maps (hosting, examples, canonical-v5, views), each of which said "this map carries execution". Chosen at charting on 2026-08-15: Wayfinder's default is planning, and the pull to just do the work is the signal the map has ended. Task tickets are for work that *unblocks a decision*, never for delivering the page.
+- **The prior research is the floor, not a decision.** `docs/research/markdown-derived-docs.md` (2026-08-15) answers the mechanism questions against primary sources and against measured probes of this repo's real build. Its §5 and §6 findings are measurements and can be relied on; its §9 recommendation is one input to [markdown-read-shape](wayfinder/tickets/069-docs-markdown-read-shape.md), not a settled answer — [furniture-boundary](wayfinder/tickets/066-docs-furniture-boundary.md) has since **corrected §9's package list twice** (`remark-gfm` missing, and fences nest a `<code>` the page's CSS is not written for) and shown that §2's furniture table **misses the largest cost of all**, Svelte's CSS scoping. Take §9 as a draft. Its objection 1 stands and every ticket should keep it in view: **this halves the Svelte page, it does not delete it** — and under the chosen shape, half of what stays moves from `.svelte` into a transformer rather than disappearing.
+- **Settled context (from charting, 2026-08-15):**
+  - **The prose moves, all eight sections at once.** Not section by section: a stalled half-migration leaves "which file do I edit?" with one more answer than it has today, which is worse than either endpoint.
+  - **The section marker is droppable.** `web/src/routes/docs/+page.svelte:36–48` — the `IntersectionObserver` that bolds the sticky-nav entry under a notional reading line — is the only runtime JavaScript on the page. Trading it for a page that ships nothing is a good trade. [css-section-marker](wayfinder/tickets/067-docs-css-section-marker.md) may save it in CSS, as a **bonus and not a precondition**; `csr = false` is not hostage to it.
+  - **"Section marker" is the name.** Coined at charting to retire "reading-line highlight", which collides with the **highlighter stroke** — the `linear-gradient` under each Ubiquitous Language `<dt>` (`web/src/lib/sheet/CanvasSheet.svelte:987–991`), pure CSS, on the Sheet, untouched by any of this. The section marker is website furniture and stays out of `CONTEXT.md`, which is the canvas domain's glossary.
+  - **The anchor ids cannot be produced by a slugger.** The eight ids are hand-chosen short nouns, not slugs of the headings above them; run through `github-slugger` only one of eight survives (`exports`). The `sections` array (`web/src/routes/docs/+page.svelte:21–30`) already *is* the contract — id, chip, label, title in one typechecked table.
+  - **No `rehype-sanitize`.** Its default schema rewrites `id="editor"` to `id="user-content-editor"`, which breaks the contract for the *homepage's* inbound links, and its own remedy for that is a client-side script this site's CSP blocks. The source is first-party and in-repo; a test that fails on `<script` in generated docs HTML is the honest defence.
+  - **The narrow destination is the page.** The homepage genuinely needs its JavaScript (`goto`, clipboard, the replace dialog, the ride-to-the-finale navigation at `web/src/routes/+page.svelte:20–45`) and `/edit` is the editor. A "reading surfaces ship no JS" principle would have exactly one instance.
+  - **CSP directives are global.** `web/vite.config.ts:30–44` is one set for all pages, and `style-src`'s `'unsafe-inline'` is there for the *homepage's* `style=` attributes. A script-free `/docs` gets no hash of its own, but it cannot get a tighter policy without machinery that does not exist.
+- **Skills:** `/grilling` + `/domain-modeling` for the decision tickets; `/prototype` for [furniture-boundary](wayfinder/tickets/066-docs-furniture-boundary.md); `/research` for the one research ticket; `writing-copy` for any user-facing string that moves.
+- **Tracker (local markdown):** tickets live in `wayfinder/tickets/*.md`. Frontmatter: `status: open|closed`, `assignee` (non-empty = claimed), `blocked-by: [ticket names]`. Frontier = open, unassigned, all blockers closed. Resolutions are appended to the ticket under `## Resolution`, then `status: closed`. Commit tracker changes to `main`.
+
+## Decisions so far
+
+<!-- one line per closed ticket -->
+
+- [Prototype: where the Markdown ends and the Svelte furniture begins](wayfinder/tickets/066-docs-furniture-boundary.md) — **shape 3, the directive vocabulary**: it is the only one of the three that reproduces today's DOM (`+3` heading ids, `−1` prompt span, one removable wrapper), where one contiguous body deletes the page's visual argument and named fragments cost five source files and six shell seams per section. It also found the cost none of the three avoids — **Svelte's CSS scoping does not reach `{@html}`, so 22 of the page's 27 style rules stop matching**, and the five already `:global` are exactly the furniture ones. Corrected the research's pipeline twice (`remark-gfm` missing; fences nest a `<code>` today's `<pre>` does not) and closed a §10 open item: a repo-root Markdown glob works under `vite dev` with one `server.fs.allow` line.
+
+## Not yet specified
+
+- **Whether the homepage's prose follows.** `SPEC.md:35` declares the homepage prose documentary in the same breath as the docs prose, so the same argument reaches it. It cannot go script-free, but its prose could still be Markdown. **Its precondition is now met** — [furniture-boundary](wayfinder/tickets/066-docs-furniture-boundary.md) priced the seam, and the price on a mostly-furniture page reads badly: shape C's directive vocabulary only pays off where there is running prose to move, and the homepage has far less of it than the docs page. Sharp enough to state, but it is a *different page* and the destination names only `/docs`. Left here rather than ticketed; [spec-amendment](wayfinder/tickets/070-docs-spec-amendment.md) item 5 rules on whether it is in scope at all or becomes a fresh effort.
+- **Whether a script-free page can carry a tighter policy than the site's.** Directives are global today and one JS-free page does not make a case. If a second and third reading surface ever go script-free, per-page directives stop being machinery-for-nothing. Watch for the trigger; do not build for it.
+
+## Out of scope
+
+- **One source feeding both `/docs` and the READMEs.** The drift the Markdown move is constantly assumed to fix, and does not. `README.md:28` leads the CLI with `npm run bcc` for someone standing in a checkout; `web/src/routes/docs/+page.svelte:298` leads with `npx` for someone who has cloned nothing. That inversion is deliberate and was recorded as a register split at `wayfinder/tickets/057-remark-plugin.md:64`. Collapsing them means flattening the register or inventing a variant mechanism, which is a DSL. Full argument: `docs/research/markdown-derived-docs.md` §3 and objection 5.
+- **`bcc` fences inside the site's own docs.** Attractive — the docs would draw real canvases through the very adapter they describe — but `fencePreamble()` emits `@font-face` rules using `url(data:font/woff2;base64,…)` (`web/src/lib/fence/fence.ts:98–100`) against a `font-src 'self'` policy (`web/vite.config.ts:37`), so the sheet would draw in a fallback face. It buys authenticity on one page at the price of widening a directive for the whole site. **Most likely of the three to return** — the day something else forces `data:` into `font-src`, this is nearly free. Research: §7.5.
+- **The homepage and `/edit`.** Both genuinely need their JavaScript; the narrow destination excludes them. (The homepage's *prose* is a different question and sits in Not yet specified above, not here.)
+- **Markdown as a source of truth for anything but the docs page's own prose.** `SPEC.md` is organised by decision domain and declares this copy outside itself; the wayfinder maps are argument rather than instruction. Neither is a coherent source and neither becomes one here.
