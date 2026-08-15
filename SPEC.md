@@ -31,11 +31,40 @@ This spec compiles the decisions of the wayfinder map (`wayfinder/map.md`); each
 
 ## 2. Stack & deployment
 
-- **SvelteKit** (TypeScript) + **Tailwind CSS v4**, `adapter-static`, deployed to **Cloudflare Pages**. Strictly client-side; no server code.
-- **Site shell:** three prerendered pages and a static 404. The editor — everything this spec describes — lives at `/edit`; `/` is a documentary homepage; `/docs` collects every tool's documentation on one page under eight anchored sections (`#editor`, `#canvas-file`, `#exports`, `#cli`, `#fence`, `#remark`, `#vscode`, `#mcp`) the homepage links into, which makes those ids a contract. The homepage and docs prose rearranges facts recorded here and in the READMEs and makes no claims of its own; that copy is outside this spec.
+- **SvelteKit** (TypeScript) + **Tailwind CSS v4**, `adapter-static`, deployed to **Cloudflare Pages**. **Strictly client-side at runtime** — no backend, nothing served but static files. `+page.server.ts` and `$lib/server/` appear exactly once, on `/docs` (§2.1), and run only at prerender; the boundary is enforced by the build, not by convention.
+- **Site shell:** three prerendered pages and a static 404. The editor — everything this spec describes — lives at `/edit`; `/` is a documentary homepage; `/docs` collects every tool's documentation on one page under eight anchored sections (`#editor`, `#canvas-file`, `#exports`, `#cli`, `#fence`, `#remark`, `#vscode`, `#mcp`) the homepage links into, which makes those ids a contract. The homepage and docs prose rearranges facts recorded here and in the READMEs and makes no claims of its own; that copy is outside this spec. How `/docs` is built from it: §2.1.
 - Fonts self-hosted same-origin: **Archivo** (structure/labels), **Source Serif 4** (user prose), **IBM Plex Mono** (identifiers) — latin subsets, WOFF2.
 - PNG capture: **`@zumer/snapdom`** (see §9).
 - License: the canvas is CC BY 4.0 — ddd-crew attribution appears in the app footer and in every artifact (see §10, §11).
+
+### 2.1 The docs page
+
+Full decision record: `wayfinder/tickets/066-docs-furniture-boundary.md`, `067-docs-css-section-marker.md`, `068-docs-source-set.md`, `069-docs-markdown-read-shape.md`, `071-docs-stylesheet-scoping.md`, `072-docs-directive-vocabulary.md`.
+
+`/docs` renders from committed Markdown and ships no client JavaScript.
+
+**The eight ids are the invariant.** They are hand-chosen short nouns, not slugs of the headings above them — through `github-slugger` only one of the eight survives — so nothing generates them and nothing may. `web/src/lib/docs/sections.ts` is the **register**: one `as const` row per section carrying order, chip, label and title, exporting `type DocsId`. The shell draws `{#each sections as s (s.id)}`, so the id is written once instead of once literally and once positionally. The eight files at `docs/site/*.md` supply **bodies, never membership** — the basename is the id, and there is no frontmatter.
+
+**The prose is outside this spec; the contract is not.** The copy stays documentary and moved byte-for-byte. What this spec owns is the register-versus-bodies split, the ids, and the guards below.
+
+**Mechanism.** The pipeline runs in `web/src/routes/docs/+page.server.ts` and returns the merged, ordered array the shell loops. `csr = false` is declared in **`+page.ts`, not `+page.server.ts`**: from the server module the router cannot learn the page is CSR-less without fetching it, and `data-sveltekit-preload-data="hover"` (`web/src/app.html:19`) is site-wide, so every hover on a Docs link pays. Measured, that difference is 412 bytes against 27 KB. The `?raw` imports, the pipeline and the transformer live in `web/src/lib/server/docs/bodies.ts` — a client import of `$lib/server/` fails `npm run build`, which is why the sources and the parser never enter the client graph. Six packages: `remark-parse → remark-gfm → remark-directive → remark-rehype → rehype-slug → rehype-stringify`. No `rehype-sanitize` — its schema rewrites `id="editor"` to `id="user-content-editor"`, which breaks the inbound links, and its own remedy is a client script this site's CSP blocks. No `rehype-raw` either: without it `remark-rehype` drops raw tags and keeps their text, which makes "no raw HTML in the prose" a property of the pipeline rather than a rule someone has to remember.
+
+**Furniture is a directive vocabulary.** Eight words — `note`, `term`, `filecard`, `grid`, `card`, `scroller`, `figure`, `kbd` — built as hast via `hName`/`hProperties`, never as HTML strings. The vocabulary's only reference is the build-time guard, which validates each directive's name and attributes and names the eight words in its own error message. Nothing else lists them, so nothing else can go stale.
+
+**The stylesheet is not scoped, and cannot be.** Svelte's scoping does not reach `{@html}` output, so 22 of the page's 27 rule blocks move to `web/src/lib/docs/prose.css` and 5 shell rules stay in the component. `prose.css` stays **unlayered**: Svelte emits scoped blocks unlayered and Tailwind 4 emits everything inside `@layer`, so these rules outrank every utility on the page today. Moving them into a Tailwind layer would switch 49 dead utility declarations on at once. `.docs` is therefore a namespace held by convention and one test rather than by the compiler, and every selector in `prose.css` is written under it.
+
+**Five guards, firing at four times.** They do not consolidate; collapsing them would move three of them later.
+
+| fires at | catches |
+|---|---|
+| Vite module resolution | a renamed or missing `.md` — the eight `?raw` imports are named, not globbed |
+| `npm run check` | a homepage href pointing at an id nobody has (`DocsId`) |
+| `npm test` | a `.md` nobody imports; a `github.com` link drifted from `package.json`'s `repository`; raw HTML in any `.md`; a `prose.css` selector not under `.docs` |
+| `npm run build` | a pipeline that throws — an unknown directive name or attribute, or a body not opening with a paragraph |
+
+**Two constraints on the prose.** No `.md` can carry a build-resolved asset: Vite never sees `{@html}` output, so an image written in Markdown emits an unhashed path that 404s. The page's one image is a `::figure` whose URL the transformer injects, and a second cannot be added without a code change. And a colon followed immediately by a letter or digit is consumed as a directive — `9:30` renders as `9`, `npm:test` as `npm`. Today's prose does not step on it, and the guard catches whoever does, because those parse as directives named `30` and `test`.
+
+**What changes visibly.** The sticky nav's section marker is gone. CSS reproduces both of its visual effects but can never set an attribute, so `aria-current` is unreachable — and since the visual effects are `lg:`-gated while `aria-current` is not, a CSS marker would keep the affordance for the reader with the most other recourse and drop it for the reader with the least. Separately, the attribution card moves outside `.docs`, which centres it and renders its two labels at the sizes their markup already asks for. That card is the only intended appearance change.
 
 ## 3. The Canvas file schema
 
@@ -510,6 +539,6 @@ Link line: **Learn the method: the ddd-crew's Bounded Context Canvas** → `gith
 
 ## 14. Research & prototype provenance
 
-- Research notes: `docs/research/contexture-schema.md` (branch `research/contexture-schema`), `docs/research/export-techniques.md` (branch `research/export-techniques`).
-- Prototypes (all variants + reasoning on their branches): visual language `prototype/canvas-visual-language` (winner `6-quiet-sheet/`), inline editing `prototype/inline-editing` (winner `1-live-sheet/`), empty state `prototype/empty-state` (winner `1-placeholder-questions/`), example chooser `prototype/example-chooser` (winner variant 1, the Examples menu).
+- Research notes: `docs/research/contexture-schema.md` (branch `research/contexture-schema`), `docs/research/export-techniques.md` (branch `research/export-techniques`), `docs/research/css-only-scroll-spy.md` (ticket 067), `docs/research/markdown-derived-docs.md` (exploratory, no ticket).
+- Prototypes (all variants + reasoning on their branches): visual language `prototype/canvas-visual-language` (winner `6-quiet-sheet/`), inline editing `prototype/inline-editing` (winner `1-live-sheet/`), empty state `prototype/empty-state` (winner `1-placeholder-questions/`), example chooser `prototype/example-chooser` (winner variant 1, the Examples menu), docs furniture boundary `proto/066-docs-furniture-boundary` (winner `docs-proto/c/`, the directive vocabulary).
 - Decision detail: `wayfinder/tickets/*.md`; glossary: `CONTEXT.md`.
