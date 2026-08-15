@@ -1,0 +1,40 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>WebKit: foreignObject content that creates a layer paints unscaled when SVG-as-image is displayed below natural size</title>
+<style>
+  body { font: 14px/1.4 sans-serif; margin: 24px; max-width: 900px; }
+  img { display: block; outline: 1px solid #ccc; }
+  figure { margin: 0 0 24px; }
+  figcaption { font-size: 12px; color: #555; margin-bottom: 4px; }
+</style>
+<h1>foreignObject + self-painting layer + downscaled &lt;img&gt;</h1>
+<p>
+  One SVG containing a <code>&lt;foreignObject&gt;</code> with four lines of XHTML text:
+  a plain control, a <code>position: relative</code> line, an <code>opacity: 0.6</code> line,
+  and a line whose bullet carries a CSS <code>transform</code>.
+  The same data: URI is shown twice below — at natural size (400px) and at half size (200px).
+</p>
+<p>
+  <strong>Expected:</strong> the half-size image is the natural-size image scaled uniformly (this is what Chrome and Firefox do).<br>
+  <strong>Actual (WebKit/Safari):</strong> at half size, the three lines that create a self-painting layer
+  (positioned box, opacity &lt; 1, transform) paint at <em>full, unscaled</em> size — overflowing their
+  lines and the image box — while the control line scales correctly. At natural size everything is correct.
+</p>
+<div id="figures"></div>
+<script>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120" viewBox="0 0 400 120">
+  <foreignObject width="400" height="120">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font:16px sans-serif;background:#f4efe4;height:120px">
+      <p style="margin:0">control: plain text</p>
+      <p style="margin:0;position:relative">position: relative</p>
+      <p style="margin:0;opacity:0.6">opacity: 0.6</p>
+      <p style="margin:0"><span style="display:inline-block;width:8px;height:8px;background:#c66;transform:rotate(14deg)"></span> transformed bullet</p>
+    </div>
+  </foreignObject></svg>`;
+  const src = 'data:image/svg+xml;base64,' + btoa(svg);
+  document.getElementById('figures').innerHTML = `
+    <figure><figcaption>natural size (400px) — correct everywhere</figcaption>
+      <img src="${src}" width="400"></figure>
+    <figure><figcaption>half size (200px) — WebKit paints the three layer-creating lines unscaled</figcaption>
+      <img src="${src}" width="200"></figure>`;
+</script>
