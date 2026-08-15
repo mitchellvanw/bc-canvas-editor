@@ -3,7 +3,7 @@ name: docs-directive-vocabulary
 title: "Decision: the directive vocabulary — which words, and what catches a typo"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [docs-furniture-boundary]
 ---
 
