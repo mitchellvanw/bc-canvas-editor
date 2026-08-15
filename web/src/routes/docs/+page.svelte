@@ -73,8 +73,8 @@ rehypePlugins: [[rehypeRaw, { passThrough: ['mdxjsEsm', 'mdxFlowExpression',
 
 {#snippet note(text: string, tilt: string)}
 	<aside class="note {tilt}">
-		<p class="font-mono text-[11px] font-medium tracking-wide text-ink-faint">field note</p>
-		<p class="mt-1 text-sm leading-relaxed">{text}</p>
+		<p class="font-mono font-medium tracking-wide text-ink-faint">field note</p>
+		<p>{text}</p>
 	</aside>
 {/snippet}
 
@@ -252,7 +252,7 @@ rehypePlugins: [[rehypeRaw, { passThrough: ['mdxjsEsm', 'mdxFlowExpression',
 
 				<div class="mt-6 grid gap-5 sm:grid-cols-2">
 					<div class="border border-line bg-sheet p-5 sm:self-start">
-						<p class="font-mono text-[11px] font-medium tracking-wide text-ink-faint">comes back</p>
+						<p class="font-mono font-medium tracking-wide text-ink-faint">comes back</p>
 						<dl>
 							<dt><code>.bcc.json</code> — Canvas file</dt>
 							<dd>The canvas itself. The durable form; everything else is derived from it.</dd>
@@ -265,7 +265,7 @@ rehypePlugins: [[rehypeRaw, { passThrough: ['mdxjsEsm', 'mdxFlowExpression',
 						</dl>
 					</div>
 					<div class="border border-dashed border-ink-faint bg-sheet p-5">
-						<p class="font-mono text-[11px] font-medium tracking-wide text-ink-faint">one way out</p>
+						<p class="font-mono font-medium tracking-wide text-ink-faint">one way out</p>
 						<dl>
 							<dt><code>.bcc.svg</code> — image</dt>
 							<dd>
@@ -353,7 +353,7 @@ rehypePlugins: [[rehypeRaw, { passThrough: ['mdxjsEsm', 'mdxFlowExpression',
 <span class="text-ink-faint">```</span></pre>
 					</figure>
 					<div class="overflow-hidden rounded-[4px] border border-line bg-sheet shadow-sm">
-						<p class="border-b border-line px-3 py-2 font-mono text-[10px] text-ink-soft">what the fence draws</p>
+						<p class="border-b border-line px-3 py-2 font-mono text-ink-soft">what the fence draws</p>
 						<img src={orderSvg} alt="The Order Fulfillment canvas as a rendered sheet" class="h-40 w-full object-cover object-top" width="1440" height="1292" loading="lazy" />
 					</div>
 				</div>
