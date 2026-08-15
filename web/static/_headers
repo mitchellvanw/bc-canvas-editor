@@ -1,8 +1,10 @@
 # Everything the site serves. The editor runs entirely client-side over
 # localStorage, so there is no frame-embedding story to support and nothing
-# downstream that needs a referrer. A full CSP is deliberately not here: the
-# SvelteKit init script is inline, so a real policy is its own considered
-# change, not a header to sprinkle.
+# downstream that needs a referrer. The CSP is not here: SvelteKit hashes its
+# inline init script per page, so the policy rides each prerendered page as a
+# <meta> tag (vite.config.ts `csp`) and 404.html carries its own — a header
+# would need 'unsafe-inline' or per-build hashes. x-frame-options stays,
+# because frame-ancestors is the one directive a <meta> policy cannot carry.
 /*
   x-content-type-options: nosniff
   x-frame-options: DENY

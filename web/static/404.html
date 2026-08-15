@@ -4,6 +4,12 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="robots" content="noindex" />
+		<!-- The prerendered pages get their policy from SvelteKit's csp config;
+		     this static page carries its own. Nothing loads but the inline style. -->
+		<meta
+			http-equiv="content-security-policy"
+			content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'"
+		/>
 		<title>Not found — BC Canvas</title>
 		<!-- Served by Cloudflare Pages for any path the build doesn't hold. The
 		     site is prerendered at / (homepage), /edit (editor) and /docs, so

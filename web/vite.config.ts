@@ -16,7 +16,32 @@ export default defineConfig({
 			// The site's project root is `web/`, but Cloudflare Pages builds from
 			// the repo root with its output dir set to `build` — so the adapter
 			// keeps writing there.
-			adapter: adapter({ pages: '../build', assets: '../build' })
+			adapter: adapter({ pages: '../build', assets: '../build' }),
+
+			// Prerendered pages carry the policy as a <meta> tag, with SvelteKit
+			// hashing its own inline init script — which is why script-src can stay
+			// strict on a static host. The two cloudflareinsights hosts are Web
+			// Analytics: the edge injects the loader, the beacon posts home.
+			// style-src takes unsafe-inline because style= attributes (homepage
+			// stagger/confetti vars) have no hashable form; img-src takes data: and
+			// blob: for the inlined example SVGs and the PNG capture path.
+			// frame-ancestors can't ride a <meta> policy; static/_headers keeps
+			// x-frame-options DENY for that.
+			csp: {
+				mode: 'hash',
+				directives: {
+					'default-src': ['self'],
+					'script-src': ['self', 'https://static.cloudflareinsights.com'],
+					'style-src': ['self', 'unsafe-inline'],
+					'img-src': ['self', 'data:', 'blob:'],
+					'font-src': ['self'],
+					'connect-src': ['self', 'https://cloudflareinsights.com'],
+					'object-src': ['none'],
+					'base-uri': ['self'],
+					'frame-src': ['none'],
+					'form-action': ['self']
+				}
+			}
 		})
 	],
 
