@@ -3,7 +3,7 @@ name: docs-markdown-read-shape
 title: "Decision: how the Markdown is read at build, under csr = false"
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: mitchell
 blocked-by: [docs-furniture-boundary]
 ---
 
