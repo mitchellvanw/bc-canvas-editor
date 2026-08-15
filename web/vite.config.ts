@@ -45,8 +45,9 @@ export default defineConfig({
 		})
 	],
 
-	// `examples/` lives at the repo root, outside this project's root. It is
-	// served in dev because the homepage imports the committed example SVGs as
-	// assets; the build inlines them either way.
-	server: { fs: { allow: ['../examples'] } }
+	// `examples/` and `docs/` live at the repo root, outside this project's
+	// root. They are served in dev because the homepage imports the committed
+	// example SVGs as assets and `/docs` imports its eight section bodies from
+	// `docs/site/*.md`; the build inlines both either way.
+	server: { fs: { allow: ['../examples', '../docs'] } }
 });
