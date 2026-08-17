@@ -19,6 +19,7 @@
 	 * `aria-current`, and the effects were `lg:`-gated while the attribute was
 	 * not (ticket 067).
 	 */
+	import '$lib/docs/prose.css';
 	import type { DocsSection } from '$lib/docs/sections';
 	import type { PageData } from './$types';
 
@@ -94,23 +95,31 @@
 					{@html s.html}
 				</section>
 			{/each}
-
-			<!-- attribution -->
-			<section class="mt-24 flex justify-center">
-				<div class="max-w-md rotate-1 border border-term-ink bg-term px-6 py-5 text-center shadow-[2px_3px_0_rgb(26_30_32/0.12)]">
-					<p class="font-mono text-[11px] font-medium tracking-wide text-term-ink">attribution</p>
-					<p class="mt-1 text-sm leading-relaxed">
-						The Bounded Context Canvas is by the
-						<a href="https://github.com/ddd-crew/bounded-context-canvas" class="font-medium underline underline-offset-2">ddd-crew</a>,
-						licensed CC BY 4.0. These docs just explain the paper.
-					</p>
-				</div>
-			</section>
 		</div>
 	</div>
+
+	<!-- Attribution: page chrome, not one of the eight bodies. It sits outside
+	     `.docs` beside the masthead — inside, `.docs section`'s `flow-root`
+	     caught it and its own `flex justify-center` never applied. -->
+	<section class="mt-24 flex justify-center">
+		<div class="max-w-md rotate-1 border border-term-ink bg-term px-6 py-5 text-center shadow-[2px_3px_0_rgb(26_30_32/0.12)]">
+			<p class="font-mono text-[11px] font-medium tracking-wide text-term-ink">attribution</p>
+			<p class="mt-1 text-sm leading-relaxed">
+				The Bounded Context Canvas is by the
+				<a href="https://github.com/ddd-crew/bounded-context-canvas" class="font-medium underline underline-offset-2">ddd-crew</a>,
+				licensed CC BY 4.0. These docs just explain the paper.
+			</p>
+		</div>
+	</section>
 </div>
 
 <style>
+	/* The shell's own rules (ticket 071). Every selector here styles an element
+	   this component renders, so Svelte's scoping reaches it — which is what
+	   keeps `.underline-command` / `.underline-event` off the homepage, where
+	   the same two class names carry a different implementation. The 22 rules
+	   for the pipeline's output live in `$lib/docs/prose.css`. */
+
 	/* The homepage's marker underlines, under the headline's load-bearing words. */
 	.underline-command {
 		box-shadow: inset 0 -0.18em 0 0 var(--color-command);
@@ -121,7 +130,7 @@
 
 	/* Each section is headed by its tool's chip — the homepage chip stack,
 	   reused as wayfinding. */
-	:global(.chip-label) {
+	.chip-label {
 		display: inline-block;
 		rotate: -1deg;
 		padding: 0.3rem 0.65rem;
@@ -132,153 +141,11 @@
 		box-shadow: 2px 2px 0 rgb(26 30 32 / 0.12);
 	}
 
-	/* The docs' running prose: serif ledes, sans mechanics, mono facts —
-	   the homepage's registers held steady over a longer read. Text caps at
-	   a measure; field notes float past it into the right rail on wide
-	   screens, the homepage's margin-note collage. */
+	/* The eight section wrappers: the loop's, so these stay scoped. */
 	.docs section {
 		display: flow-root; /* a floated field note stays inside its section */
 	}
 	.docs section + section {
 		margin-top: 6.5rem;
-	}
-	.docs .lede {
-		margin-top: 1.25rem;
-		max-width: 42rem;
-		font-family: var(--font-serif);
-		font-size: 1.125rem;
-		line-height: 1.65;
-		color: var(--color-ink-soft);
-	}
-	.docs h3 {
-		margin-top: 2.25rem;
-		max-width: 42rem;
-		font-size: 1.05rem;
-		font-weight: 600;
-	}
-	.docs p:not(.lede),
-	.docs ul,
-	.docs dl {
-		margin-top: 0.875rem;
-		max-width: 42rem;
-		font-size: 0.9375rem;
-		line-height: 1.7;
-	}
-	.docs ul {
-		padding-left: 1.1rem;
-		list-style: disc;
-	}
-	.docs li {
-		margin-top: 0.5rem;
-	}
-	.docs li::marker {
-		color: var(--color-ink-faint);
-	}
-	.docs dt {
-		font-weight: 600;
-	}
-	.docs dt:not(:first-of-type) {
-		margin-top: 0.875rem;
-	}
-	.docs dd {
-		margin-top: 0.2rem;
-		color: var(--color-ink-soft);
-	}
-	.docs a {
-		text-decoration: underline;
-		text-underline-offset: 2px;
-	}
-	.docs code {
-		font-family: var(--font-mono);
-		font-size: 0.86em;
-	}
-	.docs kbd {
-		font-family: var(--font-mono);
-		font-size: 0.8em;
-		padding: 0.1rem 0.35rem;
-		border: 1px solid var(--color-line);
-		border-radius: 3px;
-		background: var(--color-sheet);
-		box-shadow: 0 1px 0 var(--color-line);
-	}
-
-	/* Field notes: the homepage's tilted asides, carrying the caveats you
-	   learn in the field. Inline cards on small screens; floated into the
-	   right rail once there is one. */
-	:global(.docs .note) {
-		margin: 1.25rem 0;
-		max-width: 15rem;
-		border: 1px solid var(--color-line);
-		background: var(--color-sheet);
-		padding: 1rem 1.1rem;
-		box-shadow: 2px 3px 0 rgb(26 30 32 / 0.1);
-	}
-	@media (min-width: 64rem) {
-		:global(.docs .note) {
-			float: right;
-			clear: right;
-			width: 14rem;
-			margin: 0.25rem 0 1rem 1.75rem;
-		}
-	}
-
-	/* Code blocks: `term` is a shell, dark; `filecard` is file contents on
-	   sheet, with the filename as its tab. Both scroll sideways rather than
-	   wrap, so a long line never breaks the page. */
-	.docs pre {
-		margin-top: 1rem;
-		max-width: 42rem;
-		overflow-x: auto;
-		border-radius: 4px;
-		padding: 1rem;
-		font-family: var(--font-mono);
-		font-size: 0.75rem;
-		line-height: 1.7;
-	}
-	.docs pre.term {
-		background: var(--color-ink);
-		color: var(--color-paper);
-		box-shadow: 0 1px 2px rgb(26 30 32 / 0.08);
-	}
-	:global(.docs .filecard) {
-		margin-top: 1rem;
-		max-width: 42rem;
-		overflow: hidden;
-		border-radius: 4px;
-		border: 1px solid var(--color-line);
-		background: var(--color-sheet);
-		box-shadow: 0 1px 2px rgb(26 30 32 / 0.06);
-	}
-	:global(.docs .filecard figcaption) {
-		border-bottom: 1px solid var(--color-line);
-		padding: 0.5rem 0.75rem;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		color: var(--color-ink-soft);
-	}
-	:global(.docs .filecard pre) {
-		margin-top: 0;
-		border: none;
-		border-radius: 0;
-		box-shadow: none;
-	}
-
-	.docs table {
-		margin-top: 1rem;
-		width: 100%;
-		max-width: 42rem;
-		border-collapse: collapse;
-		font-size: 0.875rem;
-	}
-	.docs th {
-		text-align: left;
-		font-weight: 600;
-		padding: 0.5rem 1rem 0.5rem 0;
-		border-bottom: 1px solid var(--color-ink);
-	}
-	.docs td {
-		vertical-align: top;
-		padding: 0.6rem 1rem 0.6rem 0;
-		border-bottom: 1px solid var(--color-line);
 	}
 </style>

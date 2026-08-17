@@ -1,0 +1,174 @@
+/**
+ * The docs page's body rules (SPEC §2.1, ticket 071).
+ *
+ * These style what the *pipeline* generates. Svelte scopes CSS by stamping a
+ * hash class onto elements in the template, and `{@html}` output is never in
+ * the template — so 22 of the page's 27 rule blocks could not reach their own
+ * DOM and live here instead. The 5 that style shell-rendered elements keep the
+ * compiler's guarantee and stay in `+page.svelte`.
+ *
+ * Two things this file must keep doing:
+ *
+ *   - **Every selector is written under `.docs`.** With the compiler's
+ *     guarantee gone, that convention is all that keeps these rules off the
+ *     other two pages — and it is load-bearing, not tidy: the homepage has its
+ *     own `.underline-command` / `.underline-event` with different bodies one
+ *     file away. `prose.test.ts` asserts it.
+ *   - **It stays unlayered.** Svelte emits scoped blocks unlayered and
+ *     Tailwind 4 emits everything inside `@layer`, so these rules outrank
+ *     every utility on the page. Moving them into a Tailwind layer would
+ *     switch dead utility declarations on and re-base live ones — measured,
+ *     across the whole page at once.
+ *
+ * `@theme` emits real custom properties on `:root`, so `var(--color-…)`
+ * resolves here with no Tailwind processing.
+ */
+
+/* The docs' running prose: serif ledes, sans mechanics, mono facts — the
+   homepage's registers held steady over a longer read. Text caps at a measure;
+   field notes float past it into the right rail on wide screens, the
+   homepage's margin-note collage. */
+.docs .lede {
+	margin-top: 1.25rem;
+	max-width: 42rem;
+	font-family: var(--font-serif);
+	font-size: 1.125rem;
+	line-height: 1.65;
+	color: var(--color-ink-soft);
+}
+.docs h3 {
+	margin-top: 2.25rem;
+	max-width: 42rem;
+	font-size: 1.05rem;
+	font-weight: 600;
+}
+.docs p:not(.lede),
+.docs ul,
+.docs dl {
+	margin-top: 0.875rem;
+	max-width: 42rem;
+	font-size: 0.9375rem;
+	line-height: 1.7;
+}
+.docs ul {
+	padding-left: 1.1rem;
+	list-style: disc;
+}
+.docs li {
+	margin-top: 0.5rem;
+}
+.docs li::marker {
+	color: var(--color-ink-faint);
+}
+.docs dt {
+	font-weight: 600;
+}
+.docs dt:not(:first-of-type) {
+	margin-top: 0.875rem;
+}
+.docs dd {
+	margin-top: 0.2rem;
+	color: var(--color-ink-soft);
+}
+.docs a {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+.docs code {
+	font-family: var(--font-mono);
+	font-size: 0.86em;
+}
+.docs kbd {
+	font-family: var(--font-mono);
+	font-size: 0.8em;
+	padding: 0.1rem 0.35rem;
+	border: 1px solid var(--color-line);
+	border-radius: 3px;
+	background: var(--color-sheet);
+	box-shadow: 0 1px 0 var(--color-line);
+}
+
+/* Field notes: the homepage's tilted asides, carrying the caveats you learn in
+   the field. Inline cards on small screens; floated into the right rail once
+   there is one. */
+.docs .note {
+	margin: 1.25rem 0;
+	max-width: 15rem;
+	border: 1px solid var(--color-line);
+	background: var(--color-sheet);
+	padding: 1rem 1.1rem;
+	box-shadow: 2px 3px 0 rgb(26 30 32 / 0.1);
+}
+@media (min-width: 64rem) {
+	.docs .note {
+		float: right;
+		clear: right;
+		width: 14rem;
+		margin: 0.25rem 0 1rem 1.75rem;
+	}
+}
+
+/* Code blocks: `term` is a shell, dark; `filecard` is file contents on sheet,
+   with the filename as its tab. Both scroll sideways rather than wrap, so a
+   long line never breaks the page. */
+.docs pre {
+	margin-top: 1rem;
+	max-width: 42rem;
+	overflow-x: auto;
+	border-radius: 4px;
+	padding: 1rem;
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	line-height: 1.7;
+}
+/* A Markdown fence nests a <code> the hand-written <pre> never had, and
+   `.docs code`'s 0.86em would compound against the block's own 0.75rem. */
+.docs pre > code {
+	font-size: inherit;
+}
+.docs pre.term {
+	background: var(--color-ink);
+	color: var(--color-paper);
+	box-shadow: 0 1px 2px rgb(26 30 32 / 0.08);
+}
+.docs .filecard {
+	margin-top: 1rem;
+	max-width: 42rem;
+	overflow: hidden;
+	border-radius: 4px;
+	border: 1px solid var(--color-line);
+	background: var(--color-sheet);
+	box-shadow: 0 1px 2px rgb(26 30 32 / 0.06);
+}
+.docs .filecard figcaption {
+	border-bottom: 1px solid var(--color-line);
+	padding: 0.5rem 0.75rem;
+	font-family: var(--font-mono);
+	font-size: 10px;
+	color: var(--color-ink-soft);
+}
+.docs .filecard pre {
+	margin-top: 0;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.docs table {
+	margin-top: 1rem;
+	width: 100%;
+	max-width: 42rem;
+	border-collapse: collapse;
+	font-size: 0.875rem;
+}
+.docs th {
+	text-align: left;
+	font-weight: 600;
+	padding: 0.5rem 1rem 0.5rem 0;
+	border-bottom: 1px solid var(--color-ink);
+}
+.docs td {
+	vertical-align: top;
+	padding: 0.6rem 1rem 0.6rem 0;
+	border-bottom: 1px solid var(--color-line);
+}
