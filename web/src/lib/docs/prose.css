@@ -5,7 +5,9 @@
  * hash class onto elements in the template, and `{@html}` output is never in
  * the template — so 22 of the page's 27 rule blocks could not reach their own
  * DOM and live here instead. The 5 that style shell-rendered elements keep the
- * compiler's guarantee and stay in `+page.svelte`.
+ * compiler's guarantee and stay in `+page.svelte`. A 23rd block is here that
+ * was never in the component: `pre > code`, which the Markdown pipeline forces
+ * (ticket 071 decision 6).
  *
  * Two things this file must keep doing:
  *

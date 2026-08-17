@@ -97,9 +97,14 @@ interface MdNode {
 	position?: { start: { line: number } };
 }
 
-/** Alternation state for the field notes, held for one render of the page. */
-interface Page {
-	notes: number;
+/**
+ * How many field notes the page has placed. The tilts alternate down the whole
+ * page rather than within a file, so this is threaded through one render of all
+ * eight bodies — the reason {@link renderBodies} exists beside
+ * {@link renderDocsMarkdown}.
+ */
+interface Tilts {
+	placed: number;
 }
 
 /* -------------------------------------------------------------------------
@@ -120,7 +125,7 @@ interface Word {
 }
 
 interface Ctx {
-	page: Page;
+	tilts: Tilts;
 	/** The file being rendered, for the guard's messages. */
 	path: string;
 }
@@ -171,7 +176,7 @@ const WORDS: Record<string, Word> = {
 	note: {
 		kind: 'containerDirective',
 		build(node, ctx) {
-			const tilt = TILTS[ctx.page.notes++ % TILTS.length];
+			const tilt = TILTS[ctx.tilts.placed++ % TILTS.length];
 			element(node, 'aside', { className: ['note', tilt] });
 			label(node, 'field note', LABEL);
 		}
@@ -364,7 +369,7 @@ function attribute(node: MdNode, name: string): string {
  * The guard, and the walk.
  * ---------------------------------------------------------------------- */
 
-function transform(tree: MdNode, path: string, page: Page): void {
+function transform(tree: MdNode, path: string, tilts: Tilts): void {
 	// The lede is the page's one piece of positional typography — the first
 	// paragraph of every body, tagged rather than announced by a ninth word.
 	const first = tree.children?.[0];
@@ -373,7 +378,7 @@ function transform(tree: MdNode, path: string, page: Page): void {
 	}
 	first.data = { ...first.data, hProperties: { className: ['lede'] } };
 
-	walk(tree, { page, path });
+	walk(tree, { tilts, path });
 }
 
 function walk(node: MdNode, ctx: Ctx): void {
@@ -426,13 +431,13 @@ function apply(node: MdNode, ctx: Ctx): void {
  * The pipeline.
  * ---------------------------------------------------------------------- */
 
-function pipeline(page: Page) {
+function pipeline(tilts: Tilts) {
 	return unified()
 		.use(remarkParse)
 		.use(remarkGfm)
 		.use(remarkDirective)
 		.use(() => (tree: unknown, file: { path?: string }) =>
-			transform(tree as MdNode, file.path ?? '<markdown>', page)
+			transform(tree as MdNode, file.path ?? '<markdown>', tilts)
 		)
 		.use(remarkRehype)
 		.use(rehypeSlug)
@@ -445,13 +450,20 @@ function pipeline(page: Page) {
  * alternate down the page rather than within a file.
  */
 export function renderDocsMarkdown(markdown: string, path: string): string {
-	return String(pipeline({ notes: 0 }).processSync({ path, value: markdown }));
+	return String(pipeline({ placed: 0 }).processSync({ path, value: markdown }));
 }
 
-/** The eight bodies as HTML, keyed by id, in register order. */
+/**
+ * The eight bodies as HTML, keyed by id. Rendered in register order, because
+ * the field-note tilts alternate down the page rather than within a file.
+ *
+ * The `as` cast is the one place the compiler stops checking that every id has
+ * a body — the loop drives off `sections`, which is also what the caller loops,
+ * so it cannot miss. `bodies.test.ts` asserts what the cast claims: eight keys,
+ * none of them empty.
+ */
 export function renderBodies(): Record<DocsId, string> {
-	const page: Page = { notes: 0 };
-	const processor = pipeline(page);
+	const processor = pipeline({ placed: 0 });
 	const bodies = {} as Record<DocsId, string>;
 	for (const section of sections) {
 		bodies[section.id] = String(

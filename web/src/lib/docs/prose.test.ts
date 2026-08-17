@@ -21,15 +21,20 @@ const css = readFileSync(join(process.cwd(), 'web/src/lib/docs/prose.css'), 'utf
 	''
 );
 
-/** Every selector in the file, at-rules unwrapped rather than skipped. */
-const selectors = [...css.matchAll(/([^{}]+)\{/g)]
+/** Every rule block in the file, at-rules unwrapped rather than skipped. */
+const blocks = [...css.matchAll(/([^{}]+)\{/g)]
 	.map((match) => match[1].trim())
-	.filter((head) => head && !head.startsWith('@'))
-	.flatMap((list) => list.split(',').map((one) => one.trim()));
+	.filter((head) => head && !head.startsWith('@'));
+
+const selectors = blocks.flatMap((list) => list.split(',').map((one) => one.trim()));
 
 describe('prose.css', () => {
 	it('writes every selector under .docs', () => {
-		expect(selectors.length).toBeGreaterThan(20);
+		// 22 rule blocks moved off the component, plus the one `pre > code` the
+		// Markdown pipeline forces (ticket 071 decisions 3 and 6). Pinned rather
+		// than bounded, so a rule arriving without its `.docs` prefix cannot hide
+		// behind a loose count.
+		expect(blocks).toHaveLength(23);
 		for (const selector of selectors) expect(selector.startsWith('.docs'), selector).toBe(true);
 	});
 

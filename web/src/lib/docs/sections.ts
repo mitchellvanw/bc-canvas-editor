@@ -25,12 +25,9 @@ export const sections = [
 /** A section of `/docs` — and the anchor the homepage is allowed to link into. */
 export type DocsId = (typeof sections)[number]['id'];
 
-/** A register row joined to its rendered body, in page order. */
-export interface DocsSection {
-	id: DocsId;
-	chip: string;
-	label: string;
-	title: string;
-	/** The section's Markdown body, rendered to HTML (`$lib/server/docs/bodies.ts`). */
-	html: string;
-}
+/**
+ * A register row joined to its rendered body (`$lib/server/docs/bodies.ts`) —
+ * what the shell loops. Derived from the rows rather than restated, so a new
+ * column is still written once.
+ */
+export type DocsSection = (typeof sections)[number] & { html: string };
