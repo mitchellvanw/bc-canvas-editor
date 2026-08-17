@@ -14,20 +14,10 @@
 	 * braces lives in template-literal consts so the template never escapes
 	 * a `{`.
 	 */
+	import { sections } from '$lib/docs/sections';
 	import orderSvg from '../../../../examples/order-fulfillment.bcc.svg?url';
 
 	const REPO = 'https://github.com/mitchellvanw/bc-canvas-editor';
-
-	const sections = [
-		{ id: 'editor', chip: 'bg-event border-event-ink text-event-ink', label: 'editor', title: 'The editor' },
-		{ id: 'canvas-file', chip: 'bg-sheet border-ink text-ink-soft', label: 'file', title: 'The Canvas file' },
-		{ id: 'exports', chip: 'bg-command border-command-ink text-command-ink', label: 'exports', title: 'Exports' },
-		{ id: 'cli', chip: 'bg-ink border-ink text-paper', label: 'bcc', title: 'The command line' },
-		{ id: 'fence', chip: 'bg-term border-term-ink text-term-ink', label: 'fence', title: 'The bcc fence' },
-		{ id: 'remark', chip: 'bg-query border-query-ink text-query-ink', label: 'remark', title: 'The remark plugin' },
-		{ id: 'vscode', chip: 'bg-policy border-policy-ink text-policy-ink', label: 'vscode', title: 'The VS Code extension' },
-		{ id: 'mcp', chip: 'bg-collaborator border-collaborator-ink text-collaborator-ink', label: 'mcp', title: 'The MCP server & plugin' }
-	];
 
 	/** The nav's legend dot: the chip's background and border, none of its text. */
 	const dot = (chip: string) => chip.split(' ').slice(0, 2).join(' ');

@@ -17,6 +17,7 @@
 	 */
 	import { goto } from '$app/navigation';
 	import { EXAMPLES, type ExampleEntry } from '$lib/chrome/examples';
+	import type { DocsId } from '$lib/docs/sections';
 	import { canvas } from '$lib/editor/document.svelte';
 	import { blankCanvas, stampIds, type CanvasDoc } from '$lib/model/canvas';
 	import orderSvg from '../../../examples/order-fulfillment.bcc.svg?url';
@@ -56,8 +57,10 @@
 
 	// The tools grid: one card per tool, each linking to its section of the
 	// docs. The dots reuse the journey's station colors, so the grid reads
-	// as the index of the story above it.
-	const tools = [
+	// as the index of the story above it. The hrefs are typed against the
+	// docs register (SPEC §2.1), so a link into an id nobody has is a
+	// `npm run check` failure rather than a dead anchor in production.
+	const tools: { href: `/docs#${DocsId}`; dot: string; name: string; text: string }[] = [
 		{ href: '/docs#editor', dot: 'bg-event border-event-ink', name: 'The editor', text: 'The sheet, edited in place in the browser. Nothing leaves the machine until you export.' },
 		{ href: '/docs#cli', dot: 'bg-ink border-ink', name: 'The command line', text: 'bcc lists, checks, formats and renders the canvases in a repo — through npx, nothing to install.' },
 		{ href: '/docs#fence', dot: 'bg-term border-term-ink', name: 'The bcc fence', text: 'One fence, one path: the sheet drawn inside any markdown file that gets built or previewed.' },
