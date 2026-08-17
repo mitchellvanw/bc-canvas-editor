@@ -22,15 +22,19 @@
 	import { blankCanvas, stampIds, type CanvasDoc } from '$lib/model/canvas';
 	import orderSvg from '../../../examples/order-fulfillment.bcc.svg?url';
 
-	// The chip stack: the palette legend doubling as the pitch. A tidy column
-	// beside the headline from md up; below that, a loose two-column wall
-	// cluster (`wall`) — a stacked list of wide bars read as boring.
+	// The chip stack: the palette legend doubling as the pitch, drawn as one
+	// collage hand at three widths (the .scratch/hero-tablet-mockups winner).
+	// Phone (`mobile`): cards shrink to their text and pack into a centered
+	// 2+2+1 scatter between prose and CTAs. Band, sm–md (`band`): a column
+	// right of the copy, each card drifting a different distance left into
+	// the text gutter. Desktop (`desk`): the column keeps its order but
+	// loses the shared edges — varied widths, alternating margins, ±3° tilt.
 	const chips = [
-		{ bg: 'bg-command', ink: 'text-command-ink', border: 'border-command-ink', tilt: 'md:-rotate-1', wall: 'max-md:-rotate-2 max-md:translate-y-1', kind: 'command', text: 'What it is told to do' },
-		{ bg: 'bg-event', ink: 'text-event-ink', border: 'border-event-ink', tilt: 'md:rotate-[1.5deg]', wall: 'max-md:rotate-[2.5deg] max-md:translate-y-6', kind: 'event', text: 'What it announces happened' },
-		{ bg: 'bg-query', ink: 'text-query-ink', border: 'border-query-ink', tilt: 'md:rotate-[-0.5deg]', wall: 'max-md:rotate-[-1.5deg] max-md:-translate-y-1', kind: 'query', text: 'What it will answer' },
-		{ bg: 'bg-policy', ink: 'text-policy-ink', border: 'border-policy-ink', tilt: 'md:rotate-1', wall: 'max-md:rotate-[1.8deg] max-md:translate-y-4', kind: 'policy', text: 'The rules it enforces' },
-		{ bg: 'bg-collaborator', ink: 'text-collaborator-ink', border: 'border-collaborator-ink', tilt: 'md:rotate-[-1.5deg]', wall: 'max-md:rotate-[-2deg] max-md:col-span-2 max-md:w-3/4 max-md:translate-y-3 max-md:justify-self-center', kind: 'collaborator', text: 'Who is on the other end' }
+		{ bg: 'bg-command', ink: 'text-command-ink', border: 'border-command-ink', mobile: 'max-sm:rotate-[-2.6deg] max-sm:translate-y-[2px]', band: 'sm:max-md:rotate-[3deg] sm:max-md:translate-x-[-16%]', desk: 'md:w-[92%] md:rotate-[-2.8deg] md:translate-x-[-6%]', kind: 'command', text: 'What it is told to do' },
+		{ bg: 'bg-event', ink: 'text-event-ink', border: 'border-event-ink', mobile: 'max-sm:rotate-[2.4deg] max-sm:translate-y-[-2px]', band: 'sm:max-md:rotate-[-3.2deg] sm:max-md:translate-x-[-2%]', desk: 'md:w-[94%] md:ml-auto md:rotate-[3deg] md:translate-x-[3%]', kind: 'event', text: 'What it announces happened' },
+		{ bg: 'bg-query', ink: 'text-query-ink', border: 'border-query-ink', mobile: 'max-sm:rotate-[-2deg] max-sm:translate-x-[-2%]', band: 'sm:max-md:rotate-[2.4deg] sm:max-md:translate-x-[-17%]', desk: 'md:w-[90%] md:rotate-[-2.4deg] md:translate-x-[-10%]', kind: 'query', text: 'What it will answer' },
+		{ bg: 'bg-policy', ink: 'text-policy-ink', border: 'border-policy-ink', mobile: 'max-sm:rotate-[2.6deg] max-sm:translate-y-[-3px]', band: 'sm:max-md:rotate-[-2.6deg] sm:max-md:translate-x-[-4%]', desk: 'md:w-[92%] md:ml-auto md:rotate-[2.6deg]', kind: 'policy', text: 'The rules it enforces' },
+		{ bg: 'bg-collaborator', ink: 'text-collaborator-ink', border: 'border-collaborator-ink', mobile: 'max-sm:rotate-[-2.4deg] max-sm:translate-y-[-2px]', band: 'sm:max-md:rotate-[3.2deg] sm:max-md:translate-x-[-12%]', desk: 'md:w-[96%] md:ml-[2%] md:rotate-[-3deg] md:translate-x-[-4%]', kind: 'collaborator', text: 'Who is on the other end' }
 	];
 
 	const NPX_LINE = 'npx --yes github:mitchellvanw/bc-canvas-editor ls';
@@ -204,66 +208,71 @@
 		</div>
 	</header>
 
-	<!-- The wall: headline left, the chip stack right. -->
-	<section class="mt-14 grid items-start gap-12 md:grid-cols-[1.2fr_1fr] md:gap-10 lg:gap-8">
-		<div>
-			<h1 class="text-5xl leading-[1.04] font-bold tracking-tight text-balance sm:text-6xl md:text-5xl lg:text-6xl xl:text-7xl">
+	<!-- The wall, one collage at three widths. Copy, figure and CTA row are
+	     three grid children so each range can deal them out: phone unwraps
+	     the copy (contents) to run headline → prose → cards → CTAs; the band
+	     puts the scatter beside the copy with the CTA row spanning under
+	     both; desktop returns the CTA row to the copy's column. -->
+	<section class="mt-11 grid items-start gap-y-8 sm:mt-14 sm:max-md:grid-cols-[1.4fr_1fr] sm:max-md:gap-x-4 md:grid-cols-[1.2fr_1fr] md:gap-x-10 lg:gap-x-8">
+		<div class="max-sm:contents sm:col-start-1 sm:row-start-1">
+			<h1 class="text-5xl leading-[1.04] font-bold tracking-tight text-balance max-sm:order-1 sm:max-md:text-[2.375rem] md:text-5xl lg:text-6xl xl:text-7xl">
 				Put the system <span class="underline-event">on the wall</span>, one context
 				<span class="underline-command">at a time</span>.
 			</h1>
-			<p class="mt-6 max-w-xl font-serif text-lg leading-relaxed text-ink-soft">
+			<p class="mt-6 max-w-xl font-serif text-lg leading-relaxed text-ink-soft max-sm:order-2 max-sm:mt-0 max-sm:text-[1.0625rem] sm:max-md:max-w-[19rem] sm:max-md:text-[1.0625rem]">
 				The Bounded Context Canvas gives every part of a system one loud page: what it is for,
 				what it listens to, what it promises. This is an editor, a CLI, an MCP server and a
 				markdown fence for exactly that page — and the file never leaves your repo.
 			</p>
-			<div class="mt-8 flex flex-wrap items-center gap-3">
-				<a
-					href="/edit"
-					onclick={openEditor}
-					class="rounded-[4px] bg-ink px-6 py-3 text-sm font-semibold text-sheet transition-transform duration-200 hover:-translate-y-0.5"
-				>
-					Open the editor
-				</a>
-				<button
-					type="button"
-					onclick={copyNpx}
-					class="group flex max-w-full items-center gap-3 rounded-[4px] border border-line bg-sheet px-4 py-3 font-mono text-xs hover:bg-paper xl:text-sm"
-				>
-					<span class="text-ink-faint">$</span>
-					{NPX_LINE}
-					<span class="shrink-0 text-ink-soft group-hover:text-ink" aria-hidden="true">
-						{#if copied}
-							<svg class="h-4 w-4 text-query-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M20 6 9 17l-5-5" />
-							</svg>
-						{:else}
-							<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-								<rect x="9" y="9" width="13" height="13" rx="2" />
-								<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-							</svg>
-						{/if}
-					</span>
-					<span class="sr-only" aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
-				</button>
-			</div>
 		</div>
 
-		<figure class="mx-auto w-full max-w-sm max-md:max-w-lg md:mt-2">
-			<ul class="max-md:grid max-md:grid-cols-2 max-md:gap-x-4 max-md:gap-y-5 md:space-y-3">
+		<figure class="w-full max-sm:order-3 max-sm:-mt-2 sm:max-md:relative sm:max-md:z-[1] sm:col-start-2 sm:row-start-1 md:mx-auto md:mt-2 md:max-w-[26rem] md:row-span-2">
+			<ul class="flex max-sm:flex-wrap max-sm:justify-center max-sm:gap-x-2.5 max-sm:gap-y-2 sm:flex-col sm:max-md:gap-2 md:gap-1.5">
 				{#each chips as chip, i (chip.kind)}
 					<li
-						class="chip {chip.bg} {chip.tilt} {chip.wall} border {chip.border} px-4 py-3 shadow-[2px_3px_0_rgb(26_30_32/0.12)]"
+						class="chip {chip.bg} {chip.mobile} {chip.band} {chip.desk} border {chip.border} px-3 py-2 shadow-[2px_3px_0_rgb(26_30_32/0.12)] max-sm:max-w-[11rem] sm:px-3.5 sm:py-2.5 sm:max-md:w-[104%] md:px-4 md:py-3"
 						style="--i: {i}"
 					>
-						<span class="font-mono text-[11px] font-medium tracking-wide {chip.ink}">{chip.kind}</span>
-						<span class="mt-0.5 block font-medium">{chip.text}</span>
+						<span class="font-mono text-[11px] font-medium tracking-wide max-sm:text-[10px] {chip.ink}">{chip.kind}</span>
+						<span class="mt-0.5 block font-medium max-sm:mt-px max-sm:text-sm sm:max-md:text-[0.9375rem]">{chip.text}</span>
 					</li>
 				{/each}
 			</ul>
-			<figcaption class="mt-8 text-sm text-ink-soft max-md:text-center md:mt-4">
+			<figcaption class="mt-4 text-sm text-ink-soft max-sm:text-center sm:max-md:mt-6 sm:max-md:text-right md:mt-5">
 				Each of these has a fixed place on the sheet. Filling them in is the workshop.
 			</figcaption>
 		</figure>
+
+		<div class="flex flex-wrap items-center gap-3 max-sm:order-4 sm:row-start-2 sm:max-md:col-span-full md:col-start-1">
+			<a
+				href="/edit"
+				onclick={openEditor}
+				class="rounded-[4px] bg-ink px-6 py-3 text-sm font-semibold text-sheet transition-transform duration-200 hover:-translate-y-0.5"
+			>
+				Open the editor
+			</a>
+			<button
+				type="button"
+				onclick={copyNpx}
+				class="group flex max-w-full items-center gap-3 rounded-[4px] border border-line bg-sheet px-4 py-3 font-mono text-xs hover:bg-paper xl:text-sm"
+			>
+				<span class="text-ink-faint">$</span>
+				{NPX_LINE}
+				<span class="shrink-0 text-ink-soft group-hover:text-ink" aria-hidden="true">
+					{#if copied}
+						<svg class="h-4 w-4 text-query-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M20 6 9 17l-5-5" />
+						</svg>
+					{:else}
+						<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="9" y="9" width="13" height="13" rx="2" />
+							<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+						</svg>
+					{/if}
+				</span>
+				<span class="sr-only" aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
+			</button>
+		</div>
 	</section>
 </div>
 
