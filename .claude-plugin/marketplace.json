@@ -7,7 +7,7 @@
 		{
 			"name": "bc-canvas",
 			"source": "./mcp",
-			"description": "Bounded Context Canvas tools for a codebase: a local MCP server over the canvas files in a project, a facilitated workshop, a disciplined draft-from-code, and a reviewer that asks rather than fills."
+			"description": "Bounded Context Canvas tools for a codebase: a local MCP server over the canvas files in a project, a facilitated workshop, a disciplined draft from the code or from the documents, and a reviewer that asks rather than fills."
 		}
 	]
 }

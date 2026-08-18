@@ -5,7 +5,7 @@ choreography. stdio only; nothing leaves the machine.
 
 ### Install
 
-The server ships inside the **bc-canvas** plugin, together with two
+The server ships inside the **bc-canvas** plugin, together with three
 skills and a reviewer agent. There is nothing to build — the plugin carries the
 server ready to run, and Node is its only requirement:
 
@@ -42,6 +42,9 @@ The facilitation layer, findable by typing `/` and the name:
 - **draft-canvas-from-code** — a draft drawn from what the code shows,
   handed back for correction. The judgments a codebase cannot answer arrive as open
   questions rather than invented rows.
+- **draft-canvas-from-docs** — the same draft from the specs, ADRs and
+  glossaries instead. A document can decide what code cannot, so those rows arrive
+  quoted; two documents that disagree arrive as an open question naming both.
 - **canvas-reviewer** — an agent that reviews by asking: it names what
   is missing or thin and puts the open questions back to you, answering none of
   them.

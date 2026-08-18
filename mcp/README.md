@@ -1,6 +1,6 @@
 # bc-canvas-mcp
 
-Tooling for the Bounded Context Canvas files in a project: a facilitated workshop, a draft-from-code pass, and a reviewer — over canvases that open unchanged in [BC Canvas](https://bc-canvas.pages.dev).
+Tooling for the Bounded Context Canvas files in a project: a facilitated workshop, a draft-from-code pass, a draft-from-docs pass, and a reviewer — over canvases that open unchanged in [BC Canvas](https://bc-canvas.pages.dev).
 
 Two surfaces carry it, and the split is worth knowing before you reach for either. **The MCP server is how a canvas gets into a conversation** — it reads one as prose and explains what each section is for. **`bcc` is how a canvas changes on disk** — it lists, checks, formats and renders. The server does not write. Without `bcc` beside it you can read canvases and learn the method, and that is all.
 
@@ -10,7 +10,7 @@ The canvases are meant to be committed alongside the code they describe. That is
 
 ## Install
 
-The server ships inside the **bc-canvas** plugin, together with two skills — a facilitated canvas workshop and a disciplined draft-from-code — and a reviewer agent:
+The server ships inside the **bc-canvas** plugin, together with three skills — a facilitated canvas workshop and a disciplined draft from either the code or the documents — and a reviewer agent:
 
 ```
 /plugin marketplace add mitchellvanw/bc-canvas-editor
@@ -79,6 +79,7 @@ Beside the server, the plugin carries the facilitation layer — findable by typ
 
 - **canvas-workshop** — a facilitated session. The model asks, one section at a time; you answer; the sheet fills in your words, and what you defer lands under Open questions instead of staying silently blank.
 - **draft-canvas-from-code** — a draft drawn from what the code shows, handed back for correction. The business judgments a codebase cannot answer arrive as open questions rather than invented rows.
+- **draft-canvas-from-docs** — the same draft from the specs, ADRs and glossaries instead. A document can decide what code cannot, so those rows arrive quoted; where two documents disagree, or the code does not keep what one promises, both sides arrive as an open question.
 - **canvas-reviewer** — an agent that reviews by asking: it names what is missing or thin and puts the open questions back to you, answering none of them. Reach for it on a canvas nobody is currently facilitating; a workshop in progress is reviewed by the facilitator running it, who knows which rows you said and which it drafted.
 
 ## `bcc`, the command line

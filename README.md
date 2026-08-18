@@ -21,7 +21,7 @@ Each canvas has a `.bcc.svg` beside it — the sheet as one self-contained image
 
 `mcp/` is a local stdio MCP server over the canvas files in a project: it reads one as prose, explains what each section is for, and offers every canvas as a resource a conversation can attach. It does not write — that is `bcc`, below — which makes the split the plugin is built on: **the server is how a canvas gets into a conversation, the command line is how one changes on disk.**
 
-It ships as the **bc-canvas** plugin (`/plugin marketplace add mitchellvanw/bc-canvas-editor`), which adds a facilitated workshop skill, a draft-from-code skill, and a reviewer agent beside the server. See [`mcp/README.md`](mcp/README.md).
+It ships as the **bc-canvas** plugin (`/plugin marketplace add mitchellvanw/bc-canvas-editor`), which adds a facilitated workshop skill, a draft-from-code skill, a draft-from-docs skill, and a reviewer agent beside the server. See [`mcp/README.md`](mcp/README.md).
 
 ## Command line
 

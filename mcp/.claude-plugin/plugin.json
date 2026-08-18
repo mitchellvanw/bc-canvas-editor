@@ -1,7 +1,7 @@
 {
 	"name": "bc-canvas",
 	"version": "0.0.1",
-	"description": "A facilitated canvas workshop, a draft-from-code pass and a reviewer, over the Bounded Context Canvases in your project. The MCP server it bundles is how a canvas gets into the conversation; the bcc command is how one changes on disk. Either way the files open unchanged in the BC Canvas editor.",
+	"description": "A facilitated canvas workshop, a draft from the code or from the documents, and a reviewer, over the Bounded Context Canvases in your project. The MCP server it bundles is how a canvas gets into the conversation; the bcc command is how one changes on disk. Either way the files open unchanged in the BC Canvas editor.",
 	"author": {
 		"name": "Mitchell van Wijngaarden"
 	},
